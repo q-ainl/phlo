@@ -1,0 +1,1 @@
+function n8n($webhook, ?array $data = null, $test = false) => HTTP(%creds->n8n->server.'webhook'.($test ? '-test' : '').'/'.$webhook, POST: $data)

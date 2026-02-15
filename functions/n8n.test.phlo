@@ -1,0 +1,1 @@
+function n8n_test($webhook, ?array $data = null) => n8n($webhook, $data, true)

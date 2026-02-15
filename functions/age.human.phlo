@@ -1,0 +1,1 @@
+function age_human(int $age) => time_human(time() - $age)

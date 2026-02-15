@@ -1,0 +1,1 @@
+function apcu($key, $cb, int $duration = 3600, bool $log = true) => first($value = apcu_entry($key, $cb, $duration), $log && debug('C: '.(strlen($key) > 58 ? substr($key, 0, 55).'...' : $key).(is_array($value) ? ' ('.count($value).')' : (is_numeric($value) ? ":$value" : (is_string($value) ? ':string:'.strlen($value) : colon.gettype($value))))))

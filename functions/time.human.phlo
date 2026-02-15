@@ -1,0 +1,10 @@
+function time_human(?int $time = null){
+	static $labels
+	$labels ??= last($labels = arr(seconds: 60, minutes: 60, hours: 24, days: 7, weeks: 4, months: 13, years: 1), defined('tsLabels') && $labels = array_combine(tsLabels, $labels), $labels)
+	$age = time() - $time
+	foreach ($labels AS $range => $multiplier){
+		if ($age / $multiplier < 1.6583) break
+		$age /= $multiplier
+	}
+	return round($age)." $range"
+}

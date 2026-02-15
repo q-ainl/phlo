@@ -1,0 +1,1 @@
+function auth_log(string $user) => file_put_contents(data.'access.log', date('j-n-Y H:i:s')." - $user - ".phlo('req')->ip."\n", FILE_APPEND)

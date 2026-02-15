@@ -1,0 +1,1 @@
+function wsCast($wsTarget = 'broadcast', $wsHost = null, $wsEndpoint = null, ...$data) => $wsTarget ? HTTP($wsEndpoint ?? 'http://0.0.0.0:3001/message', JSON: true, POST: arr(host: $wsHost ?? host, target: $wsTarget, data: $data)) : null
