@@ -1,0 +1,1 @@
+function regex(string $pattern, string $subject, int $flags = 0, int $offset = 0) => preg_match($pattern, $subject, $match, $flags, $offset) ? $match : []

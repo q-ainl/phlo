@@ -1,0 +1,1 @@
+function active(bool $cond, string $classList = void) => $cond || $classList ? ' class="'.$classList.($cond ? ($classList ? space : void).'active' : void).'"' : void

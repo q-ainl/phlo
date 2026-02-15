@@ -1,0 +1,1 @@
+function phlo_async(string $cb, ...$args) => last($cmd = '/usr/bin/php '.escapeshellarg(rtrim(www, slash).'/app.php').space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void).' > /dev/null 2>&1 & echo $!', exec($cmd, $r), isset($r[0]) && ctype_digit($r[0]) && (int)$r[0] > 0)

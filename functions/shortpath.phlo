@@ -1,0 +1,6 @@
+function shortpath(?string $file){
+	if (!$file) return 'unknown'
+	$p = explode(slash, str_replace(bs, slash, $file))
+	$n = count($p)
+	return $n >= 2 ? $p[$n - 2].slash.$p[$n - 1] : end($p)
+}

@@ -1,0 +1,84 @@
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: Language/translation library
+
+@ requires:    @cookies @JSON @OpenAI @INI
+@ advice:      Use %lang in views to show current app lang (for example in links)
+
+function nl($text, ...$args) => %lang->translation('nl', $text, ...$args)
+function en($text, ...$args) => %lang->translation('en', $text, ...$args)
+
+static asyncBatch($from, $to, $json){
+	%app->lang = $to
+	$texts = json_decode($json, true)
+	$translations = $this->translateBatch($from, $to, $texts)
+	foreach ($translations AS $hash => $translation) $this->translations->$hash = $translation
+}
+
+view => %app->lang
+
+prop model = 'gpt-4o-mini'
+prop translations => %INI(%app->lang, langs)
+
+prop browser => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
+method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
+
+method detect($text, $fallback = 'en'){
+	$res = %OpenAI->chat (
+		model: $this->model,
+		system: 'Analyseer welke taal deze tekst is en geef alleen de ISO 639-1 code van de taal terug, zonder andere data!',
+		user: $text.lf.lf.'De ISO 639-1 code van de taal is: ',
+		temperature: 0,
+	)->answer
+	return strlen($res) === 2 ? strtolower($res) : $fallback
+}
+
+method hash($from, $text) => $from.($short = substr(implode(regex_all('/[A-Za-z0-9]+/', ucwords($text))[0]), 0, 8)).substr(md5($text), 0, 10 - strlen($short))
+
+method translation($from, $text, ...$args){
+	if ($from === %app->lang) $translation = $text
+	else {
+		$translation = []
+		$missing = []
+		foreach (explode(lf, $text) AS $line){
+			if (trim($line)){
+				$hash = $this->hash($from, $line)
+				if (!$item = $this->translations->$hash) [$missing[$hash] = $item = $line, debug(%app->lang.': '.(strlen($line) > 20 ? substr($line, 0, 18).'...' : $line))]
+			}
+			else $item = void
+			$translation[] = $item
+		}
+		if ($missing) phlo_async('lang::asyncBatch', $from, %app->lang, json_encode($missing))
+		$translation = implode(lf, $translation)
+	}
+	$translation = strtr($translation, ['\n' => lf])
+	return $args ? sprintf($translation, ...$args) : $translation
+}
+
+method translate($from, $to, $text){
+	if ($from === $to) return $text
+	return %OpenAI->chat (
+		model: $this->model,
+		system: "You will be provided with a word, sentence or (markdown) text in ISO 639-1 language $from, and your task is to translate this string into ISO 639-1 language $to. Respect markdown, missing interpunction and specific use of capitals. Give only the translation.",
+		user: $text,
+		temperature: 0,
+	)->answer
+}
+
+method translateBatch($from, $to, $texts){
+	if ($from === $to) return $texts
+	$hashes = array_keys($texts)
+	$numbered = implode(lf, array_map(fn($i, $t) => ($i + 1).'. '.$t, array_keys($values = array_values($texts)), $values))
+	$answer = %OpenAI->chat (
+		model: $this->model,
+		system: "You will be provided with numbered lines in ISO 639-1 language $from. Translate each line into ISO 639-1 language $to. Return only the numbered translations in the same format. Respect markdown, missing interpunction and specific use of capitals.",
+		user: $numbered,
+		temperature: 0,
+	)->answer
+	$result = []
+	foreach (explode(lf, trim($answer)) AS $line){
+		if (preg_match('/^(\d+)\.\s*(.+)/', $line, $m))
+			$result[$hashes[(int)$m[1] - 1]] = $m[2]
+	}
+	return $result
+}

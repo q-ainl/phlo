@@ -1,0 +1,1 @@
+function camel(string $text) => lcfirst(str_replace(space, void, ucwords(lcfirst($text))))

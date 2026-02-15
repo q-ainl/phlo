@@ -1,0 +1,1 @@
+function json_read(string $file, ?bool $assoc = null) => json_decode(file_get_contents($file), $assoc) ?? error('Error reading '.esc($file))

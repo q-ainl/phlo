@@ -1,0 +1,17 @@
+function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, bool $DELETE = false, ?string $agent = null){
+	$curl = curl_init($url)
+	if ($POST !== null || $PUT !== null || $PATCH !== null){
+		if (!is_null($POST)) [$method = 'POST', $content = $POST]
+		elseif (!is_null($PUT)) [$method = 'PUT', $content = $PUT]
+		elseif (!is_null($PATCH)) [$method = 'PATCH', $content = $PATCH]
+		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method)
+		if ($JSON) [!is_string($content) && $content = json_encode($content), array_push($headers, 'Content-Type: application/json', 'Content-Length: '.strlen($content))]
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $content)
+	}
+	elseif ($DELETE) curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'DELETE')
+	$agent && curl_setopt($curl, CURLOPT_USERAGENT, $agent === true ? phlo('req')->userAgent : $agent)
+	curl_setopt_array($curl, [CURLOPT_COOKIEFILE => data.'cookies.txt', CURLOPT_COOKIEJAR => data.'cookies.txt', CURLOPT_HTTPHEADER => $headers, CURLOPT_FOLLOWLOCATION => true, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 15, CURLOPT_ENCODING => void])
+	$res = curl_exec($curl)
+	if ($res === false) error('HTTP error: '.curl_error($curl))
+	return $res
+}

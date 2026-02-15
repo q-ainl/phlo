@@ -1,0 +1,1 @@
+function phlo_exists(string $obj) => is_file(php.strtr($obj, [us => dot]).'.php')

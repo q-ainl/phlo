@@ -1,0 +1,1 @@
+function json_write(string $file, $data, $flags = null) => file_put_contents($file, json_encode($data, $flags ?? jsonFlags), LOCK_EX)

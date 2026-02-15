@@ -1,0 +1,1 @@
+function regex_all(string $pattern, string $subject, int $flags = 0, int $offset = 0) => preg_match_all($pattern, $subject, $matches, $flags, $offset) ? $matches : []

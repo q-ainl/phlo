@@ -1,0 +1,23 @@
+function token(int $length = 8, ?string $input = null){
+	$length || error('Token must have a minimum length above 0', 500)
+	$alphabet = 'abcdefghijklmnopqrstuvwxyz'
+	$alphabetLength = strlen($alphabet)
+	$limit = intdiv(256, $alphabetLength) * $alphabetLength
+	$token = void
+	$buffer = void
+	$state = is_null($input) ? null : hash('sha256', (string)$input, true)
+	while (strlen($token) < $length){
+		if ($buffer === void){
+			if (is_null($state)) $buffer = random_bytes(32)
+			else {
+				$state = hash('sha256', $state, true)
+				$buffer = $state
+			}
+		}
+		$byte = ord($buffer[0])
+		$buffer = substr($buffer, 1)
+		if ($byte >= $limit) continue
+		$token .= $alphabet[$byte % $alphabetLength]
+	}
+	return $token
+}
