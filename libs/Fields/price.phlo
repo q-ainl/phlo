@@ -1,0 +1,8 @@
+@ class:       field_price
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS price field
+@ extends:     field_number
+
+prop decimals = 2
+method sanitize($value) => round((float)$value, $this->decimals)

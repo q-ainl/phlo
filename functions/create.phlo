@@ -1,1 +1,1 @@
-function create(iterable $items, Closure $keyCb, ?Closure $valueCb = null) => array_combine(loop($items, $keyCb), $valueCb ? loop($items, $valueCb) : $items)
+function create(iterable $items, \Closure $keyCb, ?\Closure $valueCb = null) => array_combine(loop($items, $keyCb), $valueCb ? loop($items, $valueCb) : $items)

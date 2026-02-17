@@ -1,0 +1,62 @@
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: Fluent query builder for Phlo ORM
+
+prop class
+prop conditions = []
+prop bindings = []
+prop orderBy
+prop limitVal
+prop offsetVal
+
+method eq($column, $value) => $this->where("`$column` = ?", $value)
+method neq($column, $value) => $this->where("`$column` != ?", $value)
+method gt($column, $value) => $this->where("`$column` > ?", $value)
+method gte($column, $value) => $this->where("`$column` >= ?", $value)
+method lt($column, $value) => $this->where("`$column` < ?", $value)
+method lte($column, $value) => $this->where("`$column` <= ?", $value)
+method like($column, $value) => $this->where("`$column` LIKE ?", $value)
+method in($column, array $values) => $this->where("`$column` IN (".implode(',', array_fill(0, count($values), '?')).")", ...$values)
+method isNull($column) => $this->where("`$column` IS NULL")
+method notNull($column) => $this->where("`$column` IS NOT NULL")
+method between($column, $min, $max) => $this->where("`$column` BETWEEN ? AND ?", $min, $max)
+method raw($sql, ...$bindings) => $this->where($sql, ...$bindings)
+
+method where($condition, ...$values){
+	$this->conditions[] = $condition
+	foreach ($values AS $v) $this->bindings[] = $v
+	return $this
+}
+
+method order($order){
+	$this->orderBy = $order
+	return $this
+}
+
+method limit($limit){
+	$this->limitVal = $limit
+	return $this
+}
+
+method offset($offset){
+	$this->offsetVal = $offset
+	return $this
+}
+
+method build {
+	$where = $this->conditions ? implode(' AND ', $this->conditions) : void
+	$limit = $this->limitVal ? ($this->offsetVal ? "$this->offsetVal,$this->limitVal" : "$this->limitVal") : void
+	return arr(where: $where ?: void, order: $this->orderBy ?: void, limit: $limit ?: void, ...$this->bindings)
+}
+
+prop records => ($class = $this->class) && $class::records(...$this->build)
+prop record => ($class = $this->class) && $class::record(...$this->build)
+prop column => ($class = $this->class) && $class::column(...$this->build)
+prop item => ($class = $this->class) && $class::item(...$this->build)
+prop count => ($class = $this->class) && $class::recordCount(...$this->build)
+
+method delete{
+	$class = $this->class
+	$where = $this->conditions ? implode(' AND ', $this->conditions) : error('Cannot delete without conditions')
+	return $class::delete($where, ...$this->bindings)
+}

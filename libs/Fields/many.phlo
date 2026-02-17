@@ -1,0 +1,32 @@
+@ extends:     field
+@ class:       field_many
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS model many-to-many relation field
+
+prop list = 'label'
+prop record = 'label'
+prop create = false
+prop change = false
+prop manage = true
+
+method count($record) => $record->getCount($this->name)
+method label($record, $CMS) => loop($record->{$this->name}, fn($relation) => $this->link($relation), lf) ?: dash
+method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::objShortName()).slash.$record->id, class: 'async', inner: $record)
+
+method input($record, $CMS){
+	if (!$this->manage) return $this->label($record, $CMS)
+	$current = $record->{$this->name};
+	$available = $this->resolveObj::records()
+	return tag('div', class: 'many-manager', inner: loop($available, fn($option) => tag('label', inner: input(type: 'checkbox', name: $this->name.'[]', value: $option->id, checked: isset($current[$option->id]) ? true : null).space.$option), lf))
+}
+
+method parse($record){
+	$ids = (array)(%payload->{$this->name} ?? [])
+	$relation = $record::objMany()[$this->name]
+	$record::DB()->delete($relation['table'], "`$relation[localKey]`=?", $record->id)
+	foreach ($ids as $fId) $record::DB()->create($relation['table'], [$relation['localKey'] => $record->id, $relation['foreignKey'] => (int)$fId])
+}
+
+method sql => []
+

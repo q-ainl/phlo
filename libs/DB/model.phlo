@@ -5,10 +5,12 @@
 @ type:        abstract class
 @ requires:    @DB @MySQL apcu?
 
-static DB => %MySQL
+static DB => %app->DB ?? %MySQL
 static objRecords = []
 static objLoaded = []
 static objCache = false
+static objRecordLimit = 10000
+static objSoftDelete = false
 
 static canView = true
 static canCreate = true
@@ -22,22 +24,74 @@ static _columns(){
 	return $fq.implode("$fq,$fq", $list).$fq
 }
 static fields() => method_exists(static::class, 'schema') ? static::_fields() : (static::$fields ?? [])
-static _fields() => loop(static::schema(), fn($field, $column) => last($field->name ??= $column, $field->type === 'parent' && $field->obj ??= $column, $field))
+static _fields(){
+	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet']
+	$fields = loop(static::schema(), fn($field, $column) => last($field->name ??= $column, $field->type === 'parent' && $field->obj ??= $column, $field))
+	foreach ($reserved AS $word) isset($fields[$word]) && error("Reserved column name '$word' in ".static::class)
+	return $fields
+}
 static field($name) => static::fields()[$name]
 
-static create(...$args) => static::record(id: static::createRecord(...$args))
+static create(...$args){
+	$record = phlo(static::class, ...$args)
+	method_exists(static::class, 'beforeSave') && $record->beforeSave()
+	method_exists(static::class, 'beforeCreate') && $record->beforeCreate()
+	$id = static::createRecord(...$args)
+	$record = static::record(id: $id)
+	method_exists(static::class, 'afterCreate') && $record->afterCreate()
+	method_exists(static::class, 'afterSave') && $record->afterSave()
+	return $record
+}
 static createRecord(...$args) => static::DB()->create(static::$table, ...$args)
 static change($where, ...$args) => static::DB()->change(static::$table, $where, ...$args)
-static delete($where, ...$args) => static::DB()->delete(static::$table, $where, ...$args)
+
+static delete($where, ...$args){
+	if (method_exists(static::class, 'beforeDelete') || method_exists(static::class, 'afterDelete')){
+		$records = static::records(...[...$args, 'where' => $where])
+		foreach ($records AS $record) method_exists(static::class, 'beforeDelete') && $record->beforeDelete()
+		if (static::objSoftDelete()) $result = static::DB()->change(static::$table, $where, ...array_values($args), deleted_at: time())
+		else $result = static::DB()->delete(static::$table, $where, ...$args)
+		foreach ($records AS $record) method_exists(static::class, 'afterDelete') && $record->afterDelete()
+		return $result
+	}
+	if (static::objSoftDelete()) return static::DB()->change(static::$table, $where, ...array_values($args), deleted_at: time())
+	return static::DB()->delete(static::$table, $where, ...$args)
+}
 
 method objSave {
 	$this->id || error('Can\'t save '.static::class.' record without an id')
-	if (static::item(id: $this->id, columns: 'id')){
+	$isNew = !static::item(id: $this->id, columns: 'id')
+	$old = $isNew ? null : clone $this
+	method_exists(static::class, 'beforeSave') && $this->beforeSave($old)
+	if ($isNew){
+		method_exists(static::class, 'beforeCreate') && $this->beforeCreate()
+		static::createRecord(...$this)
+		$saved = static::record(id: $this->id)
+		method_exists(static::class, 'afterCreate') && $saved->afterCreate()
+	} else {
+		method_exists(static::class, 'beforeChange') && $this->beforeChange($old)
 		static::change('id=?', $this->id, ...$this)
-		return static::record(id: $this->id)
+		$saved = static::record(id: $this->id)
+		method_exists(static::class, 'afterChange') && $saved->afterChange($old)
 	}
-	else return static::create(...$this)
+	method_exists(static::class, 'afterSave') && $saved->afterSave($old)
+	return $saved
 }
+
+static transaction($callback) => static::DB()->transaction($callback)
+static query() => phlo('query', class: static::class)
+
+static objIncludeDeleted = false
+static objWithDeleted($callback){
+	static::$objIncludeDeleted = true
+	try {
+		$result = $callback()
+	} finally {
+		static::$objIncludeDeleted = false
+	}
+	return $result
+}
+static objRestore($id) => static::DB()->change(static::$table, 'id=?', $id, deleted_at: null)
 
 static column(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_COLUMN])
 static item(...$args) => static::recordsLoad($args, 'fetch', [\PDO::FETCH_COLUMN])
@@ -49,17 +103,23 @@ static record(...$args) => count($records = static::records(...$args)) > 1 ? err
 static recordsLoad($args, $fetch, $fetchMode, $saveRelations = false){
 	$args['table'] ??= static::$table
 	$saveRelations && $args['columns'] ??= static::$table.'.id as _,'.static::columns()
+	isset(static::$joins) && debug && error('DEPRECATED: static $joins in '.static::class.'. Use getParent/getChildren/getMany instead.')
 	isset(static::$joins) && $args['joins'] = static::$joins.(isset($args['joins']) ? " $args[joins]" : void)
 	method_exists(static::class, 'where') && $args['where'] = static::where().(isset($args['where']) ? " AND $args[where]" : void)
+	static::objSoftDelete() && !static::$objIncludeDeleted && $args['where'] = 'deleted_at IS NULL'.(isset($args['where']) ? " AND $args[where]" : void)
 	isset(static::$group) && $args['group'] ??= static::$group
 	isset(static::$order) && $args['order'] ??= static::$order
 	if ($cacheKey = $args['cacheKey'] ?? null) unset($args['cacheKey'])
 	if ($duration = $args['cache'] ?? static::objCache()){
 		unset($args['cache'])
-		$records = apcu($cacheKey ?? static::class.slash.md5(json_encode($args)), fn() => static::DB()->load(...$args)->$fetch(...$fetchMode), $duration === true ? 86400 : $duration)
+		$cacheArgs = $args; ksort($cacheArgs)
+		$records = apcu($cacheKey ?? static::class.slash.md5(json_encode($cacheArgs)), fn() => static::DB()->load(...$args)->$fetch(...$fetchMode), $duration === true ? 86400 : $duration)
 	}
 	else $records = static::DB()->load(...$args)->$fetch(...$fetchMode)
-	if ($saveRelations && $records) self::$objRecords[static::class] = (self::$objRecords[static::class] ?? []) + array_column($records, null, 'id')
+	if ($saveRelations && $records){
+		self::$objRecords[static::class] = (self::$objRecords[static::class] ?? []) + array_column($records, null, 'id')
+		count(self::$objRecords[static::class]) > static::objRecordLimit() && self::$objRecords[static::class] = array_slice(self::$objRecords[static::class], -static::objRecordLimit(), preserve_keys: true)
+	}
 	return $records
 }
 
@@ -96,7 +156,7 @@ method getChildren($key){
 	if (!$relation = self::objRel('objChildren')[$key] ?? null) return
 	$isArray = is_array($relation)
 	$class = $isArray ? $relation['obj'] : $relation
-	$column = $isArray ? $relation['key'] : static::class
+	$column = $isArray ? $relation['key'] : static::objShortName()
 	if (!isset(self::$objLoaded[static::class]['children'][$key])){
 		$parentIds = array_keys(self::$objRecords[static::class] ?? [])
 		if ($parentIds){
@@ -116,14 +176,18 @@ method getMany($key){
 	if (!isset(self::$objLoaded[static::class]['many'][$key])){
 		$parentIds = array_keys(self::$objRecords[static::class] ?? [])
 		if ($parentIds){
-			$targetTable = $class::$table
-			$records = $class::recordsLoad(arr(table: $relation['table'], columns: "`$targetTable`.*, `$relation[table]`.`$relation[localKey]` as _local_key", joins: "INNER JOIN `$targetTable` ON `$relation[table]`.`$relation[foreignKey]` = `$targetTable`.`id`", where: "`$relation[table]`.`$relation[localKey]` IN (".$this->objIn($parentIds).")"), 'fetchAll', [\PDO::FETCH_CLASS, $class])
+			$pivotRows = static::DB()->records(table: $relation['table'], columns: "`$relation[localKey]`,`$relation[foreignKey]`", where: "`$relation[localKey]` IN (".$this->objIn($parentIds).")")
+			// Stap 2: Unieke target IDs verzamelen
+			$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
+			// Stap 3: Target records laden via TARGET model's DB
+			$targetRecords = $targetIds ? $class::records(where: 'id IN ('.$this->objIn($targetIds).')') : []
+			// Stap 4: Many-to-many koppeling opbouwen
 			foreach (self::$objRecords[static::class] AS $parentRecord) $parentRecord->objState['many'][$key] = []
-			foreach ($records AS $record){
-				$recordId = $record->id
-				$parentId = $record->_local_key
-				unset($record->_local_key)
-				if (isset(self::$objRecords[static::class][$parentId])) self::$objRecords[static::class][$parentId]->objState['many'][$key][$recordId] = $record
+			$lk = $relation['localKey']; $fk = $relation['foreignKey']
+			foreach ($pivotRows ?: [] AS $row){
+				$parentId = $row->$lk
+				$foreignId = $row->$fk
+				if (isset(self::$objRecords[static::class][$parentId]) && isset($targetRecords[$foreignId])) self::$objRecords[static::class][$parentId]->objState['many'][$key][$foreignId] = $targetRecords[$foreignId]
 			}
 		}
 		self::$objLoaded[static::class]['many'][$key] = true
@@ -139,7 +203,7 @@ method getCount($key){
 			if ($parentIds){
 				$isArray = is_array($relation)
 				$class = $isArray ? $relation['obj'] : $relation
-				$column = $isArray ? $relation['key'] : static::class
+				$column = $isArray ? $relation['key'] : static::objShortName()
 				$counts = $class::pair(columns: "`$column`, COUNT(*)", where: '`'.$column.'` IN ('.$this->objIn($parentIds).')', group: "`$column`")
 				foreach (self::$objRecords[static::class] as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
 			}
@@ -168,7 +232,7 @@ method getLast($key){
 			if ($parentIds = array_keys(self::$objRecords[static::class] ?? [])){
 				$isArray = is_array($relation)
 				$class = $isArray ? $relation['obj'] : $relation
-				$column = $isArray ? $relation['key'] : static::class
+				$column = $isArray ? $relation['key'] : static::objShortName()
 				$childTable = $class::$table
 				$whereClause = "`$column` IN (".$this->objIn($parentIds).") AND `$childTable`.`id` = (SELECT `id` FROM `$childTable` AS lc WHERE lc.`$column`=`$childTable`.`$column` ORDER BY `id` DESC LIMIT 1)"
 				$lastChildren = $class::records(where: $whereClause)
@@ -182,25 +246,38 @@ method getLast($key){
 	return null
 }
 
+static objResolveClass($name) => str_contains($name, '\\') ? $name : substr(static::class, 0, strrpos(static::class, '\\') + 1).$name
+static objShortName($class = null) => ($c = $class ?? static::class) && ($p = strrpos($c, '\\')) !== false ? substr($c, $p + 1) : $c
+
 static objParents(){
 	if (property_exists(static::class, 'objParents')) return static::$objParents
 	if (!method_exists(static::class, 'schema')) return []
-	return loop(array_filter(static::fields(), fn($f) => $f->type === 'parent'), fn($f, $c) => $f->key ? arr(obj: $f->obj, key: $f->key) : ($f->obj ?? $c))
+	return loop(array_filter(static::fields(), fn($f) => $f->type === 'parent'), fn($f, $c) => $f->key ? arr(obj: static::objResolveClass($f->obj), key: $f->key) : (static::objResolveClass($f->obj ?? $c)))
 }
 
 static objChildren(){
 	if (property_exists(static::class, 'objChildren')) return static::$objChildren
 	if (!method_exists(static::class, 'schema')) return []
-	return loop(array_filter(static::fields(), fn($f) => $f->type === 'child'), fn($f, $c) => $f->key ? arr(obj: $f->obj, key: $f->key) : ($f->obj ?? $c))
+	return loop(array_filter(static::fields(), fn($f) => $f->type === 'child'), fn($f, $c) => $f->key ? arr(obj: static::objResolveClass($f->obj), key: $f->key) : (static::objResolveClass($f->obj ?? $c)))
 }
 
 static objMany(){
 	if (property_exists(static::class, 'objMany')) return static::$objMany
 	if (!method_exists(static::class, 'schema')) return []
-	return loop(array_filter(static::fields(), fn($f) => $f->type === 'many'), fn($f) => arr(obj: $f->obj, table: $f->table, localKey: $f->localKey ?? static::class, foreignKey: $f->foreignKey ?? $f->obj))
+	return loop(array_filter(static::fields(), fn($f) => $f->type === 'many'), fn($f) => arr(obj: static::objResolveClass($f->obj), table: $f->table, localKey: $f->localKey ?? static::objShortName(), foreignKey: $f->foreignKey ?? $f->obj))
 }
 
 static createTable(){
 	method_exists(static::class, 'schema') || error(static::class.' has no schema()')
 	return 'CREATE TABLE `'.static::$table.'` ('.lf.tab.implode(",\n\t", array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop((array)$field->sql, fn($sql) => $sql.($field->required || $field->nullable === false ? ' NOT' : void).' NULL')))))).",\n\tPRIMARY KEY (`id`)\n)"
+}
+
+static objSchemaDiff(){
+	if (!method_exists(static::class, 'schema')) return []
+	$expected = static::fields()
+	$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: "TABLE_NAME='".static::$table."'")->fetchAll(\PDO::FETCH_COLUMN)
+	$expectedColumns = array_merge(...array_values(array_filter(loop($expected, fn($field) => $field->columns ?: ($field->sql ? [$field->name] : null)))))
+	$missing = array_diff($expectedColumns, $actual)
+	$extra = array_diff($actual, $expectedColumns, ['id'])
+	return arr(missing: $missing ?: null, extra: $extra ?: null)
 }

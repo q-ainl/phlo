@@ -1,0 +1,44 @@
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: Database migration runner
+@ requires:    @DB
+
+static setup($db = null){
+	$db ??= %MySQL
+	$db->query("CREATE TABLE IF NOT EXISTS `migrations` (`id` int unsigned NOT NULL AUTO_INCREMENT, `name` varchar(255) NOT NULL, `batch` int unsigned NOT NULL, `applied_at` int unsigned NOT NULL, PRIMARY KEY (`id`), UNIQUE KEY (`name`))")
+}
+
+static applied($db = null){
+	$db ??= %MySQL
+	return $db->column(table: 'migrations', columns: 'name', order: 'id ASC')
+}
+
+static run(string $path, $db = null){
+	$db ??= %MySQL
+	static::setup($db)
+	$applied = static::applied($db)
+	$files = glob($path.'/*.sql')
+	sort($files)
+	$batch = $applied ? ($db->item(table: 'migrations', columns: 'MAX(batch)') + 1) : 1
+	$count = 0
+	foreach ($files AS $file){
+		$name = basename($file, '.sql')
+		if (in_array($name, $applied)) continue
+		$sql = file_get_contents($file)
+		$db->transaction(function() use ($db, $sql, $name, $batch){
+			foreach (array_filter(array_map('trim', explode(';', $sql))) AS $statement) $db->query($statement)
+			$db->create('migrations', name: $name, batch: $batch, applied_at: time())
+		})
+		$count++
+	}
+	return $count
+}
+
+static rollback($db = null){
+	$db ??= %MySQL
+	$batch = $db->item(table: 'migrations', columns: 'MAX(batch)')
+	if (!$batch) return 0
+	$names = $db->column(table: 'migrations', columns: 'name', where: 'batch=?', $batch)
+	$db->delete('migrations', 'batch=?', $batch)
+	return count($names)
+}

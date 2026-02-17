@@ -87,6 +87,9 @@ class file {
 				if (($node->body ?? \phlo\void) === \phlo\void) $node->body = $this->collect_block($fp, $lineIndex, '}');
 				else $node->body = $this->collect_inline_block($fp, $lineIndex, $node->body);
 			}
+			elseif ($node->operator === 'value'){
+				$node->body = $this->collect_inline_block($fp, $lineIndex, $node->body ?? \phlo\void);
+			}
 			elseif ($node->operator === 'view'){
 				if (($node->body ?? \phlo\void) === \phlo\void) $node->body = $this->collect_block($fp, $lineIndex, \phlo\void);
 				else $node->body = \ltrim($node->body);

@@ -1,0 +1,15 @@
+@ extends:     field
+@ class:       field_select
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS select field
+
+method errors($value){
+	$errors = parent::errors($value)
+	$value && !in_array($value, $this->options, true) && $errors[] = "$this->title: ongeldige optie"
+	return $errors ?: null
+}
+
+method input($record, $CMS) => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
+
+method sql => "`$this->name` enum('".implode("','", array_map(fn($o) => addslashes($o), $this->options))."')"
