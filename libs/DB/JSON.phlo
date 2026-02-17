@@ -1,0 +1,100 @@
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: JSON file database driver
+
+@ extends:     DB
+@ requires:    @DB
+
+handle => "JSON/$dir"
+method __construct(private string $dir)
+
+prop PDO => error('JSON driver does not use PDO')
+
+method objRead(string $table){
+	$file = $this->dir.slash.$table.'.json'
+	return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : []
+}
+
+method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))
+
+method objNextId(array $data) => $data ? max(array_column($data, 'id')) + 1 : 1
+
+method objFilter(array $data, string $where = void, ...$args){
+	if (!$where) return $data
+	$filtered = []
+	foreach ($data AS $row){
+		$match = true
+		$parts = preg_split('/\s+AND\s+/i', $where)
+		$argIndex = 0
+		foreach ($parts AS $part){
+			if (preg_match('/^[`"]?(\w+)[`"]?\s*=\s*\?$/', trim($part), $m)){
+				$column = $m[1]
+				$value = $args[$argIndex++] ?? null
+				if (($row[$column] ?? null) != $value) $match = false
+			}
+			elseif (preg_match('/^[`"]?(\w+)[`"]?\s+IN\s*\((.+)\)$/i', trim($part), $m)){
+				$column = $m[1]
+				$ids = array_map(fn($v) => trim($v, "\"' "), explode(',', $m[2]))
+				if (!in_array($row[$column] ?? null, $ids)) $match = false
+			}
+		}
+		$match && $filtered[] = $row
+	}
+	return $filtered
+}
+
+method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
+	!$where && $args && $where = loop(array_keys($args), fn($column) => "$column=?", ' AND ')
+	$data = $this->objRead($table)
+	$data = $this->objFilter($data, $where, ...array_values($args))
+	if ($order){
+		$desc = str_contains($order, 'DESC')
+		$col = trim(preg_replace('/\s+(ASC|DESC)/i', '', $order), '` ')
+		usort($data, fn($a, $b) => $desc ? ($b[$col] ?? 0) <=> ($a[$col] ?? 0) : ($a[$col] ?? 0) <=> ($b[$col] ?? 0))
+	}
+	$limit && $data = array_slice($data, 0, (int)$limit)
+	return new JSONResult($data, $columns)
+}
+
+method create(string $table, ...$data){
+	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
+	$all = $this->objRead($table)
+	$data['id'] ??= $this->objNextId($all)
+	foreach ($data AS $key => $value) is_a($value, 'obj') && $data[$key] = $value->id
+	$all[] = $data
+	$this->objWrite($table, $all)
+	return $data['id']
+}
+
+method change(string $table, string $where, ...$data){
+	$all = $this->objRead($table)
+	$whereCount = substr_count($where, '?')
+	$whereArgs = array_slice(array_values($data), 0, $whereCount)
+	$updates = array_slice($data, $whereCount)
+	$changed = 0
+	foreach ($all AS &$row){
+		if ($this->objFilter([$row], $where, ...$whereArgs)){
+			foreach ($updates AS $key => $value) $row[$key] = $value
+			$changed++
+		}
+	}
+	$this->objWrite($table, $all)
+	return $changed
+}
+
+method delete(string $table, string $where, ...$args){
+	$all = $this->objRead($table)
+	$matching = $this->objFilter($all, $where, ...$args)
+	$matchIds = array_column($matching, 'id')
+	$remaining = array_values(array_filter($all, fn($row) => !in_array($row['id'], $matchIds)))
+	$this->objWrite($table, $remaining)
+	return count($matching)
+}
+
+method column(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_COLUMN)
+method item(...$args) => $this->load(...$args)->fetch(\PDO::FETCH_COLUMN) ?: null
+method pair(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_KEY_PAIR)
+method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, 'obj')
+method record(...$args) => $this->load(...$args)->fetchObject('obj') ?: null
+
+method query($query, ...$args) => error('JSON driver does not support raw SQL queries')

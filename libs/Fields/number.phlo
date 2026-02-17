@@ -1,0 +1,23 @@
+@ extends:     field
+@ class:       field_number
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS number field
+
+prop decimals = 0
+prop length = 5
+prop min = 0
+
+method errors($value){
+	$errors = parent::errors($value)
+	$value !== null && $value !== void && !is_numeric($value) && $errors[] = "$this->title moet een getal zijn"
+	is_numeric($value) && isset($this->min) && $value < $this->min && $errors[] = "$this->title moet minimaal $this->min zijn"
+	is_numeric($value) && isset($this->max) && $value > $this->max && $errors[] = "$this->title mag maximaal $this->max zijn"
+	return $errors ?: null
+}
+method sanitize($value) => $this->decimals ? round((float)$value, $this->decimals) : (int)$value
+
+method label($record, $CMS) => number_format($record->{$this->name}, $this->decimals, comma, dot)
+method input($record, $CMS) => input(type: 'number', name: $this->name, value: $record->{$this->name} ?? $this->default, step: $this->decimals ? dot.str_repeat('0', $this->decimals - 1).'1' : null, min: $this->min, class: 'field')
+
+method sql => "`$this->name` ".($this->decimals ? 'decimal('.($this->length + $this->decimals).comma.$this->decimals.')' : "smallint($this->length)").' unsigned'

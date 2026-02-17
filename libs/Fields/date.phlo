@@ -1,0 +1,15 @@
+@ extends:     field
+@ class:       field_date
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS date field
+
+prop handle = true
+
+method errors($value){
+	$errors = parent::errors($value)
+	$value && !strtotime($value) && $errors[] = "$this->title is geen geldige datum"
+	return $errors ?: null
+}
+
+method sql => "`$this->name` DATE unsigned"

@@ -40,16 +40,16 @@ method query($query, ...$args){
 method column(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_COLUMN)
 method item(...$args) => $this->load(...$args)->fetch(\PDO::FETCH_COLUMN) ?: null
 method pair(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_KEY_PAIR)
-method group(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_GROUP|\PDO::FETCH_CLASS, 'obj')
-method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, 'obj')
-method record(...$args) => $this->load(...$args)->fetchObject('obj') ?: null
+method group(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_GROUP|\PDO::FETCH_CLASS, obj::class)
+method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, obj::class)
+method record(...$args) => $this->load(...$args)->fetchObject(obj::class) ?: null
 
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
 	$columns = $this->fieldQuotes.implode($this->fieldQuotes.comma.$this->fieldQuotes, array_keys($data)).$this->fieldQuotes
 	$values = implode(comma, array_fill(0, count($data), qm))
 	$query = "INSERT".($ignore ? ' IGNORE' : void)." INTO $table ($columns) VALUES ($values)"
-	$this->query($query, ...array_values(loop($data, fn($value) => is_a($value, 'obj') ? $value->id : $value)))
+	$this->query($query, ...array_values(loop($data, fn($value) => is_a($value, obj::class) ? $value->id : $value)))
 	return $this->PDO->lastInsertId() ?: ($data['id'] ?? null)
 }
 
@@ -64,3 +64,18 @@ method change(string $table, string $where, ...$data){
 }
 
 method delete(string $table, string $where, ...$args) => $this->query("DELETE FROM $table WHERE $where", ...$args)->rowCount()
+
+method begin => $this->PDO->beginTransaction()
+method commit => $this->PDO->commit()
+method rollback => $this->PDO->inTransaction() && $this->PDO->rollBack()
+method transaction($callback){
+	$this->begin
+	try {
+		$result = $callback()
+		$this->commit
+		return $result
+	} catch (\Throwable $e){
+		$this->rollback
+		throw $e
+	}
+}

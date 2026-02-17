@@ -1,0 +1,15 @@
+@ extends:     field
+@ class:       field_email
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS email field
+@ extends: field_text
+
+method errors($value){
+	$errors = parent::errors($value)
+	$value && !filter_var($value, FILTER_VALIDATE_EMAIL) && $errors[] = "$this->title is geen geldig e-mailadres"
+	return $errors ?: null
+}
+method sanitize($value) => is_string($value) ? strtolower(trim($value)) : $value
+
+view label($record, $CMS): <a href="mailto:{{ $record->{$this->name} }}">{{ $record->{$this->name} }}</a>

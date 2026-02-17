@@ -1,0 +1,25 @@
+@ extends:     field
+@ class:       field_bool
+@ version:     1.0
+@ creator:     q-ai.nl
+@ description: CMS boolean field
+
+prop true = '✅'
+prop false = '❌'
+
+method sanitize($value) => (bool)$value
+
+method label($record, $CMS) => $record->{$this->name} ? $this->true : $this->false
+method input($record, $CMS) => tag('label', inner: input(type: 'checkbox', name: $this->name, value: 1, checked: $record->{$this->name} ? false : null).tag('span', class: 'slider', inner: void))
+method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
+
+method sql => "`$this->name` tinyint(1) unsigned"
+method nullable => false
+
+<style>
+.input.bool input {
+	opacity: 0
+	width: 0
+	height: 0
+}
+</style>
