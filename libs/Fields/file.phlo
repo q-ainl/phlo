@@ -25,7 +25,7 @@ method parse($record){
 	$file = %payload->{$this->name};
 	if ($delete = %payload->{$this->name.'Delete'}) unset(%payload->{$this->name.'Delete'})
 	if ($record->{$this->name} && $delete && $this->canDelete) $record->{$this->name} = $record->{$this->name.'_token'} = null
-	if (is_a($file, 'file')){
+	if (is_a($file, file::class)){
 		$token = $file->token
 		if (!$this->write($file)) return
 		$record->{$this->name} = $file->shortenTo($this->length)
@@ -48,7 +48,7 @@ method writePath($file, $path = null){
 }
 
 method columns => [$this->name, $this->name.'_token']
-method sql => ["`$this->name` varchar(100)", "`{$this->name}_token` char(20)"]
+method sql => [$this->q($this->name).' varchar(100)', $this->q($this->name.'_token').' char(20)']
 
 <script>
 on('click', '.input.file .file', (file) => file.nextElementSibling.click())

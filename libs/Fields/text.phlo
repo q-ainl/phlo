@@ -20,4 +20,4 @@ method errors($value){
 }
 method sanitize($value) => is_string($value) ? trim($value) : $value
 
-method sql => "`$this->name` varchar($this->length)"
+method sql => $this->q($this->name)." varchar($this->length)"

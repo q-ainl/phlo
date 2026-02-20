@@ -8,6 +8,7 @@ function field($type, ...$args) => phlo("field_$type", ...$args, type: $type)
 static __handle => null
 
 prop title => ucfirst($this->name)
+prop DB => %app->DB ?? %MySQL
 
 method validate($value) => !$this->errors($value)
 method errors($value){
@@ -21,6 +22,11 @@ method parse($record){
 	$value !== null && $record->{$this->name} = $this->sanitize($value)
 }
 
+method q($name){
+	$fq = $this->DB->fieldQuotes ?? bt
+	return "$fq$name$fq"
+}
+method dbIs($name) => str_contains(strtolower($this->DB::class), strtolower($name))
 method resolveObj => str_contains($this->obj, '\\') ? $this->obj : 'phlo\\'.$this->obj
 method input($record, $CMS) => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
 method label($record, $CMS) => $record->{$this->name};

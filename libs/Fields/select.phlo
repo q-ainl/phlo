@@ -12,4 +12,9 @@ method errors($value){
 
 method input($record, $CMS) => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
 
-method sql => "`$this->name` enum('".implode("','", array_map(fn($o) => addslashes($o), $this->options))."')"
+method sql {
+	$options = array_map(fn($o) => addslashes($o), $this->options)
+	if ($this->dbIs('mysql')) return $this->q($this->name)." enum('".implode("','", $options)."')"
+	$quotedOptions = implode(comma.space, array_map(fn($o) => "'".str_replace("'", "''", $o)."'", $this->options))
+	return $this->q($this->name)." varchar(191) CHECK (".$this->q($this->name)." IN ($quotedOptions))"
+}

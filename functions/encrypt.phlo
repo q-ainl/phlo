@@ -1,0 +1,1 @@
+function encrypt($data, $key):string => base64_encode(($nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES)).sodium_crypto_secretbox($data, $nonce, hash('sha256', $key, true)))

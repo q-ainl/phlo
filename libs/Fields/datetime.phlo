@@ -23,5 +23,4 @@ method parse($record){
 	elseif ($payload = %payload->{$this->name}) $record->{$this->name} = strtotime($payload)
 }
 
-method sql => "`$this->name` int(10) unsigned"
-
+method sql => $this->q($this->name).($this->dbIs('mysql') ? ' bigint unsigned' : ' bigint')

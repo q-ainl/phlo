@@ -14,4 +14,4 @@ method label($record, $CMS) => tag('div', inner: esc($record->{$this->name}))
 
 method parse($record) => $record->{$this->name} ??= $this->default
 
-method sql => "`$this->name` char($this->length)"
+method sql => $this->q($this->name)." char($this->length)"

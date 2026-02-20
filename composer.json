@@ -1,0 +1,28 @@
+{
+    "name": "phlo/tech",
+    "description": "Phlo — a compiled PHP framework with threaded runtime on FrankenPHP",
+    "type": "framework",
+    "license": "Apache-2.0",
+    "homepage": "https://phlo.tech",
+    "authors": [
+        {
+            "name": "q-ai.nl",
+            "homepage": "https://q-ai.nl"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "ext-pdo": "*",
+        "ext-json": "*"
+    },
+    "suggest": {
+        "ext-apcu": "For caching support",
+        "ext-frankenphp": "For threaded worker runtime"
+    },
+    "autoload": {
+        "files": [
+            "constants.php"
+        ]
+    }
+}

@@ -18,6 +18,26 @@ static context(...$args){
 	return $args
 }
 
+static tool($tool):array => arr (
+	name: $tool->name,
+	description: $tool->desc,
+	parameters: arr (
+		type: 'object',
+		properties: loop($tool->args, fn($data, $arg) => array_filter($data, fn($key) => in_array($key, ['type', 'enum', 'description']), ARRAY_FILTER_USE_KEY)),
+		required: array_keys($tool->args),
+	),
+)
+
+method embedding($input, $model = 'text-embedding-004') => $this->request($model.':embedContent', POST: arr(content: arr(parts: [arr(text: $input)])))->embedding->values
+
+method vision($text, $image, $stream = false, ...$args) {
+	$model = $args['model'] ?? static::model
+	unset($args['model'])
+	$contents = [arr(role: 'user', parts: [arr(text: $text), arr(inline_data: arr(mime_type: 'image/jpeg', data: base64_encode(is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image)))])]
+	if ($stream) return $this->stream(...$args, model: $model, contents: $contents)
+	else return $this->chat(...$args, model: $model, contents: $contents)
+}
+
 method chat(...$args){
 	$model = $args['model'] ?? static::model
 	unset($args['model'])
@@ -48,11 +68,11 @@ method stream(...$args){
 	}
 	$answer = void
 	$buffer = void
-	$url = static::endpoint.$model.':streamGenerateContent?alt=sse&key='.%creds->Gemini
+	$url = static::endpoint.$model.':streamGenerateContent?alt=sse'
 	$curl = curl_init($url)
 	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST')
 	curl_setopt($curl, CURLOPT_POSTFIELDS, $payload = json_encode($args))
-	curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: '.strlen($payload)])
+	curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: '.strlen($payload), 'x-goog-api-key: '.%creds->Gemini])
 	curl_setopt($curl, CURLOPT_WRITEFUNCTION, function($curl, $data) use ($cb, &$buffer, &$answer){
 		$chunks = trim($buffer.$data)
 		$buffer = void
@@ -74,7 +94,7 @@ method stream(...$args){
 }
 
 method request($path, ...$args){
-	$res = json_decode(HTTP(static::endpoint.$path.'?key='.%creds->Gemini, ['Content-Type: application/json'], true, ...$args))
+	$res = json_decode(HTTP(static::endpoint.$path, ['Content-Type: application/json', 'x-goog-api-key: '.%creds->Gemini], true, ...$args))
 	if (isset($res->error)) error('Gemini Request error: '.$res->error->message)
 	return $res
 }

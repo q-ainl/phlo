@@ -24,9 +24,9 @@ method input($record, $CMS){
 method parse($record){
 	$ids = (array)(%payload->{$this->name} ?? [])
 	$relation = $record::objMany()[$this->name]
-	$record::DB()->delete($relation['table'], "`$relation[localKey]`=?", $record->id)
+	$fq = $record::DB()->fieldQuotes
+	$record::DB()->delete($relation['table'], "$fq$relation[localKey]$fq=?", $record->id)
 	foreach ($ids as $fId) $record::DB()->create($relation['table'], [$relation['localKey'] => $record->id, $relation['foreignKey'] => (int)$fId])
 }
 
 method sql => []
-

@@ -5,7 +5,7 @@
 @ description: CMS WYSIWYG field
 
 prop allowedTags = '<p><br><b><i><u><strong><em><ul><ol><li><a><h1><h2><h3><h4><h5><h6><blockquote><span>'
-method sanitize($value) => strip_tags($value, $this->allowedTags)
+method sanitize($value) => preg_replace('/\b(on\w+|javascript)\s*[:=]/i', '', strip_tags($value, $this->allowedTags))
 method parse($record) => ($html = %payload->{$this->name}) !== null && $record->{$this->name} = $this->sanitize($html)
 
 method input($record, $CMS){
@@ -16,7 +16,7 @@ method input($record, $CMS){
 	return tag('div', class: 'wysiwyg-container', inner: "$toolbar$editor$hiddenInput");
 }
 
-method sql => "`$this->name` TEXT"
+method sql => $this->q($this->name).' TEXT'
 
 <script>
 on('click', '.wysiwyg-container .toolbar button', (button, e) => {
