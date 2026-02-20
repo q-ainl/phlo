@@ -2,7 +2,7 @@
 @ creator:     q-ai.nl
 @ description: Embeddings library with Qdrant
 
-method get(string $input) => apcu('embedding/'.token(input: $input), fn($input) => %OpenAI->embedding($input), 86400 * 28)
+method get(string $input, ?string $model = null) => apcu('embedding/'.token(input: $input), fn($input) => %AI->embedding(input: $input, model: $model), 86400 * 28)
 
 method collections => array_column($this->request('collections')->result->collections, 'name')
 method create($collection, $size = 1536, $distance = 'Cosine') => $this->request("collections/$collection", PUT: arr(vectors: arr(size: $size, distance: $distance)))->status === 'ok'

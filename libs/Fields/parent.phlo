@@ -10,4 +10,4 @@ method link($record, $content = null) => tag('a', href: slash.($record::$uriReco
 prop optionLimit = 100
 prop options => $this->resolveObj::records(limit: $this->optionLimit, order: 'id DESC')
 
-method sql => "`$this->name` varchar(10)"
+method sql => $this->q($this->name).($this->dbIs('mysql') ? ' int(10) unsigned' : ' integer')

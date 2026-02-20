@@ -24,7 +24,7 @@ method input($record, $CMS){
 
 method write($file) => %img($file->file)->scale($this->thumbSize, $this->thumbSize)->save($this->writePath($file, $this->thumbPath)) && $file->move($this->writePath($file))
 
-method sql => ["`$this->name` varchar(100)", "`{$this->name}_token` char(20)"]
+method sql => [$this->q($this->name).' varchar(100)', $this->q($this->name.'_token').' char(20)']
 
 <script>
 on('click', '.input.image .image', (img) => img.nextElementSibling.click())

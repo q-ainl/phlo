@@ -2,7 +2,7 @@
 @ creator:     q-ai.nl
 @ description: Stream shell output cmd via yielding
 
-function exec_stream(string $cmd, ?int $timeoutSec = 0){
+function phlo_stream(string $cmd, ?int $timeoutSec = 0){
 	$desc = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']]
 	$proc = proc_open($cmd, $desc, $pipes)
 	if (!is_resource($proc)) return

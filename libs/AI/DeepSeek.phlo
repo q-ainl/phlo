@@ -14,6 +14,23 @@ static context(...$args){
 	return $args
 }
 
+static tool($tool):array => arr (
+	type: 'function',
+	function: arr (
+		name: $tool->name,
+		description: $tool->desc,
+		parameters: arr (
+			type: 'object',
+			properties: loop($tool->args, fn($data, $arg) => array_filter($data, fn($key) => in_array($key, ['type', 'enum', 'desc']), ARRAY_FILTER_USE_KEY)),
+			additionalProperties: false,
+			required: array_keys($tool->args),
+		),
+		strict: true,
+	),
+)
+
+method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
+
 method chat(...$args){
 	$args['model'] ??= static::model
 	$args = static::context(...$args)

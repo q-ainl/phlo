@@ -12,4 +12,4 @@ method errors($value){
 	return $errors ?: null
 }
 
-method sql => "`$this->name` DATE unsigned"
+method sql => $this->q($this->name).' DATE'

@@ -87,7 +87,10 @@ function sources(bool $release = false, ?string $appPath = null, ?string $dataPa
 	foreach ($appPaths AS $path){
 		$dir = \rtrim($normalize($path), \phlo\slash).\phlo\slash;
 		if (!\is_dir($dir)) continue;
-		foreach (\glob($dir.'*.phlo') AS $appFile) $appFiles[] = $appFile;
+		foreach (\glob($dir.'*.phlo') AS $appFile){
+			if ($exclude && \in_array(\strtr(\basename($appFile, '.phlo'), [\phlo\dot => \phlo\us]), $exclude, true)) continue;
+			$appFiles[] = $appFile;
+		}
 	}
 	$functionPaths = $paths['functions'] ?? [];
 	\is_array($functionPaths) || $functionPaths = [$functionPaths];
@@ -116,7 +119,7 @@ function sources(bool $release = false, ?string $appPath = null, ?string $dataPa
 	}
 	$release = $build['release'] ?? null;
 	if ($release){
-		$build['release'] = \array_replace(['php' => $appPath.'release/', 'www' => $appPath.'release/www/'], \array_map($normalize, $release));
+		$build['release'] = \array_replace(['php' => $appPath.'release/', 'www' => $appPath.'release/www/'], \array_map(fn($v) => \is_string($v) ? $normalize($v) : $v, $release));
 	}
 	$result = [
 		'build' => $build,

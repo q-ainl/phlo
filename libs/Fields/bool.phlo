@@ -13,7 +13,7 @@ method label($record, $CMS) => $record->{$this->name} ? $this->true : $this->fal
 method input($record, $CMS) => tag('label', inner: input(type: 'checkbox', name: $this->name, value: 1, checked: $record->{$this->name} ? false : null).tag('span', class: 'slider', inner: void))
 method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
 
-method sql => "`$this->name` tinyint(1) unsigned"
+method sql => $this->q($this->name).($this->dbIs('mysql') ? ' tinyint(1) unsigned' : ' boolean')
 method nullable => false
 
 <style>

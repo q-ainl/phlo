@@ -7,6 +7,7 @@ const engines = ['claude' => 'Claude', 'gpt' => 'OpenAI', 'chatgpt' => 'OpenAI',
 static resolve(...$args):array {
 	$via = $args['via'] ?? void
 	unset($args['via'])
+	$args['model'] ??= %app->model ?? void
 	if ($via) $via = static::engines[strtolower($via)] ?? $via
 	elseif (isset($args['model'])) $via = static::engines[strtolower(explode('-', $args['model'])[0])] ?? void
 	return [$via ?: 'OpenAI', $args]

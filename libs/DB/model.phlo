@@ -33,7 +33,8 @@ static _fields(){
 static field($name) => static::fields()[$name]
 
 static create(...$args){
-	$record = phlo(static::class, ...$args)
+	$class = static::class
+	$record = new $class(...$args)
 	method_exists(static::class, 'beforeSave') && $record->beforeSave()
 	method_exists(static::class, 'beforeCreate') && $record->beforeCreate()
 	$id = static::createRecord(...$args)
@@ -151,43 +152,45 @@ method getParent($key){
 	return $this->objState['parents'][$key] = $parentObject
 }
 
-method getChildren($key){
+	method getChildren($key){
 	if (array_key_exists($key, $this->objState['children'])) return $this->objState['children'][$key]
 	if (!$relation = self::objRel('objChildren')[$key] ?? null) return
 	$isArray = is_array($relation)
 	$class = $isArray ? $relation['obj'] : $relation
 	$column = $isArray ? $relation['key'] : static::objShortName()
-	if (!isset(self::$objLoaded[static::class]['children'][$key])){
-		$parentIds = array_keys(self::$objRecords[static::class] ?? [])
-		if ($parentIds){
-			$children = $class::records(where: '`'.$column.'` IN ('.$this->objIn($parentIds).')')
-			foreach (self::$objRecords[static::class] AS $parentRecord) $parentRecord->objState['children'][$key] = []
-			foreach ($children AS $childId => $child) !is_null($pId = $child->objData[$column] ?? null) && isset(self::$objRecords[static::class][$pId]) && self::$objRecords[static::class][$pId]->objState['children'][$key][$childId] = $child
-		}
-		self::$objLoaded[static::class]['children'][$key] = true
+		if (!isset(self::$objLoaded[static::class]['children'][$key])){
+			$parentIds = array_keys(self::$objRecords[static::class] ?? [])
+			if ($parentIds){
+				$fq = static::DB()->fieldQuotes
+				$children = $class::records(where: $fq.$column.$fq.' IN ('.$this->objIn($parentIds).')')
+				foreach (self::$objRecords[static::class] AS $parentRecord) $parentRecord->objState['children'][$key] = []
+				foreach ($children AS $childId => $child) !is_null($pId = $child->objData[$column] ?? null) && isset(self::$objRecords[static::class][$pId]) && self::$objRecords[static::class][$pId]->objState['children'][$key][$childId] = $child
+			}
+			self::$objLoaded[static::class]['children'][$key] = true
 	}
 	return $this->objState['children'][$key] ?? []
 }
 
-method getMany($key){
+	method getMany($key){
 	if (array_key_exists($key, $this->objState['many'])) return $this->objState['many'][$key]
 	if (!$relation = self::objRel('objMany')[$key] ?? null) return
 	$class = $relation['obj']
-	if (!isset(self::$objLoaded[static::class]['many'][$key])){
-		$parentIds = array_keys(self::$objRecords[static::class] ?? [])
-		if ($parentIds){
-			$pivotRows = static::DB()->records(table: $relation['table'], columns: "`$relation[localKey]`,`$relation[foreignKey]`", where: "`$relation[localKey]` IN (".$this->objIn($parentIds).")")
-			// Stap 2: Unieke target IDs verzamelen
-			$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
-			// Stap 3: Target records laden via TARGET model's DB
-			$targetRecords = $targetIds ? $class::records(where: 'id IN ('.$this->objIn($targetIds).')') : []
-			// Stap 4: Many-to-many koppeling opbouwen
-			foreach (self::$objRecords[static::class] AS $parentRecord) $parentRecord->objState['many'][$key] = []
-			$lk = $relation['localKey']; $fk = $relation['foreignKey']
-			foreach ($pivotRows ?: [] AS $row){
-				$parentId = $row->$lk
-				$foreignId = $row->$fk
-				if (isset(self::$objRecords[static::class][$parentId]) && isset($targetRecords[$foreignId])) self::$objRecords[static::class][$parentId]->objState['many'][$key][$foreignId] = $targetRecords[$foreignId]
+		if (!isset(self::$objLoaded[static::class]['many'][$key])){
+			$parentIds = array_keys(self::$objRecords[static::class] ?? [])
+			if ($parentIds){
+				$fq = static::DB()->fieldQuotes
+				$lk = $relation['localKey']; $fk = $relation['foreignKey']
+				$pivotRows = static::DB()->records(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn($parentIds).')')
+				// Stap 2: Unieke target IDs verzamelen
+				$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
+				// Stap 3: Target records laden via TARGET model's DB
+				$targetRecords = $targetIds ? $class::records(where: 'id IN ('.$this->objIn($targetIds).')') : []
+				// Stap 4: Many-to-many koppeling opbouwen
+				foreach (self::$objRecords[static::class] AS $parentRecord) $parentRecord->objState['many'][$key] = []
+				foreach ($pivotRows ?: [] AS $row){
+					$parentId = $row->$lk
+					$foreignId = $row->$fk
+					if (isset(self::$objRecords[static::class][$parentId]) && isset($targetRecords[$foreignId])) self::$objRecords[static::class][$parentId]->objState['many'][$key][$foreignId] = $targetRecords[$foreignId]
 			}
 		}
 		self::$objLoaded[static::class]['many'][$key] = true
@@ -195,49 +198,56 @@ method getMany($key){
 	return $this->objState['many'][$key] ?? []
 }
 
-method getCount($key){
+	method getCount($key){
 	if (array_key_exists($key, $this->objState['counts'] ?? [])) return $this->objState['counts'][$key]
 	if ($relation = self::objRel('objChildren')[$key] ?? null){
 		if (!isset(self::$objLoaded[static::class]['children_count'][$key])){
-			$parentIds = array_keys(self::$objRecords[static::class] ?? [])
-			if ($parentIds){
-				$isArray = is_array($relation)
-				$class = $isArray ? $relation['obj'] : $relation
-				$column = $isArray ? $relation['key'] : static::objShortName()
-				$counts = $class::pair(columns: "`$column`, COUNT(*)", where: '`'.$column.'` IN ('.$this->objIn($parentIds).')', group: "`$column`")
-				foreach (self::$objRecords[static::class] as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
-			}
-			self::$objLoaded[static::class]['children_count'][$key] = true
+				$parentIds = array_keys(self::$objRecords[static::class] ?? [])
+				if ($parentIds){
+					$isArray = is_array($relation)
+					$class = $isArray ? $relation['obj'] : $relation
+					$column = $isArray ? $relation['key'] : static::objShortName()
+					$fq = static::DB()->fieldQuotes
+					$counts = $class::pair(columns: $fq.$column.$fq.', COUNT(*)', where: $fq.$column.$fq.' IN ('.$this->objIn($parentIds).')', group: $fq.$column.$fq)
+					foreach (self::$objRecords[static::class] as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
+				}
+				self::$objLoaded[static::class]['children_count'][$key] = true
 		}
 		return $this->objState['counts'][$key] ?? 0
 	}
-	if ($relation = self::objRel('objMany')[$key] ?? null){
-		if (!isset(self::$objLoaded[static::class]['many_count'][$key])){
-			$parentIds = array_keys(self::$objRecords[static::class] ?? [])
-			if ($parentIds){
-				$counts = static::DB()->load(table: $relation['table'], columns: "`$relation[localKey]`,COUNT(*)", where: '`'.$relation['localKey'].'` IN ('.$this->objIn($parentIds).')', group: "`$relation[localKey]`")->fetchAll(\PDO::FETCH_KEY_PAIR)
-				foreach (self::$objRecords[static::class] as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
-			}
-			self::$objLoaded[static::class]['many_count'][$key] = true
+		if ($relation = self::objRel('objMany')[$key] ?? null){
+			if (!isset(self::$objLoaded[static::class]['many_count'][$key])){
+				$parentIds = array_keys(self::$objRecords[static::class] ?? [])
+				if ($parentIds){
+					$fq = static::DB()->fieldQuotes
+					$localKey = $relation['localKey']
+					$counts = static::DB()->load(table: $relation['table'], columns: $fq.$localKey.$fq.',COUNT(*)', where: $fq.$localKey.$fq.' IN ('.$this->objIn($parentIds).')', group: $fq.$localKey.$fq)->fetchAll(\PDO::FETCH_KEY_PAIR)
+					foreach (self::$objRecords[static::class] as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
+				}
+				self::$objLoaded[static::class]['many_count'][$key] = true
 		}
 		return $this->objState['counts'][$key] ?? 0
 	}
 	return 0
 }
 
-method getLast($key){
+	method getLast($key){
 	if (array_key_exists($key, $this->objState['last_child'] ?? [])) return $this->objState['last_child'][$key]
 	if ($relation = self::objRel('objChildren')[$key] ?? null){
 		if (!isset(self::$objLoaded[static::class]['last_child'][$key])){
-			if ($parentIds = array_keys(self::$objRecords[static::class] ?? [])){
-				$isArray = is_array($relation)
-				$class = $isArray ? $relation['obj'] : $relation
-				$column = $isArray ? $relation['key'] : static::objShortName()
-				$childTable = $class::$table
-				$whereClause = "`$column` IN (".$this->objIn($parentIds).") AND `$childTable`.`id` = (SELECT `id` FROM `$childTable` AS lc WHERE lc.`$column`=`$childTable`.`$column` ORDER BY `id` DESC LIMIT 1)"
-				$lastChildren = $class::records(where: $whereClause)
-				foreach (self::$objRecords[static::class] as $record) $record->objState['last_child'][$key] = null
-				foreach ($lastChildren as $child) if (isset(self::$objRecords[static::class][$parentId = $child->objData[$column]])) self::$objRecords[static::class][$parentId]->objState['last_child'][$key] = $child
+				if ($parentIds = array_keys(self::$objRecords[static::class] ?? [])){
+					$isArray = is_array($relation)
+					$class = $isArray ? $relation['obj'] : $relation
+					$column = $isArray ? $relation['key'] : static::objShortName()
+					$childTable = $class::$table
+					$fq = static::DB()->fieldQuotes
+					$qt = $fq.$childTable.$fq
+					$qc = $fq.$column.$fq
+						$ids = $this->objIn($parentIds)
+						$joins = ' INNER JOIN (SELECT MAX('.$fq.'id'.$fq.') AS last_id, '.$qc.' AS parent_id FROM '.$qt.' WHERE '.$qc.' IN ('.$ids.') GROUP BY '.$qc.') AS lcmax ON '.$qt.'.'.$fq.'id'.$fq.' = lcmax.last_id'
+						$lastChildren = $class::records(joins: $joins)
+					foreach (self::$objRecords[static::class] as $record) $record->objState['last_child'][$key] = null
+					foreach ($lastChildren as $child) if (isset(self::$objRecords[static::class][$parentId = $child->objData[$column]])) self::$objRecords[static::class][$parentId]->objState['last_child'][$key] = $child
 			}
 			self::$objLoaded[static::class]['last_child'][$key] = true
 		}
@@ -269,15 +279,19 @@ static objMany(){
 
 static createTable(){
 	method_exists(static::class, 'schema') || error(static::class.' has no schema()')
-	return 'CREATE TABLE `'.static::$table.'` ('.lf.tab.implode(",\n\t", array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop((array)$field->sql, fn($sql) => $sql.($field->required || $field->nullable === false ? ' NOT' : void).' NULL')))))).",\n\tPRIMARY KEY (`id`)\n)"
+	$fq = static::DB()->fieldQuotes
+	$idColumn = $fq.'id'.$fq
+	return 'CREATE TABLE '.$fq.static::$table.$fq.' ('.lf.tab.implode(",\n\t", array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop((array)$field->sql, fn($sql) => $sql.($field->required || $field->nullable === false ? ' NOT' : void).' NULL')))))).",\n\tPRIMARY KEY ($idColumn)\n)"
 }
 
-static objSchemaDiff(){
-	if (!method_exists(static::class, 'schema')) return []
-	$expected = static::fields()
-	$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: "TABLE_NAME='".static::$table."'")->fetchAll(\PDO::FETCH_COLUMN)
-	$expectedColumns = array_merge(...array_values(array_filter(loop($expected, fn($field) => $field->columns ?: ($field->sql ? [$field->name] : null)))))
-	$missing = array_diff($expectedColumns, $actual)
-	$extra = array_diff($actual, $expectedColumns, ['id'])
+	static objSchemaDiff(){
+		if (!method_exists(static::class, 'schema')) return []
+		$expected = static::fields()
+		$where = "TABLE_NAME='".static::$table."'"
+		static::DB()->fieldQuotes === bt && $where .= ' AND TABLE_SCHEMA = DATABASE()'
+		$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: $where)->fetchAll(\PDO::FETCH_COLUMN)
+		$expectedColumns = array_merge(...array_values(array_filter(loop($expected, fn($field) => $field->columns ?: ($field->sql ? [$field->name] : null)))))
+		$missing = array_diff($expectedColumns, $actual)
+		$extra = array_diff($actual, $expectedColumns, ['id'])
 	return arr(missing: $missing ?: null, extra: $extra ?: null)
 }
