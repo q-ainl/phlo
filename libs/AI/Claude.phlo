@@ -1,4 +1,4 @@
-@ version:     2.0
+@ version:     1.1
 @ creator:     q-ai.nl
 @ description: Anthropic Claude API
 
@@ -28,7 +28,7 @@ static tool($tool):array => arr (
 
 method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
 
-method vision($text, $image, $stream = false, ...$args) {
+method vision($text, $image, $stream = false, ...$args){
 	$data = is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image
 	$messages = [arr(role: 'user', content: [arr(type: 'text', text: $text), arr(type: 'image', source: arr(type: 'base64', media_type: 'image/jpeg', data: base64_encode($data)))])]
 	if ($stream) return $this->stream(...$args, messages: $messages)
