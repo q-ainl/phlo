@@ -1,0 +1,15 @@
+<style ns=theme.cobalt>
+:root {
+	$bg: #0f172a
+	$surface: #1e293b
+	$text: #e2e8f0
+	$muted: #8a929f
+	$border: #414b5c
+	$primary: #3b82f6
+	$on-primary: #080c0a
+	$focus: #3b82f666
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ef4444
+}
+</style>

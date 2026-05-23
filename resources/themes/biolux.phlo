@@ -1,0 +1,15 @@
+<style ns=theme.biolux>
+:root {
+	$bg: linear-gradient(to bottom, #001307, #013319, #03693a)
+	$surface: #022418
+	$text: #e6fff5
+	$muted: #7f9c92
+	$border: #2b4b40
+	$primary: #4fffb3
+	$on-primary: #080c0a
+	$focus: #4fffb366
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff4d4d
+}
+</style>

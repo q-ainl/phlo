@@ -1,0 +1,7 @@
+@ summary:  Convert text to camelCase
+@ package:  string
+@ frontend: false
+@ backend:  true
+@ tags:     camelcase string format
+
+function camel(string $text) => lcfirst(str_replace(space, void, ucwords(lcfirst($text))))

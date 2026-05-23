@@ -1,0 +1,15 @@
+<style ns=theme.dark>
+:root {
+	$bg: linear-gradient(to bottom, #040b08, #020504)
+	$surface: #0b1f18
+	$text: #e6fff5
+	$muted: #9abfb2
+	$border: #1c3b2f
+	$primary: #4fffb3
+	$on-primary: #022418
+	$focus: #4fffb366
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff4d4d
+}
+</style>

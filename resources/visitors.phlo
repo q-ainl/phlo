@@ -1,0 +1,80 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Visitor tracking via heartbeat
+@ extends:  model
+@ package:  analytics
+@ frontend: false
+@ backend:  true
+@ requires: @payload @model token wsCast
+@ tags:     visitors analytics heartbeat tracking
+
+static table = 'visitors'
+static columns = 'id,token,host,page,lang,IP,browser,os,device,requests,state,width,height,referrer,created,changed'
+
+static history => static::records(columns: 'FROM_UNIXTIME(changed, "%Y-%m-%d") AS date,COUNT(DISTINCT token) AS visitors,COUNT(id) AS visits', group: 'date', order: 'date DESC')
+static online => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 9)')
+static lastHour => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 3600)')
+
+static isBot(?string $ua):bool {
+	if (!$ua) return false
+	return (bool)preg_match('/bot|crawl|spider|slurp|baiduspider|facebookexternalhit|twitterbot|linkedinbot|curl|wget|python-requests|go-http-client|java\//i', $ua)
+}
+
+static parseReferrer(string $url):string {
+	static $engines = ['google' => 'Google', 'bing' => 'Bing', 'duckduckgo' => 'DuckDuckGo', 'yahoo' => 'Yahoo', 'baidu' => 'Baidu', 'yandex' => 'Yandex', 'ecosia' => 'Ecosia', 'startpage' => 'Startpage', 'brave' => 'Brave', 'kagi' => 'Kagi']
+	$host = strtolower(preg_replace('/^www\./', '', (string)(parse_url($url, PHP_URL_HOST) ?? '')))
+	foreach ($engines AS $key => $name) if (str_contains($host, $key)) return 'search:'.$name
+	return $host ?: substr($url, 0, 100)
+}
+
+route PUT heartbeat @n,v,l,u,w,h,a,p,r,c {
+	if (static::isBot(%useragent->source)) return
+	$consent = (bool)%payload->c
+	$n = strlen(%payload->n) === 8 ? %payload->n : date('Ymd')
+	$id = $consent ? token(20, $n.space.%app->token.space.%useragent->source) : token(20, $n.space.date('Ymd').space.%app->token.space.%req->ip)
+	$data = arr (
+		token: %app->token ?? error('No app token available'),
+		host: host,
+		page: %payload->u,
+		lang: strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en',
+		IP: $consent ? %req->ip : void,
+		browser: $consent ? %useragent->full.(%payload->a ? ' App' : void) : substr(md5((string)%useragent->source), 0, 8),
+		os: $consent ? %useragent->osFull : void,
+		device: $consent ? %useragent->device : void,
+		requests: %payload->p,
+		state: %payload->v,
+		width: %payload->w,
+		height: %payload->h,
+		changed: time(),
+	)
+	$record = static::record(id: $id, columns: 'id,page,referrer')
+	if (($referrer = %payload->r) && !$record?->referrer && !str_contains($referrer, host)) $data['referrer'] = static::parseReferrer($referrer)
+	$label = host.slash.%payload->u
+	$wsHost = defined('wsHost') ? wsHost : null
+	if ($record) [static::change('id=?', $id, ...$data), $record->page !== %payload->u && $wsHost && wsCast(wsHost: $wsHost, toast: 'Request: '.$label)]
+	else static::create(...$data, id: $id, created: time()) && $wsHost && wsCast(wsHost: $wsHost, toast: 'Visitor: '.$label)
+}
+
+<script>
+let curpath = app.path
+let heartbeatTimeout
+const heartbeat = () => delay('heartbeat', 333, () => {
+	clearTimeout(heartbeatTimeout)
+	const consent = document.cookie.includes('phlo_consent=1')
+	if (consent){
+		const m = document.cookie.match(/phlo_visitor=([a-z0-9]{8})/)
+		if (m) window.name = m[1]
+		else {
+			window.name ||= phlo.token(8)
+			document.cookie = `phlo_visitor=${window.name};path=/;max-age=${365 * 86400};SameSite=Lax`
+		}
+	}
+	else window.name ||= phlo.token(8)
+	fetch('/heartbeat', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: phlo.state.index, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0})})
+	heartbeatTimeout = setTimeout(heartbeat, 20000)
+})
+document.addEventListener('visibilitychange', heartbeat)
+;['focus', 'blur', 'resize'].forEach(e => addEventListener(e, heartbeat))
+app.updates.push(() => curpath !== app.path && (heartbeat(), curpath = app.path))
+heartbeat()
+</script>

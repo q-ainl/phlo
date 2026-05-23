@@ -1,0 +1,15 @@
+<style ns=theme.zulo>
+:root {
+	$bg: #0d1b1e
+	$surface: #133c4e
+	$text: #d2fef7
+	$muted: #8dafab
+	$border: #396370
+	$primary: #08fdd8
+	$on-primary: #0b0f0d
+	$focus: #08fdd866
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff1744
+}
+</style>

@@ -1,0 +1,15 @@
+<style ns=theme.midnight>
+:root {
+	$bg: #121212
+	$surface: #1e1e2f
+	$text: #e0e0e0
+	$muted: #898990
+	$border: #41414f
+	$primary: #2a2a40
+	$on-primary: #ffffff
+	$focus: #2a2a4066
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #cf6679
+}
+</style>

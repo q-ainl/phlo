@@ -1,0 +1,12 @@
+@ extends:  field
+@ class:    field_email
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Email field
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field email
+@ extends:  field_text
+
+view label($record): <a href="mailto:{{ $record->{$this->name} }}">{{ $record->{$this->name} }}</a>

@@ -1,0 +1,12 @@
+# Lokale agent state
+.claude/
+.codex/
+.agents/
+
+# Backups + editor + OS
+bak/
+*.log
+*.swp
+*.tmp
+*.tmp.*
+.DS_Store

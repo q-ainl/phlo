@@ -1,0 +1,72 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Fluent query builder for Phlo ORM
+@ package:  database
+@ frontend: false
+@ backend:  true
+@ requires: @DB
+@ tags:     query builder orm database sql
+
+prop class
+prop conditions = []
+prop bindings = []
+prop orderBy
+prop limitVal
+prop offsetVal
+method fq => ($class = $this->class) ? $class::DB()->fieldQuotes : bt
+method q($column){
+	preg_match('/^[A-Za-z_][A-Za-z0-9_.]*$/', $column) || error("Invalid column for query builder: $column")
+	$fq = $this->fq
+	return implode(dot, array_map(fn($part) => $fq.$part.$fq, explode(dot, $column)))
+}
+
+method eq($column, $value) => $this->where($this->q($column)." = ?", $value)
+method neq($column, $value) => $this->where($this->q($column)." != ?", $value)
+method gt($column, $value) => $this->where($this->q($column)." > ?", $value)
+method gte($column, $value) => $this->where($this->q($column)." >= ?", $value)
+method lt($column, $value) => $this->where($this->q($column)." < ?", $value)
+method lte($column, $value) => $this->where($this->q($column)." <= ?", $value)
+method like($column, $value) => $this->where($this->q($column)." LIKE ?", $value)
+method in($column, array $values) => $this->where($this->q($column)." IN (".implode(',', array_fill(0, count($values), '?')).")", ...$values)
+method isNull($column) => $this->where($this->q($column)." IS NULL")
+method notNull($column) => $this->where($this->q($column)." IS NOT NULL")
+method between($column, $min, $max) => $this->where($this->q($column)." BETWEEN ? AND ?", $min, $max)
+method raw($sql, ...$bindings) => $this->where($sql, ...$bindings)
+method where($condition, ...$values){
+	$this->conditions[] = $condition
+	foreach ($values AS $v) $this->bindings[] = $v
+	return $this
+}
+
+method order($order){
+	$this->orderBy = $order
+	return $this
+}
+
+method limit($limit){
+	$this->limitVal = $limit
+	return $this
+}
+
+method offset($offset){
+	$this->offsetVal = $offset
+	return $this
+}
+method build {
+	$where = $this->conditions ? implode(' AND ', $this->conditions) : void
+	$limit = $this->limitVal ? ($this->offsetVal ? "$this->offsetVal,$this->limitVal" : "$this->limitVal") : void
+	$args = ['where' => $where ?: void, 'order' => $this->orderBy ?: void, 'limit' => $limit ?: void]
+	foreach ($this->bindings AS $b) $args[] = $b
+	return $args
+}
+
+prop records => ($class = $this->class) && $class::records(...$this->build)
+prop record => ($class = $this->class) && $class::record(...$this->build)
+prop column => ($class = $this->class) && $class::column(...$this->build)
+prop item => ($class = $this->class) && $class::item(...$this->build)
+prop count => ($class = $this->class) && $class::recordCount(...$this->build)
+method delete{
+	$class = $this->class
+	$where = $this->conditions ? implode(' AND ', $this->conditions) : error('Cannot delete without conditions')
+	return $class::delete($where, ...$this->bindings)
+}

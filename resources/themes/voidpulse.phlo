@@ -1,0 +1,15 @@
+<style ns=theme.voidpulse>
+:root {
+	$bg: linear-gradient(to bottom, #020617, #111827, #020617)
+	$surface: #05081a
+	$text: #e5f8f0
+	$muted: #96a3a4
+	$border: #323845
+	$primary: #22c55e
+	$on-primary: #0b0f0d
+	$focus: #22c55e66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #fb374a
+}
+</style>

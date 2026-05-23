@@ -1,0 +1,15 @@
+<style ns=theme.lightgrid>
+:root {
+	$bg: #fafafa
+	$surface: #ffffff
+	$text: #111827
+	$muted: #7c8088
+	$border: #cbcccf
+	$primary: #9333ea
+	$on-primary: #080c0a
+	$focus: #9333ea66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #f43f5e
+}
+</style>

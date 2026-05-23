@@ -1,0 +1,8 @@
+@ summary:  Run app callback asynchronously in background process
+@ package:  runtime
+@ frontend: false
+@ backend:  true
+@ requires: cli
+@ tags:     async cli process background app
+
+function phlo_async(string $cb, ...$args) => last($cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void).' > /dev/null 2>&1 & echo $!', exec($cmd, $r), isset($r[0]) && ctype_digit($r[0]) && (int)$r[0] > 0)

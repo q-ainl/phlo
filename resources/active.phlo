@@ -1,0 +1,7 @@
+@ summary:  Build active class attribute for UI state
+@ package:  view
+@ frontend: false
+@ backend:  true
+@ tags:     active class ui view html
+
+function active(bool $cond, string $classList = void) => $cond || $classList ? ' class="'.$classList.($cond ? ($classList ? space : void).'active' : void).'"' : void

@@ -1,0 +1,34 @@
+@ extends:  field
+@ class:    field_wysiwyg
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  WYSIWYG field
+@ package:  fields
+@ frontend: true
+@ backend:  true
+@ tags:     field wysiwyg editor
+
+method input($record){
+	$value = $record->{$this->name} ?? $this->default ?? void
+	$toolbar = tag('div', class: 'toolbar', inner: tag('button', type: 'button', data_command: 'bold', inner: '<b>B</b>').tag('button', type: 'button', data_command: 'italic', inner: '<i>I</i>').tag('button', type: 'button', data_command: 'underline', inner: '<u>U</u>').tag('button', type: 'button', data_command: 'insertUnorderedList', inner: '•').tag('button', type: 'button', data_command: 'insertOrderedList', inner: '1.'))
+	$editor = tag('div', class: 'editor', contenteditable: 'true', inner: $value)
+	$hiddenInput = textarea(name: $this->name, class: 'hidden-value', inner: $value)
+	return tag('div', class: 'wysiwyg-container', inner: "$toolbar$editor$hiddenInput")
+}
+
+method sql => "`$this->name` TEXT"
+
+<script>
+on('click', '.wysiwyg-container .toolbar button', (button, e) => {
+	e.preventDefault()
+	const command = button.dataset.command
+	document.execCommand(command, false, null)
+})
+
+on('input', '.wysiwyg-container .editor', (editor) => {
+	const container = editor.closest('.wysiwyg-container')
+	const hiddenInput = container.querySelector('textarea.hidden-value')
+	hiddenInput.value = editor.innerHTML
+})
+on('click', '.wysiwyg-container .editor a', (a) => window.open(a.href))
+</script>

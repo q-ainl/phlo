@@ -1,0 +1,15 @@
+<style ns=theme.forestdusk>
+:root {
+	$bg: linear-gradient(to bottom, #1C3C3E, #4C9A2A, #A1DE93)
+	$surface: #243A2E
+	$text: #E9FDF0
+	$muted: #90a599
+	$border: #475d51
+	$primary: #4C9A2A
+	$on-primary: #080c0a
+	$focus: #4c9a2a66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #FF5722
+}
+</style>

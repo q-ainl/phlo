@@ -1,0 +1,7 @@
+@ summary:  Create associative array from iterable using callbacks
+@ package:  array
+@ frontend: false
+@ backend:  true
+@ tags:     create array iterable callback
+
+function create(iterable $items, \Closure $keyCb, ?\Closure $valueCb = null) => array_combine(loop($items, $keyCb), $valueCb ? loop($items, $valueCb) : $items)

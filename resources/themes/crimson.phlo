@@ -1,0 +1,15 @@
+<style ns=theme.crimson>
+:root {
+	$bg: #0b0b0b
+	$surface: #1a1a1a
+	$text: #ffffff
+	$muted: #989898
+	$border: #434343
+	$primary: #ff1a1a
+	$on-primary: #080c0a
+	$focus: #ff1a1a66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff0000
+}
+</style>

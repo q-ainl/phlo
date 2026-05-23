@@ -1,0 +1,15 @@
+<style ns=theme.steelwave>
+:root {
+	$bg: linear-gradient(to bottom, #E1E6F0 0%, #C0CADB 50%, #94A3B8 100%)
+	$surface: #F8FAFC
+	$text: #1E293B
+	$muted: #89919f
+	$border: #bac0cc
+	$primary: #3B82F6
+	$on-primary: #0b0f0d
+	$focus: #3b82f666
+	$success: #16a34a
+	$warn: #d08609
+	$error: #dc2626
+}
+</style>

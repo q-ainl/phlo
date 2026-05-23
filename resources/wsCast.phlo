@@ -1,0 +1,16 @@
+@ summary:  Broadcast a message to WebSocket clients via the PhloWS HTTP bridge
+@ package:  realtime
+@ frontend: false
+@ backend:  true
+@ requires: HTTP
+@ tags:     websocket cast realtime http
+
+function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = websocket, ...$data) => HTTP (
+	'http://127.0.0.1:'.$wsPort.'/message',
+	JSON: true,
+	POST: arr (
+		host: $wsHost,
+		target: $wsTarget,
+		data: $data,
+	),
+)

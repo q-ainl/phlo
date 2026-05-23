@@ -1,0 +1,12 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  MySQL handler via DB class
+@ extends:  DB
+@ package:  database
+@ frontend: false
+@ backend:  true
+@ requires: @DB creds:mysql php-ext:pdo php-ext:pdo_mysql
+@ tags:     mysql pdo database sql
+
+prop PDO => new \PDO('mysql:host='.%creds->mysql->host.';dbname='.%creds->mysql->database, %creds->mysql->user, %creds->mysql->password)
+prop objPers = true

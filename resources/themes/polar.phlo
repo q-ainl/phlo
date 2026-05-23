@@ -1,0 +1,15 @@
+<style ns=theme.polar>
+:root {
+	$bg: #eceff1
+	$surface: #cfd8dc
+	$text: #263238
+	$muted: #939a9e
+	$border: #c4c9cc
+	$primary: #90a4ae
+	$on-primary: #0b0f0d
+	$focus: #90a4ae66
+	$success: #16a34a
+	$warn: #d08609
+	$error: #d32f2f
+}
+</style>

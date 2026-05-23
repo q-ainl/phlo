@@ -1,0 +1,24 @@
+@ summary:  Stream JSON chunks over CLI or Server-Sent Events
+@ package:  runtime
+@ frontend: false
+@ backend:  true
+@ requires: debug
+@ tags:     chunk stream sse cli async
+
+function chunk(...$cmds):void {
+	$res = %res
+	$cli = %req->cli
+	if (debug){
+		$res->dump && [$cmds['dump'] = $res->dump, $res->dump = []]
+		$res->debug && [$cmds['debug'] = $res->debug, $res->debug = []]
+	}
+	if (!$res->streaming){
+		$res->streaming = true
+		$res->type = 'text/event-stream'
+		$res->header('Cache-Control', 'no-store')
+		$res->header('X-Content-Type-Options', 'nosniff')
+		$res->render(206)
+	}
+	print(json_encode($cmds, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf)
+	$cli || [@ob_flush(), flush()]
+}

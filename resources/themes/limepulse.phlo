@@ -1,0 +1,15 @@
+<style ns=theme.limepulse>
+:root {
+	$bg: #0a0a0a
+	$surface: #1a1a1a
+	$text: #e6ffe6
+	$muted: #8a988a
+	$border: #3f433f
+	$primary: #13bd19
+	$on-primary: #080c0a
+	$focus: #13bd1966
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff4444
+}
+</style>

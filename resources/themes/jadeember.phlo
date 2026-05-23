@@ -1,0 +1,15 @@
+<style ns=theme.jadeember>
+:root {
+	$bg: linear-gradient(to bottom, #021310, #03251e, #05352a)
+	$surface: #041f1a
+	$text: #e7fff7
+	$muted: #819a94
+	$border: #2d4742
+	$primary: #34d399
+	$on-primary: #080c0a
+	$focus: #34d39966
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #fb4c5b
+}
+</style>

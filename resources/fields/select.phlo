@@ -1,0 +1,13 @@
+@ extends:  field
+@ class:    field_select
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Select field
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field select
+
+method input($record) => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
+
+method sql => "`$this->name` enum('".implode("','", $this->options)."')"

@@ -1,0 +1,15 @@
+<style ns=theme.zen>
+:root {
+	$bg: #f1f8e9
+	$surface: #dcedc8
+	$text: #33691e
+	$muted: #9cb88e
+	$border: #cbdbc0
+	$primary: #aed581
+	$on-primary: #0b0f0d
+	$focus: #aed58166
+	$success: #16a34a
+	$warn: #d08609
+	$error: #d32f2f
+}
+</style>

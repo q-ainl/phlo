@@ -1,0 +1,20 @@
+@ extends:  field
+@ class:    field_child
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Child relation field
+@ package:  fields
+@ frontend: true
+@ backend:  true
+@ tags:     field relation child
+
+prop list = 'count'
+prop change = false
+prop create = false
+prop record = 'list'
+
+method count($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id.slash.$this->name, class: 'async', inner: $record->getCount($this->name).space.$this->title)
+method last($record) => $record->getLast($this->name)
+method label($record) => implode(loop($record->{$this->name}, fn($child) => $this->link($child))) ?: dash
+method input($record) => $this->label($record)
+method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)

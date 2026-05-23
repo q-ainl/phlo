@@ -1,0 +1,15 @@
+<style ns=theme.kiro>
+:root {
+	$bg: #140c36
+	$surface: #341a65
+	$text: #ffffff
+	$muted: #a498ba
+	$border: #594381
+	$primary: #fc0fc0
+	$on-primary: #080c0a
+	$focus: #fc0fc066
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff0033
+}
+</style>

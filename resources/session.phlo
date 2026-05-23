@@ -1,0 +1,18 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Session data object
+@ package:  web
+@ frontend: false
+@ backend:  true
+@ tags:     session web state
+
+session_start()
+$this->objData = $_SESSION
+
+method __set($key, $value) => $_SESSION[$key] = $this->objData[$key] = $value
+method __unset($key) => unset($this->objData[$key], $_SESSION[$key])
+
+method objRegenerateId($deleteOld = true){
+	session_regenerate_id($deleteOld)
+	$this->objData = $_SESSION
+}

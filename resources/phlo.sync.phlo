@@ -1,0 +1,17 @@
+@ summary:  Run app callback synchronously via CLI
+@ package:  runtime
+@ frontend: false
+@ backend:  true
+@ requires: cli
+@ tags:     sync cli process app
+
+function phlo_sync(string $cb, ...$args){
+	$cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void)
+	exec($cmd.' 2>&1', $r, $code)
+	$out = implode(lf, $r)
+	$j = json_decode($out, true)
+	if ($code !== 0) error('Could not execute "'.esc($cb).'" via CLI')
+	if (json_last_error() !== JSON_ERROR_NONE) return $out
+	if (is_array($j) && isset($j['error'])) error((string)$j['error'])
+	return $j
+}

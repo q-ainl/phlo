@@ -1,0 +1,7 @@
+@ summary:  Check if compiled Phlo class exists
+@ package:  build
+@ frontend: false
+@ backend:  true
+@ tags:     phlo exists class build runtime
+
+function phlo_exists(string $obj) => is_file(php.strtr($obj, [us => dot]).'.php')

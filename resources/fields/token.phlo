@@ -1,0 +1,20 @@
+@ extends:  field
+@ class:    field_token
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Token field
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field token
+
+prop length = 8
+prop default => token($this->length)
+prop create = false
+prop change = false
+prop search = true
+
+method label($record) => tag('div', inner: esc($record->{$this->name}))
+method parse($record) => $record->{$this->name} ??= $this->default
+
+method sql => "`$this->name` char($this->length)"

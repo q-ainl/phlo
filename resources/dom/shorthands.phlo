@@ -1,0 +1,14 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  onChange, onClick and onInput event shorthands
+@ package:  dom
+@ frontend: true
+@ backend:  false
+@ requires: @DOM
+@ tags:     dom events shorthand frontend
+
+<script>
+function onChange(els, cb){ on('change', els, cb) }
+function onClick(els, cb){ on('click', els, cb) }
+function onInput(els, cb){ on('input', els, cb) }
+</script>

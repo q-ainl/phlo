@@ -1,0 +1,20 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Single Page App datatag plugin
+@ package:  dom
+@ frontend: true
+@ backend:  false
+@ requires: @DOM
+@ tags:     dom datatag dataset spa events
+
+<script>
+on('click', '[data-get], [data-post], [data-put], [data-patch], [data-delete]', (el, e) => {
+	if (el.dataset.confirm) return
+	e.preventDefault()
+	let method, path, data = null
+	if ((path = el.dataset.get) !== undefined) method = 'get'
+	else if ((path = el.dataset.delete) !== undefined) method = 'delete'
+	else [data = {}, Object.keys(el.dataset).forEach((key) => key === 'post' || key === 'put' || key === 'patch' ? [method = key, path = el.dataset[key]] : data[key] = el.dataset[key])]
+	app[method](path, data)
+})
+</script>

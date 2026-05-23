@@ -1,0 +1,43 @@
+<style ns=loader.binary>
+html.loading body::before {
+	content: ''
+	position: fixed
+	inset: 0
+	background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), #000
+	background-size: 100% 4px, 100% 100%
+	opacity: 0
+	animation: darkfade .15s ease forwards .1s
+	pointer-events: none
+	z-index: 9999
+}
+@keyframes darkfade {
+	80%: opacity: 0
+	100%: opacity: .8
+}
+html.waiting body::after {
+	content: '{ 0000 }'
+	position: fixed
+	top: 50%
+	left: 50%
+	transform: translate(-50%, -50%)
+	font-family: monospace
+	font-size: 1.5rem
+	font-weight: bold
+	color: #0f0
+	background: #000
+	padding: 1rem 2rem
+	border: 2px solid #0f0
+	border-radius: 4px
+	box-shadow: 0 0 12px #0f0, inset 0 0 8px #0f0
+	white-space: pre
+	animation: binarypulse .6s steps(1) infinite
+	z-index: 10000
+}
+@keyframes binarypulse {
+	0%: content: '{ 0000 }'
+	25%: content: '{ 0101 }'
+	50%: content: '{ 1011 }'
+	75%: content: '{ 1111 }'
+	100%: content: '{ 0000 }'
+}
+</style>

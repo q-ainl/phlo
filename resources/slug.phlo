@@ -1,0 +1,7 @@
+@ summary:  Convert text to URL slug
+@ package:  string
+@ frontend: false
+@ backend:  true
+@ tags:     slug url string format
+
+function slug(string $text) => trim(preg_replace('/[^a-z0-9]+/', dash, strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text))), dash)

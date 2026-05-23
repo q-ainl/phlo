@@ -1,0 +1,10 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Stream shell command output via yielding
+@ package:  runtime
+@ frontend: false
+@ backend:  true
+@ requires: exec_stream cli
+@ tags:     stream phlo cli process yield
+
+function phlo_stream(string $cb, ...$args) => yield from exec_stream(cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void))

@@ -1,0 +1,15 @@
+<style ns=theme.whitebolt>
+:root {
+	$bg: #ffffff
+	$surface: #f3f3f3
+	$text: #1f2937
+	$muted: #9a9fa5
+	$border: #d2d4d7
+	$primary: #3b82f6
+	$on-primary: #0b0f0d
+	$focus: #3b82f666
+	$success: #16a34a
+	$warn: #f59e0b
+	$error: #ef4444
+}
+</style>

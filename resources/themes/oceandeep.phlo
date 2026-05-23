@@ -1,0 +1,15 @@
+<style ns=theme.oceandeep>
+:root {
+	$bg: linear-gradient(to bottom, #001C30, #0A6EBD, #00C2CB)
+	$surface: #062D44
+	$text: #E9F8FF
+	$muted: #839dab
+	$border: #2f5266
+	$primary: #0A6EBD
+	$on-primary: #080c0a
+	$focus: #0a6ebd66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #E63946
+}
+</style>

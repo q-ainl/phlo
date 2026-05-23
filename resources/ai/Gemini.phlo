@@ -1,0 +1,102 @@
+@ version:  1.1
+@ creator:  q-ai.nl
+@ summary:  Google Gemini API
+@ package:  ai
+@ frontend: false
+@ backend:  true
+@ requires: creds:Gemini @AI
+@ tags:     ai gemini google chat vision embeddings
+
+const model = 'gemini-2.0-flash'
+const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
+
+static context(...$args){
+	$args['contents'] ??= []
+	if (isset($args['system'])){
+		$args['systemInstruction'] = ['parts' => [['text' => $args['system']]]]
+		unset($args['system'])
+	}
+	if (isset($args['assistant']) && array_push($args['contents'], ['role' => 'model', 'parts' => [['text' => $args['assistant']]]])) unset($args['assistant'])
+	if (isset($args['user']) && array_push($args['contents'], ['role' => 'user', 'parts' => [['text' => $args['user']]]])) unset($args['user'])
+	return $args
+}
+
+static tool($tool):array => [
+	'name' => $tool->name,
+	'description' => $tool->desc,
+	'parameters' => [
+		'type' => 'object',
+		'properties' => loop($tool->args, fn($data, $arg) => array_filter($data, fn($key) => in_array($key, ['type', 'enum', 'description']), ARRAY_FILTER_USE_KEY)),
+		'required' => array_keys($tool->args),
+	],
+]
+
+method embedding($input, $model = 'text-embedding-004') => $this->request($model.':embedContent', POST: ['content' => ['parts' => [['text' => $input]]]])->embedding->values
+
+method vision($text, $image, $stream = false, ...$args){
+	$model = $args['model'] ?? static::model
+	unset($args['model'])
+	$contents = [['role' => 'user', 'parts' => [['text' => $text], ['inline_data' => ['mime_type' => 'image/jpeg', 'data' => base64_encode(is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image)]]]]]
+	if ($stream) return $this->stream(...$args, model: $model, contents: $contents)
+	else return $this->chat(...$args, model: $model, contents: $contents)
+}
+
+method chat(...$args){
+	$model = $args['model'] ?? static::model
+	unset($args['model'])
+	$args = static::context(...$args)
+	$res = $this->request($model.':generateContent', POST: $args)
+	$return = new obj(answer: void, model: $model, finish: $res->candidates[0]->finishReason ?? void, tokens: ($res->usageMetadata->promptTokenCount ?? 0) + ($res->usageMetadata->candidatesTokenCount ?? 0), tokens_in: $res->usageMetadata->promptTokenCount ?? 0, tokens_out: $res->usageMetadata->candidatesTokenCount ?? 0)
+	$tools = []
+	foreach ($res->candidates[0]->content->parts ?? [] AS $part){
+		if (isset($part->text)) $return->answer = $part->text
+		elseif (isset($part->functionCall)) $tools[] = new obj(name: $part->functionCall->name, args: (array)$part->functionCall->args)
+	}
+	if ($tools) $return->tools = $tools
+	return $return
+}
+
+method parseSSE(string $url, array $headers, array $payload):Generator {
+	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+	$ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)]), 'content' => $json, 'timeout' => 300, 'ignore_errors' => true]])
+	$stream = fopen($url, 'r', false, $ctx)
+	$stream || error('SSE connection failed')
+	$status = (int)explode(' ', $http_response_header[0] ?? 'HTTP/1.1 200')[1]
+	if ($status >= 400){
+		$err = json_decode((string)stream_get_contents($stream))
+		fclose($stream)
+		error('Gemini error '.$status.': '.($err->error->message ?? 'unknown'))
+	}
+	$finish = null
+	$usage = null
+	while (!feof($stream)){
+		$line = fgets($stream)
+		if ($line === false) break
+		$line = rtrim($line, "\r\n")
+		if (!str_starts_with($line, 'data:')) continue
+		$data = ltrim(substr($line, 5))
+		if ($data === void) continue
+		$p = json_decode($data)
+		if (!$p) continue
+		if (isset($p->error)) error('Gemini stream error: '.$p->error->message)
+		if (isset($p->usageMetadata)) $usage = $p->usageMetadata
+		if ($p->candidates[0]->finishReason ?? null) $finish = $p->candidates[0]->finishReason
+		$text = $p->candidates[0]->content->parts[0]->text ?? null
+		if (!is_null($text)) yield obj(text: $text)
+	}
+	fclose($stream)
+	yield obj(done: true, finish: $finish, tokens_in: $usage?->promptTokenCount, tokens_out: $usage?->candidatesTokenCount)
+}
+method stream(...$args):Generator {
+	%app->streaming = true
+	$model = $args['model'] ?? static::model
+	unset($args['model'], $args['cb'])
+	$args = static::context(...$args)
+	return $this->parseSSE(static::endpoint.$model.':streamGenerateContent?alt=sse', ['x-goog-api-key: '.%creds->Gemini], $args)
+}
+
+method request($path, ...$args){
+	$res = json_decode(AI::http(static::endpoint.$path, ['x-goog-api-key: '.%creds->Gemini], true, $args['POST'] ?? null))
+	if (isset($res->error)) error('Gemini Request error: '.$res->error->message)
+	return $res
+}

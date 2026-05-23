@@ -1,0 +1,43 @@
+<style ns=loader.kitchen>
+html.loading body::before {
+	content: ''
+	position: fixed
+	inset: 0
+	background: #000
+	opacity: 0
+	animation: darkfade .15s ease forwards .1s
+	pointer-events: none
+	z-index: 9999
+}
+@keyframes darkfade {
+	80%: opacity: 0
+	100%: opacity: .8
+}
+
+html.waiting body::after {
+	content: 'cooking request  [🍳     ]'
+	position: fixed
+	top: 50%
+	left: 50%
+	transform: translate(-50%, -50%)
+	font-family: monospace
+	font-size: 1.05rem
+	color: #fff
+	background: #141414
+	padding: .85rem 1.25rem
+	border: 1px solid #ffffff33
+	min-width: 30ch
+	white-space: pre
+	animation: kitchen 1.15s steps(6) infinite
+	z-index: 10000
+}
+@keyframes kitchen {
+	0%: content: 'cooking request  [🍳      ]'
+	16%: content: 'cooking request  [ 🍳     ]'
+	33%: content: 'cooking request  [  🍳    ]'
+	50%: content: 'cooking request  [   🍳   ]'
+	66%: content: 'cooking request  [    🍳  ]'
+	83%: content: 'cooking request  [     🍳 ]'
+	100%: content: 'cooking request  [      🍳]'
+}
+</style>

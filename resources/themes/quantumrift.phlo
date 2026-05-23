@@ -1,0 +1,15 @@
+<style ns=theme.quantumrift>
+:root {
+	$bg: linear-gradient(to bottom, #00040f, #000e2b, #001946)
+	$surface: #001024
+	$text: #ece9ff
+	$muted: #9999ab
+	$border: #2f3b50
+	$primary: #8b5cf6
+	$on-primary: #0b0f0d
+	$focus: #8b5cf666
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff4c4c
+}
+</style>

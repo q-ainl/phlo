@@ -1,0 +1,13 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Server-side WebSocket handler via PhloWS
+@ advice:   Enable this class only when websockets are configured for the host
+@ package:  realtime
+@ frontend: false
+@ backend:  true
+@ tags:     websocket realtime ws server
+
+static connect($host, $token, $socket) => function_exists('wsConnect') && wsConnect($host, $token, $socket)
+static auth($host, $token, $socket) => function_exists('wsAuth') && wsAuth($host, $token, $socket)
+static receive($host, $token, $socket, $data) => function_exists('wsReceive') && wsReceive($host, $token, $socket, ...json_decode($data, true))
+static close($host, $token, $socket) => function_exists('wsClose') && wsClose($host, $token, $socket)

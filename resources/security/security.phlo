@@ -1,0 +1,25 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Generic security resource
+@ package:  security
+@ frontend: true
+@ backend:  true
+@ requires: @session token
+@ tags:     security csp nonce headers
+
+method setNonce => %app->nonce = token(8)
+
+method frameProtect($mode = 'DENY') => %res->header('X-Frame-Options', $mode)
+
+method strict => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]]
+method full => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]]
+method basic => [$this->base, %req->async || %res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]
+
+method base {
+	%res->header('Referrer-Policy', 'strict-origin-when-cross-origin')
+	%res->header('X-Content-Type-Options', 'nosniff')
+	%req->async || %res->header('Cross-Origin-Opener-Policy', 'same-origin')
+	%req->async || %res->header('Cross-Origin-Resource-Policy', 'same-origin')
+	%req->async || %res->header('Access-Control-Allow-Origin', %req->base)
+	%req->async || %res->header('X-Frame-Options', 'DENY')
+}

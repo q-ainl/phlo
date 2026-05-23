@@ -1,0 +1,13 @@
+@ extends:  field
+@ class:    field_date
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Date field
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field date
+
+prop handle = true
+
+method sql => "`$this->name` DATE unsigned"

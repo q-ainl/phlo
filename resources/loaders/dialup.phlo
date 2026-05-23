@@ -1,0 +1,41 @@
+<style ns=loader.dialup>
+html.loading body::before {
+	content: ''
+	position: fixed
+	inset: 0
+	background: #000
+	opacity: 0
+	animation: darkfade .15s ease forwards .1s
+	pointer-events: none
+	z-index: 9999
+}
+@keyframes darkfade {
+	80%: opacity: 0
+	100%: opacity: .8
+}
+
+html.waiting body::after {
+	content: 'CONNECTING...'
+	position: fixed
+	top: 50%
+	left: 50%
+	transform: translate(-50%, -50%)
+	font-family: monospace
+	font-size: 1.05rem
+	color: #79a7ff
+	background: #070b16
+	padding: .85rem 1.25rem
+	border: 1px solid #79a7ff55
+	min-width: 28ch
+	white-space: pre
+	animation: modem 2s steps(5) infinite
+	z-index: 10000
+}
+@keyframes modem {
+	0%: content: 'CONNECTING...'
+	25%: content: 'NEGOTIATING...'
+	50%: content: 'AUTHENTICATING...'
+	75%: content: 'ESTABLISHING LINK...'
+	100%: content: 'SYNCING...'
+}
+</style>

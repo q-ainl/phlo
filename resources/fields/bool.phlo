@@ -1,0 +1,19 @@
+@ extends:     field
+@ class:       field_bool
+@ version:     1.0
+@ creator:     q-ai.nl
+@ summary:     Boolean field
+@ package:     fields
+@ frontend:    true
+@ backend:     true
+@ tags:        field boolean input
+
+prop true = '✅'
+prop false = '❌'
+
+method label($record) => $record->{$this->name} ? $this->true : $this->false
+method input($record) => tag('label', inner: input(type: 'checkbox', name: $this->name, value: 1, checked: $record->{$this->name} ? false : null).tag('span', class: 'slider', inner: void))
+method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
+method nullable => false
+
+method sql => "`$this->name` tinyint(1) unsigned"

@@ -1,0 +1,10 @@
+@ summary:     Encrypt and decrypt secretbox payloads using a key
+@ package:     security
+@ frontend:    false
+@ backend:     true
+@ requires:    php-ext:sodium
+@ tags:        encrypt decrypt encryption sodium secretbox crypto
+
+function encrypt($data, $key):string => base64_encode(($nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES)).sodium_crypto_secretbox($data, $nonce, hash('sha256', $key, true)))
+
+function decrypt($encrypted, $key):string|false => ($d = base64_decode($encrypted, true)) !== false && strlen($d) >= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ? sodium_crypto_secretbox_open(substr($d, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES), substr($d, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES), hash('sha256', $key, true)) : false

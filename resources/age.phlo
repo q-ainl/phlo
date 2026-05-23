@@ -1,0 +1,7 @@
+@ summary:  Get age in seconds since a given timestamp
+@ package:  time
+@ frontend: false
+@ backend:  true
+@ tags:     age time timestamp
+
+function age(int $time) => time() - $time

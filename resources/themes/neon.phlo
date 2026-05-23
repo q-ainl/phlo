@@ -1,0 +1,15 @@
+<style ns=theme.neon>
+:root {
+	$bg: #000000
+	$surface: #1a1a1a
+	$text: #f0f0f0
+	$muted: #909090
+	$border: #414141
+	$primary: #00ffea
+	$on-primary: #080c0a
+	$focus: #00ffea66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff073a
+}
+</style>

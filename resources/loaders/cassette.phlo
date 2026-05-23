@@ -1,0 +1,43 @@
+<style ns=loader.cassette>
+html.loading body::before {
+	content: ''
+	position: fixed
+	inset: 0
+	background: #000
+	opacity: 0
+	animation: darkfade .15s ease forwards .1s
+	pointer-events: none
+	z-index: 9999
+}
+@keyframes darkfade {
+	80%: opacity: 0
+	100%: opacity: .8
+}
+
+html.waiting body::after {
+	content: '[=     ]  loading'
+	position: fixed
+	top: 50%
+	left: 50%
+	transform: translate(-50%, -50%)
+	font-family: monospace
+	font-size: 1.1rem
+	color: #fff
+	background: #101010
+	padding: .85rem 1.25rem
+	border: 1px solid #ffffff33
+	min-width: 26ch
+	white-space: pre
+	animation: tape 1s steps(6) infinite
+	z-index: 10000
+}
+@keyframes tape {
+	0%: content: '[=      ]  loading'
+	16%: content: '[==     ]  loading'
+	33%: content: '[===    ]  loading'
+	50%: content: '[====   ]  loading'
+	66%: content: '[=====  ]  loading'
+	83%: content: '[====== ]  loading'
+	100%: content: '[=======]  loading'
+}
+</style>

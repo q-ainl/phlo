@@ -1,0 +1,106 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Unified AI facade with engine auto-detect
+@ package:  ai
+@ frontend: false
+@ backend:  true
+@ requires: @OpenAI? @Claude? @Gemini? @DeepSeek?
+@ tags:     ai facade llm streaming tools embeddings
+
+const engines = ['claude' => 'Claude', 'gpt' => 'OpenAI', 'chatgpt' => 'OpenAI', 'o1' => 'OpenAI', 'o3' => 'OpenAI', 'o4' => 'OpenAI', 'deepseek' => 'DeepSeek', 'gemini' => 'Gemini']
+static sseDecodeEvents(string &$buffer, string $chunk):array {
+	$buffer .= strtr($chunk, ["\r\n" => lf, "\r" => lf])
+	$events = []
+	while (($pos = strpos($buffer, lf.lf)) !== false){
+		$raw = substr($buffer, 0, $pos)
+		$buffer = substr($buffer, $pos + 2)
+		$dataLines = []
+		foreach (explode(lf, $raw) AS $line){
+			$line = ltrim($line)
+			if (!str_starts_with($line, 'data:')) continue
+			$dataLines[] = ltrim(substr($line, 5))
+		}
+		if (!$dataLines) continue
+		$payload = trim(implode(lf, $dataLines))
+		if ($payload === '[DONE]' || $payload === void) continue
+		$decoded = json_decode($payload)
+		$decoded && $events[] = $decoded
+	}
+	return $events
+}
+static sseStreamJSONWithTool(string $url, array $headers, array $payload, \Closure $extractText, \Closure $extractTool, ?\Closure $cb = null, ?\Closure $toolCb = null):obj {
+	$req = %req
+	if (!$cb){
+		$req->cli || %res->header('Content-Type', 'text/event-stream')
+		$cb = fn($text) => last(print($text), $req->cli || [@ob_flush(), flush()], $text)
+	}
+	$answer = void
+	$toolJson = void
+	$buffer = void
+	$curl = curl_init($url)
+	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST')
+	curl_setopt($curl, CURLOPT_POSTFIELDS, $json)
+	curl_setopt($curl, CURLOPT_HTTPHEADER, [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)])
+	curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, 5)
+	curl_setopt($curl, CURLOPT_WRITEFUNCTION, function($curl, $data) use ($extractText, $extractTool, $cb, $toolCb, &$buffer, &$answer, &$toolJson){
+		foreach (static::sseDecodeEvents($buffer, $data) AS $event){
+			$text = $extractText($event)
+			(is_null($text) || $text === void || $text === false) || $answer .= $cb((string)$text, $event)
+			$tool = $extractTool($event)
+			if (!(is_null($tool) || $tool === void || $tool === false)){
+				$toolJson .= (string)$tool
+				if ($toolCb) $toolCb((string)$tool)
+			}
+		}
+		return strlen($data)
+	})
+	$res = curl_exec($curl)
+	$res === false && error('HTTP error: '.curl_error($curl))
+	return new obj(answer: $answer, tool_json: $toolJson)
+}
+static http(string $url, array $headers, bool $json = true, mixed $post = null):string {
+	$curl = curl_init($url)
+	if ($post !== null){
+		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST')
+		if ($json && !is_string($post)) $post = json_encode($post, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+		if ($json) $headers[] = 'Content-Type: application/json'
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $post)
+	}
+	curl_setopt_array($curl, [CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 300, CURLOPT_ENCODING => ''])
+	$res = curl_exec($curl)
+	if ($res === false) throw new \RuntimeException('HTTP error: '.curl_error($curl))
+	return $res
+}
+static resolve(...$args):array {
+	$via = $args['via'] ?? void
+	unset($args['via'])
+	$args['model'] ??= %app->model ?? void
+	if ($via) $via = static::engines[strtolower($via)] ?? $via
+	elseif (isset($args['model'])) $via = static::engines[strtolower(explode('-', $args['model'])[0])] ?? void
+return [$via ?: 'OpenAI', $args]
+}
+method chat(...$args){
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->chat(...$args)
+}
+method stream(...$args):Generator {
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->stream(...$args)
+}
+method stream_with_tool(...$args):obj {
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->stream_with_tool(...$args)
+}
+method embedding(...$args){
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->embedding(...$args)
+}
+method vision(...$args){
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->vision(...$args)
+}
+method transcribe(...$args){
+	[$engine, $args] = static::resolve(...$args)
+	return phlo($engine)->transcribe(...$args)
+}

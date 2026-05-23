@@ -1,0 +1,110 @@
+@ version:  1.1
+@ creator:  q-ai.nl
+@ summary:  Anthropic Claude API
+@ package:  ai
+@ frontend: false
+@ backend:  true
+@ requires: creds:Claude @AI
+@ tags:     ai claude anthropic chat vision embeddings
+
+const model = 'claude-sonnet-4-5-20250929'
+
+static context(...$args){
+	$args['messages'] ??= []
+	if (isset($args['system'])){
+		$args['system'] = [['type' => 'text', 'text' => $args['system']]]
+	}
+	if (isset($args['assistant']) && array_push($args['messages'], ['role' => 'assistant', 'content' => $args['assistant']])) unset($args['assistant'])
+	if (isset($args['user']) && array_push($args['messages'], ['role' => 'user', 'content' => $args['user']])) unset($args['user'])
+	return $args
+}
+
+static tool($tool):array => [
+	'name' => $tool->name,
+	'description' => $tool->desc,
+	'input_schema' => [
+		'type' => 'object',
+		'properties' => loop($tool->args, fn($data, $arg) => array_filter($data, fn($key) => in_array($key, ['type', 'enum', 'description']), ARRAY_FILTER_USE_KEY)),
+		'required' => array_keys($tool->args),
+	],
+]
+
+method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
+
+method vision($text, $image, $stream = false, ...$args){
+	$data = is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image
+	$messages = [['role' => 'user', 'content' => [['type' => 'text', 'text' => $text], ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => 'image/jpeg', 'data' => base64_encode($data)]]]]]
+	if ($stream) return $this->stream(...$args, messages: $messages)
+	else return $this->chat(...$args, messages: $messages)
+}
+
+method chat(...$args){
+	$args['model'] ??= static::model
+	$args['max_tokens'] ??= 4096
+	$token = $args['token'] ?? null
+	unset($args['token'])
+	$args = static::context(...$args)
+	$res = $this->request('messages', token: $token, POST: $args)
+	$return = new obj(answer: void, model: $res->model, finish: $res->stop_reason, tokens: ($res->usage->input_tokens ?? 0) + ($res->usage->output_tokens ?? 0), tokens_in: $res->usage->input_tokens ?? 0, tokens_out: $res->usage->output_tokens ?? 0)
+	$tools = []
+	foreach ($res->content AS $block){
+		if ($block->type === 'text') $return->answer = $block->text
+		elseif ($block->type === 'tool_use') $tools[] = new obj(name: $block->name, args: (array)$block->input)
+	}
+	if ($tools) $return->tools = $tools
+	return $return
+}
+
+method parseSSE(string $url, array $headers, array $payload):Generator {
+	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+	$ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)]), 'content' => $json, 'timeout' => 300, 'ignore_errors' => true]])
+	$stream = fopen($url, 'r', false, $ctx)
+	$stream || error('SSE connection failed')
+	$status = (int)explode(' ', $http_response_header[0] ?? 'HTTP/1.1 200')[1]
+	if ($status >= 400){
+		$err = json_decode((string)stream_get_contents($stream))
+		fclose($stream)
+		error('Claude error '.$status.': '.($err->error->message ?? 'unknown'))
+	}
+	$finish = null
+	$usage = null
+	while (!feof($stream)){
+		$line = fgets($stream)
+		if ($line === false) break
+		$line = rtrim($line, "\r\n")
+		if (!str_starts_with($line, 'data:')) continue
+		$data = ltrim(substr($line, 5))
+		if ($data === void) continue
+		$p = json_decode($data)
+		if (!$p) continue
+		if (isset($p->error)) error('Claude stream error: '.$p->error->message)
+		if (($p->type ?? null) === 'message_delta'){
+			$finish = $p->delta->stop_reason ?? $finish
+			if (isset($p->usage)) $usage = $p->usage
+		}
+		if (($p->type ?? null) === 'content_block_delta' && ($p->delta->type ?? null) === 'text_delta' && isset($p->delta->text)) yield obj(text: $p->delta->text)
+	}
+	fclose($stream)
+	yield obj(done: true, finish: $finish, tokens_in: $usage?->input_tokens, tokens_out: $usage?->output_tokens)
+}
+method stream(...$args):Generator {
+	%app->streaming = true
+	$args['model'] ??= static::model
+	$args['max_tokens'] ??= 4096
+	$token = $args['token'] ?? null
+	unset($args['token'], $args['cb'])
+	$args = static::context(...$args)
+	$args['stream'] = true
+	if ($token) $headers = ['anthropic-version: 2023-06-01', 'anthropic-beta: oauth-2025-04-20', 'Authorization: Bearer '.$token]
+	else $headers = ['anthropic-version: 2023-06-01', 'x-api-key: '.%creds->Claude]
+	return $this->parseSSE('https://api.anthropic.com/v1/messages', $headers, $args)
+}
+
+method request($uri, ...$args){
+	$token = $args['token'] ?? null
+	if ($token) $headers = ['anthropic-version: 2023-06-01', 'anthropic-beta: oauth-2025-04-20', 'Authorization: Bearer '.$token]
+	else $headers = ['anthropic-version: 2023-06-01', 'x-api-key: '.%creds->Claude]
+	$res = json_decode(AI::http("https://api.anthropic.com/v1/$uri", $headers, true, $args['POST'] ?? null))
+	if (isset($res->error)) error('Claude Request error: '.$res->error->message)
+	return $res
+}

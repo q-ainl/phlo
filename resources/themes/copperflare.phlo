@@ -1,0 +1,15 @@
+<style ns=theme.copperflare>
+:root {
+	$bg: linear-gradient(to bottom, #2b0d00, #4d1c0a, #663015)
+	$surface: #3a1808
+	$text: #ffe8d9
+	$muted: #a68a7b
+	$border: #5d3d2e
+	$primary: #ff8a3d
+	$on-primary: #080c0a
+	$focus: #ff8a3d66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff3b3b
+}
+</style>

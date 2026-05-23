@@ -1,0 +1,15 @@
+<style ns=theme.aurasteel>
+:root {
+	$bg: linear-gradient(to bottom, #0e1526, #1c2e4a, #2b496a)
+	$surface: #152339
+	$text: #e3f0ff
+	$muted: #8694a6
+	$border: #3a485d
+	$primary: #7eb3ff
+	$on-primary: #080c0a
+	$focus: #7eb3ff66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff5569
+}
+</style>

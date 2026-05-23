@@ -1,0 +1,15 @@
+<style ns=theme.darknova>
+:root {
+	$bg: linear-gradient(to bottom, #00010a, #050521, #0d0b3a)
+	$surface: #0a0a1f
+	$text: #e6e0ff
+	$muted: #83809a
+	$border: #323147
+	$primary: #7f5bff
+	$on-primary: #080c0a
+	$focus: #7f5bff66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff447a
+}
+</style>

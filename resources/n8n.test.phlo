@@ -1,0 +1,8 @@
+@ summary:  Call n8n test webhook endpoint
+@ package:  network
+@ frontend: false
+@ backend:  true
+@ requires: n8n
+@ tags:     n8n webhook test automation
+
+function n8n_test($webhook, ?array $data = null) => n8n($webhook, $data, true)

@@ -1,0 +1,13 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  DOM form tags for button, input, select and textarea
+@ package:  view
+@ frontend: false
+@ backend:  true
+@ requires: tag
+@ tags:     form tags html view
+
+function button(...$args):string => tag('button', ...$args)
+function input(...$args):string => tag('input', ...$args)
+function select(...$args):string => tag('select', ...$args)
+function textarea(...$args):string => tag('textarea', ...$args)

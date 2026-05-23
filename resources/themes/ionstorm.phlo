@@ -1,0 +1,15 @@
+<style ns=theme.ionstorm>
+:root {
+	$bg: linear-gradient(to bottom, #020d1f, #081f3b, #093d6e)
+	$surface: #0a1628
+	$text: #e0f0ff
+	$muted: #808e9e
+	$border: #313d4f
+	$primary: #4fa3ff
+	$on-primary: #080c0a
+	$focus: #4fa3ff66
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff5174
+}
+</style>

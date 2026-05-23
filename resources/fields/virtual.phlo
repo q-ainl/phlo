@@ -1,0 +1,14 @@
+@ extends:  field
+@ class:    field_virtual
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Virtual field
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field virtual
+
+prop create = false
+prop change = false
+
+method sql => []

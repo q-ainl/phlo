@@ -1,0 +1,8 @@
+@ summary:  Convert age in seconds to human readable text
+@ package:  time
+@ frontend: false
+@ backend:  true
+@ requires: time_human
+@ tags:     age human time format
+
+function age_human(int $age) => time_human(time() - $age)

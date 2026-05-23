@@ -1,0 +1,15 @@
+<style ns=theme.galaxytwist>
+:root {
+	$bg: linear-gradient(to bottom, #654EA3, #EAafc8)
+	$surface: #442B76
+	$text: #FFFFFF
+	$muted: #aba0c1
+	$border: #66518f
+	$primary: #654EA3
+	$on-primary: #080c0a
+	$focus: #654ea366
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #FF4B5C
+}
+</style>

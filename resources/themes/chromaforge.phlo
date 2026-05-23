@@ -1,0 +1,15 @@
+<style ns=theme.chromaforge>
+:root {
+	$bg: linear-gradient(to bottom, #0d0400, #2b0c00, #4a1d00)
+	$surface: #1a0a00
+	$text: #fff0e0
+	$muted: #98887b
+	$border: #433328
+	$primary: #ff7a00
+	$on-primary: #080c0a
+	$focus: #ff7a0066
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff1e1e
+}
+</style>

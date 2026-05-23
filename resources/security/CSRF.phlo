@@ -1,0 +1,18 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Rotating async CSRF protection for Phlo requests
+@ package:  security
+@ frontend: true
+@ backend:  true
+@ requires: @session token payload
+@ provides: app.mod.csrf
+@ tags:     csrf security async forms
+
+view: <meta name=csrf content="$this->token">
+prop token => %session->csrf ??= token(32)
+method verify => hash_equals($this->token, (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? void))
+method update => arr(csrf: $this->token = %session->csrf = token(32))
+
+<script>
+app.mod.csrf = value => obj('meta[name="csrf"]').content = value
+</script>

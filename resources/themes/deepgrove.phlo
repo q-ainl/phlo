@@ -1,0 +1,15 @@
+<style ns=theme.deepgrove>
+:root {
+	$bg: linear-gradient(to bottom, #03110a, #062518, #0b3a25)
+	$surface: #082e1e
+	$text: #e9fff6
+	$muted: #84a195
+	$border: #305445
+	$primary: #6ee7b7
+	$on-primary: #080c0a
+	$focus: #6ee7b766
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ef4444
+}
+</style>

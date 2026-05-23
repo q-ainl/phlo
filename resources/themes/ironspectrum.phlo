@@ -1,0 +1,15 @@
+<style ns=theme.ironspectrum>
+:root {
+	$bg: linear-gradient(to bottom, #1a1c21, #2b2e36, #3d414b)
+	$surface: #2a2d35
+	$text: #eff3ff
+	$muted: #969aa4
+	$border: #4d5159
+	$primary: #9aa3b8
+	$on-primary: #080c0a
+	$focus: #9aa3b866
+	$success: #22c55e
+	$warn: #fbbf24
+	$error: #ff5360
+}
+</style>

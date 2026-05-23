@@ -1,0 +1,15 @@
+<style ns=theme.light>
+:root {
+	$bg: linear-gradient(to bottom, #f6faf8, #edf4f1)
+	$surface: #ffffff
+	$text: #0e1a16
+	$muted: #5f6f69
+	$border: #d9e4df
+	$primary: #16c784
+	$on-primary: #ffffff
+	$focus: #16c78466
+	$success: #22c55e
+	$warn: #f59e0b
+	$error: #ef4444
+}
+</style>
