@@ -11,12 +11,14 @@ static tableEnsured = false
 
 method ensure(){
 	if (static::$tableEnsured) return
-	%MySQL->query('CREATE TABLE IF NOT EXISTS rate_limit (
-		rkey VARCHAR(120) NOT NULL PRIMARY KEY,
-		count INT UNSIGNED NOT NULL DEFAULT 0,
-		window_start INT UNSIGNED NOT NULL,
-		INDEX (window_start)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4')
+	%MySQL->query(implode(' ', [
+		'CREATE TABLE IF NOT EXISTS rate_limit (',
+		'rkey VARCHAR(120) NOT NULL PRIMARY KEY,',
+		'count INT UNSIGNED NOT NULL DEFAULT 0,',
+		'window_start INT UNSIGNED NOT NULL,',
+		'INDEX (window_start)',
+		') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
+	]))
 	static::$tableEnsured = true
 }
 

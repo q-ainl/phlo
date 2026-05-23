@@ -28,7 +28,7 @@ static canDelete = true
 static state => %req->model ??= obj(meta: [], records: [], loaded: [], includeDeleted: [])
 static columns {
 	if (isset(static::$columns)) return static::$columns
-	if (!method_exists(static::class, 'schema')) return '*'
+	if (!method_exists(static::class, 'schema')) return static::$table.'.*'
 	$state = static::state()
 	$key = spl_object_id(static::DB()).':'.static::DB()->fieldQuotes.':'.static::$table
 	return $state->meta[static::class]['columns'][$key] ??= static::_columns()
@@ -82,7 +82,7 @@ static change($where, ...$args) => static::DB()->change(static::$table, $where, 
 
 static delete($where, ...$args){
 	if (method_exists(static::class, 'beforeDelete') || method_exists(static::class, 'afterDelete') || static::objAudit()){
-		$records = static::records(...[...$args, 'where' => $where])
+		$records = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$args)->fetchAll(\PDO::FETCH_CLASS, static::class)
 		foreach ($records AS $record) method_exists(static::class, 'beforeDelete') && $record->beforeDelete()
 		if (static::objSoftDelete()) $result = static::DB()->change(static::$table, $where, ...array_values($args), deleted_at: time())
 		else $result = static::DB()->delete(static::$table, $where, ...$args)

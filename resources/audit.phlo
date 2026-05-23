@@ -11,19 +11,21 @@ static tableEnsured = false
 
 method ensure(){
 	if (static::$tableEnsured) return
-	%MySQL->query('CREATE TABLE IF NOT EXISTS audit_log (
-		id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-		ts INT UNSIGNED NOT NULL,
-		user INT UNSIGNED NULL,
-		model VARCHAR(60) NOT NULL,
-		record_id VARCHAR(40) NOT NULL,
-		action ENUM("create","update","delete") NOT NULL,
-		changes JSON NOT NULL,
-		ip VARCHAR(45) NULL,
-		INDEX (model, record_id),
-		INDEX (user, ts),
-		INDEX (ts)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4')
+	%MySQL->query(implode(' ', [
+		'CREATE TABLE IF NOT EXISTS audit_log (',
+		'id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,',
+		'ts INT UNSIGNED NOT NULL,',
+		'user INT UNSIGNED NULL,',
+		'model VARCHAR(60) NOT NULL,',
+		'record_id VARCHAR(40) NOT NULL,',
+		'action ENUM("create","update","delete") NOT NULL,',
+		'changes JSON NOT NULL,',
+		'ip VARCHAR(45) NULL,',
+		'INDEX (model, record_id),',
+		'INDEX (user, ts),',
+		'INDEX (ts)',
+		') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
+	]))
 	static::$tableEnsured = true
 }
 
