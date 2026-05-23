@@ -1,0 +1,58 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Sliding-window rate-limit (DB-backed, opt-in APCu)
+@ package:  security
+@ frontend: false
+@ backend:  true
+@ requires: @MySQL
+@ tags:     rate limit throttle abuse
+
+static $tableEnsured = false
+
+method ensure(){
+	if (static::$tableEnsured) return
+	%MySQL->query('CREATE TABLE IF NOT EXISTS rate_limit (
+		rkey VARCHAR(120) NOT NULL,
+		window_start INT NOT NULL,
+		count INT UNSIGNED NOT NULL DEFAULT 0,
+		PRIMARY KEY (rkey, window_start),
+		INDEX (window_start)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4')
+	static::$tableEnsured = true
+}
+
+method check($key, $limit, $windowSeconds, $storage = 'db'){
+	if ($storage === 'apcu') return $this->checkApcu($key, $limit, $windowSeconds)
+	$this->ensure()
+	$now = time()
+	$window = (int)floor($now / $windowSeconds) * $windowSeconds
+	%MySQL->query('INSERT INTO rate_limit (rkey, window_start, count) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE count = count + 1', $key, $window)
+	$sum = (int)%MySQL->query('SELECT COALESCE(SUM(count),0) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn()
+	return $sum <= $limit
+}
+
+method checkApcu($key, $limit, $windowSeconds){
+	$window = (int)floor(time() / $windowSeconds) * $windowSeconds
+	$apcuKey = 'phlo.rate.'.$key.':'.$window
+	$count = apcu_inc($apcuKey, 1, $success, $windowSeconds)
+	if (!$success) apcu_store($apcuKey, 1, $windowSeconds)
+	return $count <= $limit
+}
+
+method status($key, $limit, $windowSeconds){
+	$this->ensure()
+	$now = time()
+	$sum = (int)%MySQL->query('SELECT COALESCE(SUM(count),0) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn()
+	$oldest = (int)(%MySQL->query('SELECT MIN(window_start) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn() ?: $now)
+	return obj(used: $sum, limit: $limit, resetIn: max(0, ($oldest + $windowSeconds) - $now))
+}
+
+method reset($key){
+	$this->ensure()
+	%MySQL->query('DELETE FROM rate_limit WHERE rkey=?', $key)
+}
+
+method purge($olderThanSeconds = 604800){
+	$this->ensure()
+	%MySQL->query('DELETE FROM rate_limit WHERE window_start < ?', time() - $olderThanSeconds)
+}

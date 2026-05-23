@@ -1,0 +1,82 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Audit-log voor model-mutaties (opt-in via model after-hooks)
+@ package:  security
+@ frontend: false
+@ backend:  true
+@ requires: @MySQL
+@ tags:     audit log compliance traceability
+
+static $tableEnsured = false
+
+method ensure(){
+	if (static::$tableEnsured) return
+	%MySQL->query('CREATE TABLE IF NOT EXISTS audit_log (
+		id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+		ts INT UNSIGNED NOT NULL,
+		user INT UNSIGNED NULL,
+		model VARCHAR(60) NOT NULL,
+		record_id VARCHAR(40) NOT NULL,
+		action ENUM("create","update","delete") NOT NULL,
+		changes JSON NOT NULL,
+		ip VARCHAR(45) NULL,
+		INDEX (model, record_id),
+		INDEX (user, ts),
+		INDEX (ts)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4')
+	static::$tableEnsured = true
+}
+
+method log($model, $action, $before = [], $after = [], $exclude = []){
+	$this->ensure()
+	$class = is_object($model) ? get_class($model) : (string)$model
+	$id = is_object($model) ? ($model->id ?? null) : null
+	if ($id === null) return
+	$before = (array)$before
+	$after = (array)$after
+	foreach ($exclude AS $col) {
+		unset($before[$col], $after[$col])
+	}
+	$changes = $action === 'update' ? $this->diff($before, $after) : ($action === 'create' ? $after : $before)
+	%MySQL->query(
+		'INSERT INTO audit_log (ts, user, model, record_id, action, changes, ip) VALUES (?, ?, ?, ?, ?, ?, ?)',
+		time(),
+		isset(%session->user) ? (int)%session->user : null,
+		$class,
+		(string)$id,
+		$action,
+		json_encode($changes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		(string)($_SERVER['REMOTE_ADDR'] ?? null),
+	)
+}
+
+method diff($before, $after){
+	$changed = []
+	foreach ($after AS $col => $newVal) {
+		$oldVal = $before[$col] ?? null
+		if ($oldVal !== $newVal) $changed[$col] = ['from' => $oldVal, 'to' => $newVal]
+	}
+	return $changed
+}
+
+method history($model, $recordId, $limit = 50){
+	$this->ensure()
+	$class = is_object($model) ? get_class($model) : (string)$model
+	return %MySQL->query(
+		'SELECT * FROM audit_log WHERE model=? AND record_id=? ORDER BY ts DESC LIMIT ?',
+		$class, (string)$recordId, (int)$limit,
+	)->fetchAll(\PDO::FETCH_OBJ)
+}
+
+method byUser($userId, $fromTs = 0, $limit = 100){
+	$this->ensure()
+	return %MySQL->query(
+		'SELECT * FROM audit_log WHERE user=? AND ts >= ? ORDER BY ts DESC LIMIT ?',
+		(int)$userId, (int)$fromTs, (int)$limit,
+	)->fetchAll(\PDO::FETCH_OBJ)
+}
+
+method purge($olderThanSeconds = 31536000){
+	$this->ensure()
+	%MySQL->query('DELETE FROM audit_log WHERE ts < ?', time() - $olderThanSeconds)
+}
