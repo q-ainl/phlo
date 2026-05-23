@@ -17,8 +17,8 @@ static objSoftDelete = false
 static objAudit = false
 static objValidate = false
 static objLastErrors = []
-static objIdColumn = 'id'
-static objIdType = 'int'
+static idColumn = 'id'
+static idType = 'int'
 
 static canView = true
 static canCreate = true
@@ -44,7 +44,7 @@ static fields {
 	return $state->meta[static::class]['fields'] ??= static::_fields()
 }
 static _fields {
-	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet','objAudit','objValidate','objLastErrors','objIdColumn','objIdType']
+	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet','objAudit','objValidate','objLastErrors','idColumn','idType']
 	$fields = loop(static::schema(), fn($field, $column) => last($field->name ??= $column, $field->type === 'parent' && $field->obj ??= $column, $field))
 	foreach ($reserved AS $word) isset($fields[$word]) && error("Reserved column name '$word' in ".static::class)
 	return $fields
@@ -108,7 +108,7 @@ static objLogChange($where, ...$args){
 }
 
 method objSave {
-	$pk = static::objIdColumn()
+	$pk = static::idColumn()
 	$pkValue = $this->$pk ?? $this->id ?? null
 	$pkValue || error('Can\'t save '.static::class.' record without '.$pk)
 	$isNew = !static::item([$pk => $pkValue, 'columns' => $pk])
@@ -145,17 +145,17 @@ static objWithDeleted($callback){
 	}
 	return $result
 }
-static objRestore($id) => static::DB()->change(static::$table, static::objIdColumn().'=?', $id, deleted_at: null)
+static objRestore($id) => static::DB()->change(static::$table, static::idColumn().'=?', $id, deleted_at: null)
 
 static column(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_COLUMN])
 static item(...$args) => static::recordsLoad($args, 'fetch', [\PDO::FETCH_COLUMN])
 static pair(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_KEY_PAIR])
 static records(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, static::class], true)
-static recordCount(...$args) => static::item(...$args, columns: 'COUNT('.static::objIdColumn().')')
+static recordCount(...$args) => static::item(...$args, columns: 'COUNT('.static::idColumn().')')
 static record(...$args) => count($records = static::records(...$args)) > 1 ? error('Multiple records for '.static::class) : (current($records) ?: null)
 
 static recordsLoad($args, $fetch, $fetchMode, $saveRelations = false){
-	$pk = static::objIdColumn()
+	$pk = static::idColumn()
 	$args['table'] ??= static::$table
 	$saveRelations && $args['columns'] ??= static::$table.'.'.$pk.' as _,'.static::columns()
 	isset(static::$joins) && debug && error('DEPRECATED: static $joins in '.static::class.'. Use getParent/getChildren/getMany instead.')
@@ -205,7 +205,7 @@ method getParent($key){
 			$pClass = $pIsArray ? $pRelation['obj'] : $pRelation
 			if ($pClass === $class) foreach (array_column($allObjData, $pIsArray ? $pRelation['key'] ?? $pKey : $pKey) as $pId) $pId && !isset($state->records[$class][$pId]) && $idsToLoad[$pId] = true
 		}
-		if ($idsToLoad = array_keys($idsToLoad)) $class::records(where: $class::objIdColumn().' IN ('.$this->objIn($idsToLoad).')')
+		if ($idsToLoad = array_keys($idsToLoad)) $class::records(where: $class::idColumn().' IN ('.$this->objIn($idsToLoad).')')
 	}
 	$parentObject = $state->records[$class][$parentId] ?? null
 	return $this->objState['parents'][$key] = $parentObject
@@ -243,7 +243,7 @@ method getMany($key){
 			$lk = $relation['localKey']; $fk = $relation['foreignKey']
 			$pivotRows = static::DB()->records(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn($parentIds).')')
 			$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
-			$targetRecords = $targetIds ? $class::records(where: $class::objIdColumn().' IN ('.$this->objIn($targetIds).')') : []
+			$targetRecords = $targetIds ? $class::records(where: $class::idColumn().' IN ('.$this->objIn($targetIds).')') : []
 			foreach ($state->records[static::class] AS $parentRecord) $parentRecord->objState['many'][$key] = []
 			foreach ($pivotRows ?: [] AS $row){
 				$parentId = $row->$lk
@@ -304,7 +304,7 @@ method getLast($key){
 				$qt = $fq.$childTable.$fq
 				$qc = $fq.$column.$fq
 				$ids = $this->objIn($parentIds)
-				$childPk = $class::objIdColumn()
+				$childPk = $class::idColumn()
 				$joins = ' INNER JOIN (SELECT MAX('.$fq.$childPk.$fq.') AS last_id, '.$qc.' AS parent_id FROM '.$qt.' WHERE '.$qc.' IN ('.$ids.') GROUP BY '.$qc.') AS lcmax ON '.$qt.'.'.$fq.$childPk.$fq.' = lcmax.last_id'
 				$lastChildren = $class::records(joins: $joins)
 				foreach ($state->records[static::class] as $record) $record->objState['last_child'][$key] = null
@@ -341,7 +341,7 @@ static objMany {
 static createTable {
 	method_exists(static::class, 'schema') || error(static::class.' has no schema()')
 	$fq = static::DB()->fieldQuotes
-	$idColumn = $fq.static::objIdColumn().$fq
+	$idColumn = $fq.static::idColumn().$fq
 	return 'CREATE TABLE '.$fq.static::$table.$fq.' ('.lf.tab.implode(",\n\t", array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop((array)$field->sql, fn($sql) => $sql.($field->required || $field->nullable === false ? ' NOT' : void).' NULL')))))).",\n\tPRIMARY KEY ($idColumn)\n)"
 }
 
@@ -353,6 +353,6 @@ static objSchemaDiff {
 	$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: $where)->fetchAll(\PDO::FETCH_COLUMN)
 	$expectedColumns = array_merge(...array_values(array_filter(loop($expected, fn($field) => $field->columns ?: ($field->sql ? [$field->name] : null)))))
 	$missing = array_diff($expectedColumns, $actual)
-	$extra = array_diff($actual, $expectedColumns, [static::objIdColumn()])
+	$extra = array_diff($actual, $expectedColumns, [static::idColumn()])
 	return arr(missing: $missing ?: null, extra: $extra ?: null)
 }

@@ -1,30 +1,14 @@
-@ version:  1.1
+@ version:  1.2
 @ creator:  q-ai.nl
-@ summary:  Rate-limit resource (fixed window, drop-in compat met bestaande rate_limit tabel)
+@ summary:  Rate-limit (fixed window) op rate_limit-tabel. Schema: resources/security/rate.sql
 @ package:  security
 @ frontend: false
 @ backend:  true
 @ requires: @MySQL
 @ tags:     rate limit throttle abuse
 
-static tableEnsured = false
-
-method ensure(){
-	if (static::$tableEnsured) return
-	%MySQL->query(implode(' ', [
-		'CREATE TABLE IF NOT EXISTS rate_limit (',
-		'rkey VARCHAR(120) NOT NULL PRIMARY KEY,',
-		'count INT UNSIGNED NOT NULL DEFAULT 0,',
-		'window_start INT UNSIGNED NOT NULL,',
-		'INDEX (window_start)',
-		') ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
-	]))
-	static::$tableEnsured = true
-}
-
 method check($key, $limit, $windowSeconds, $storage = 'db'){
 	if ($storage === 'apcu') return $this->checkApcu($key, $limit, $windowSeconds)
-	$this->ensure()
 	$now = time()
 	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
 	if ($row && ($now - (int)$row->window_start) < $windowSeconds){
@@ -45,19 +29,11 @@ method checkApcu($key, $limit, $windowSeconds){
 }
 
 method status($key, $limit, $windowSeconds){
-	$this->ensure()
 	$now = time()
 	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
 	if (!$row || ($now - (int)$row->window_start) >= $windowSeconds) return obj(used: 0, limit: $limit, resetIn: 0)
 	return obj(used: (int)$row->count, limit: $limit, resetIn: max(0, ((int)$row->window_start + $windowSeconds) - $now))
 }
 
-method reset($key){
-	$this->ensure()
-	%MySQL->query('DELETE FROM rate_limit WHERE rkey=?', $key)
-}
-
-method purge($olderThanSeconds = 604800){
-	$this->ensure()
-	%MySQL->query('DELETE FROM rate_limit WHERE window_start < ?', time() - $olderThanSeconds)
-}
+method reset($key) => %MySQL->query('DELETE FROM rate_limit WHERE rkey=?', $key)
+method purge($olderThanSeconds = 604800) => %MySQL->query('DELETE FROM rate_limit WHERE window_start < ?', time() - $olderThanSeconds)

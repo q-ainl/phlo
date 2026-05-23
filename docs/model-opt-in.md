@@ -11,8 +11,8 @@ Voeg `static objAudit = true` toe op een model. Vanaf dan:
 - `Class::objLogChange($where, ...)`: alternatieve update die pre-fetcht + diff voor `%audit->log`. Gebruik in plaats van `Class::change()` als je per-record-audit op bulk-update wilt.
 
 Vereisten:
-- Voeg `audit` toe aan `data/app.json` resources.
-- `audit_log`-tabel wordt automatisch aangemaakt door `%audit->ensure()`.
+- Voeg `security/audit` toe aan `data/app.json` resources.
+- Importeer eenmalig `/srv/phlo/resources/security/audit.sql` in de app-database (`mysql <database> < /srv/phlo/resources/security/audit.sql`).
 
 Sensitive fields uitsluiten:
 ```phlo
@@ -45,8 +45,8 @@ if (!user::create($args)){
 
 Voeg toe op een model:
 ```phlo
-static objIdColumn = 'sku'
-static objIdType = 'string'
+static idColumn = 'sku'
+static idType = 'string'
 ```
 
 Vanaf dan:
@@ -68,8 +68,8 @@ Alle drie samen mag:
 ```phlo
 static objAudit = true
 static objValidate = true
-static objIdColumn = 'sku'
-static objIdType = 'string'
+static idColumn = 'sku'
+static idType = 'string'
 ```
 
 Geen interactie-effecten; elke flag staat los.

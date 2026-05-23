@@ -1,1 +1,1 @@
-assets/SKILL.md
+docs/SKILL.md
