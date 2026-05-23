@@ -7,7 +7,7 @@
 @ requires: @MySQL
 @ tags:     audit log compliance traceability
 
-static $tableEnsured = false
+static tableEnsured = false
 
 method ensure(){
 	if (static::$tableEnsured) return

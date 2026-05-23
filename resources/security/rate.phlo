@@ -1,21 +1,20 @@
-@ version:  1.0
+@ version:  1.1
 @ creator:  q-ai.nl
-@ summary:  Sliding-window rate-limit (DB-backed, opt-in APCu)
+@ summary:  Rate-limit resource (fixed window, drop-in compat met bestaande rate_limit tabel)
 @ package:  security
 @ frontend: false
 @ backend:  true
 @ requires: @MySQL
 @ tags:     rate limit throttle abuse
 
-static $tableEnsured = false
+static tableEnsured = false
 
 method ensure(){
 	if (static::$tableEnsured) return
 	%MySQL->query('CREATE TABLE IF NOT EXISTS rate_limit (
-		rkey VARCHAR(120) NOT NULL,
-		window_start INT NOT NULL,
+		rkey VARCHAR(120) NOT NULL PRIMARY KEY,
 		count INT UNSIGNED NOT NULL DEFAULT 0,
-		PRIMARY KEY (rkey, window_start),
+		window_start INT UNSIGNED NOT NULL,
 		INDEX (window_start)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4')
 	static::$tableEnsured = true
@@ -25,10 +24,14 @@ method check($key, $limit, $windowSeconds, $storage = 'db'){
 	if ($storage === 'apcu') return $this->checkApcu($key, $limit, $windowSeconds)
 	$this->ensure()
 	$now = time()
-	$window = (int)floor($now / $windowSeconds) * $windowSeconds
-	%MySQL->query('INSERT INTO rate_limit (rkey, window_start, count) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE count = count + 1', $key, $window)
-	$sum = (int)%MySQL->query('SELECT COALESCE(SUM(count),0) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn()
-	return $sum <= $limit
+	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
+	if ($row && ($now - (int)$row->window_start) < $windowSeconds){
+		if ((int)$row->count >= $limit) return false
+		%MySQL->query('UPDATE rate_limit SET count=count+1 WHERE rkey=?', $key)
+		return true
+	}
+	%MySQL->query('INSERT INTO rate_limit (rkey, count, window_start) VALUES (?,1,?) ON DUPLICATE KEY UPDATE count=1, window_start=VALUES(window_start)', $key, $now)
+	return true
 }
 
 method checkApcu($key, $limit, $windowSeconds){
@@ -42,9 +45,9 @@ method checkApcu($key, $limit, $windowSeconds){
 method status($key, $limit, $windowSeconds){
 	$this->ensure()
 	$now = time()
-	$sum = (int)%MySQL->query('SELECT COALESCE(SUM(count),0) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn()
-	$oldest = (int)(%MySQL->query('SELECT MIN(window_start) FROM rate_limit WHERE rkey=? AND window_start > ?', $key, $now - $windowSeconds)->fetchColumn() ?: $now)
-	return obj(used: $sum, limit: $limit, resetIn: max(0, ($oldest + $windowSeconds) - $now))
+	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
+	if (!$row || ($now - (int)$row->window_start) >= $windowSeconds) return obj(used: 0, limit: $limit, resetIn: 0)
+	return obj(used: (int)$row->count, limit: $limit, resetIn: max(0, ((int)$row->window_start + $windowSeconds) - $now))
 }
 
 method reset($key){
