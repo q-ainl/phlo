@@ -30,7 +30,8 @@ method ensure(){
 method log($model, $action, $before = [], $after = [], $exclude = []){
 	$this->ensure()
 	$class = is_object($model) ? get_class($model) : (string)$model
-	$id = is_object($model) ? ($model->id ?? null) : null
+	$pk = (is_string($class) && class_exists($class) && property_exists($class, 'objIdColumn')) ? $class::$objIdColumn : 'id'
+	$id = is_object($model) ? ($model->$pk ?? $model->id ?? null) : null
 	if ($id === null) return
 	$before = (array)$before
 	$after = (array)$after
