@@ -15,3 +15,12 @@ prop title => ucfirst($this->name)
 
 method input($record) => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
 method label($record) => $record->{$this->name};
+
+method objValidate($value){
+	if (($value === null || $value === '' || $value === void) && $this->required) return $this->title.' is verplicht'
+	if ($value === null || $value === '' || $value === void) return null
+	if ($this->length && is_string($value) && mb_strlen($value) > $this->length) return $this->title.' is te lang (max '.$this->length.')'
+	if ($this->pattern && is_string($value) && !preg_match('/'.str_replace('/', '\\/', $this->pattern).'/', $value)) return $this->title.' heeft ongeldig formaat'
+	if ($this->enum && !in_array($value, (array)$this->enum, true)) return $this->title.' moet een van: '.implode(', ', (array)$this->enum)
+	return null
+}
