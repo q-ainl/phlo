@@ -16,13 +16,13 @@ method canTrack => $this->choice === 'all'
 method canAnalytics => $this->choice === 'all'
 
 route async POST cookiewall accept all {
-	%cookies->set('cookieChoice', 'all', 60 * 60 * 24 * 365)
-	apply()
+	%cookies->objSet('cookieChoice', 'all', ['expires' => time() + 60 * 60 * 24 * 365])
+	apply(remove: '#cookiewall')
 }
 
 route async POST cookiewall accept essential {
-	%cookies->set('cookieChoice', 'essential', 60 * 60 * 24 * 365)
-	apply()
+	%cookies->objSet('cookieChoice', 'essential', ['expires' => time() + 60 * 60 * 24 * 365])
+	apply(remove: '#cookiewall')
 }
 
 view banner:
