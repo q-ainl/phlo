@@ -27,8 +27,10 @@ Wat niet werkt (overgenomen uit DB-interface, niet geïmplementeerd):
 ```phlo
 @ extends: model
 static table = 'cache'
-static DB => phlo('JSONDB', '/srv/myapp/data/json')
+static DB => %JSONDB(data.'JSONDB/')
 ```
+
+(`data` is de Phlo-constant voor de app data-dir, gezet door `phlo_app(data: ...)`. `%JSONDB(args)` resolvet als `phlo('JSONDB', args)`.)
 
 **Reikwijdte:** model.phlo's `static::DB()` resolvet per model. JSONDB hoeft alleen het deel van DB-interface te dekken dat door dat model wordt gebruikt.
 

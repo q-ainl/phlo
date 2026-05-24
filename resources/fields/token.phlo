@@ -17,4 +17,4 @@ prop search = true
 method label($record) => tag('div', inner: esc($record->{$this->name}))
 method parse($record) => $record->{$this->name} ??= $this->default
 
-method sql => "`$this->name` char($this->length)"
+prop dbColumns => [obj(name: $this->name, type: 'char', length: $this->length)]

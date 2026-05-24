@@ -1,6 +1,10 @@
 # Audit: resources/fields/*.phlo storage-engine-agnostiek
 
-## Conclusie
+## Status: DONE (2026-05-24), optie B uitgevoerd
+
+Elke field exposeert `prop dbColumns => [obj(name, type, length, ...), ...]`. DDL-generatie is verhuisd naar `DB/MySQL.phlo::columnSql($col)`. Andere DB-drivers (PostgreSQL, SQLite, JSONDB, Qdrant) kunnen overschrijven wanneer nodig. `model.phlo::createTable` + `_columns` + `objSchemaDiff` gebruiken de nieuwe API. Oude `method sql` + `method columns` zijn volledig verwijderd. Stilzwijgend gerepareerd: `date.phlo` had `DATE unsigned` (bug), nu correct `DATE`.
+
+## Conclusie (oorspronkelijk)
 
 De 18 field-types in `resources/fields/*.phlo` zijn **bijna volledig storage-agnostisch**, maar lekken via `method sql` een MariaDB/MySQL-dialect naar het schema-pad. Voor true engine-agnostiek (zodat dezelfde model met fields op MySQL, PostgreSQL, SQLite of JSONDB werkt) moet de DDL-generator van field naar DB-driver verhuizen.
 

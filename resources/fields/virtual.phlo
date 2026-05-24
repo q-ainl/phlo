@@ -11,4 +11,4 @@
 prop create = false
 prop change = false
 
-method sql => []
+prop dbColumns => []

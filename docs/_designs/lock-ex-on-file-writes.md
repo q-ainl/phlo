@@ -1,6 +1,16 @@
 # LOCK_EX op file_put_contents in Phlo
 
-## Vraag
+## Status: DONE (2026-05-24)
+
+Toegepast op alle runtime-writes in `resources/files/` + `DB/JSONDB.phlo`:
+- `files/INI.phlo:19` `objWrite` → `LOCK_EX`
+- `files/file.phlo:16` `append` → `FILE_APPEND | LOCK_EX`
+- `files/file.phlo:61` `write` → `LOCK_EX`
+- `DB/JSONDB.phlo:18` `objWrite` → `LOCK_EX`
+
+Build-time writes (`classes/build.php`, `classes/builder.php`) ongewijzigd: single-writer per worker-startup.
+
+## Vraag (origineel)
 
 Moet `LOCK_EX` overal op `file_put_contents` in `/srv/phlo/`? Welke afwegingen.
 

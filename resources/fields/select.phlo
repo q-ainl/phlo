@@ -10,4 +10,4 @@
 
 method input($record) => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
 
-method sql => "`$this->name` enum('".implode("','", $this->options)."')"
+prop dbColumns => [obj(name: $this->name, type: 'enum', options: $this->options)]

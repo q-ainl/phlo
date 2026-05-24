@@ -10,4 +10,4 @@
 
 prop handle = true
 
-method sql => "`$this->name` DATE unsigned"
+prop dbColumns => [obj(name: $this->name, type: 'date')]

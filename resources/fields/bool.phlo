@@ -16,4 +16,4 @@ method input($record) => tag('label', inner: input(type: 'checkbox', name: $this
 method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
 method nullable => false
 
-method sql => "`$this->name` tinyint(1) unsigned"
+prop dbColumns => [obj(name: $this->name, type: 'bool')]

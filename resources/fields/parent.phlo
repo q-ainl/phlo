@@ -13,4 +13,4 @@ method input($record) => select(name: $this->name, inner: loop($this->options, f
 method link($record, $content = null) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $content ?? $record)
 prop options => $this->obj::records()
 
-method sql => "`$this->name` varchar(10)"
+prop dbColumns => [obj(name: $this->name, type: 'string', length: 10)]

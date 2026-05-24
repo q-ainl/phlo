@@ -1,5 +1,9 @@
 # CMS-diff: /srv/control/cms/ vs /srv/sronline/cms/
 
+## Status: DONE (2026-05-24), gecentraliseerd naar /srv/cms/
+
+/srv/cms/ bevat alle 13 CMS.X files + widgets/ + icons/, control-versie wint waar verschillen (security, completeness). Beide apps mounten /srv/cms/ via `paths.resources` (control) / `paths.app` (sronline). control behoudt `cms/FieldStyles/`, sronline behoudt `cms/styles/`. Beide builden schoon, login-page rendert. **Tijdelijke regressie sronline**: rijke layout-features (userBadge, userSwitcher, notifyBadge, breadcrumb) zijn weg, kunnen via app-specifieke layout-extend terug. Geen `themes/` subdir (per user-constraint).
+
 ## Doel
 
 Voorbereiding voor centralisatie naar `/srv/cms/` als canonical Phlo-CMS.

@@ -15,4 +15,4 @@ prop min = 0
 method label($record) => number_format($record->{$this->name}, $this->decimals, comma, dot)
 method input($record) => input(type: 'number', name: $this->name, value: $record->{$this->name} ?? $this->default, step: $this->decimals ? dot.str_repeat('0', $this->decimals - 1).'1' : null, min: $this->min, class: 'field')
 
-method sql => "`$this->name` ".($this->decimals ? 'decimal('.($this->length + $this->decimals).comma.$this->decimals.')' : "smallint($this->length)").' unsigned'
+prop dbColumns => [obj(name: $this->name, type: $this->decimals ? 'decimal' : 'int', length: $this->length, decimals: $this->decimals, unsigned: true)]

@@ -15,7 +15,7 @@ method objRead(string $table){
 	$file = $this->dir.slash.$table.'.json'
 	return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : []
 }
-method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE))
+method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
 method objNextId(array $data) => $data ? max(array_column($data, 'id')) + 1 : 1
 method objFilter(array $data, string $where = void, ...$args){
 	if (!$where) return $data

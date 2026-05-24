@@ -13,7 +13,7 @@ method __construct(public string $file, ?string $name = null, $contents = null, 
 	$args && $this->objImport(...$args)
 }
 
-method append(string $data) => file_put_contents($this->file, $data, FILE_APPEND)
+method append(string $data) => file_put_contents($this->file, $data, FILE_APPEND | LOCK_EX)
 prop basename => pathinfo($this->file, PATHINFO_BASENAME)
 method base64 => base64_encode($this->contents)
 method contents => file_get_contents($this->file)
@@ -58,7 +58,7 @@ method writeJSON($data, bool $deleteEmpty = false) => $this->write(!$deleteEmpty
 method writeJSONplain($data, bool $deleteEmpty = false) => $this->write(!$deleteEmpty || $data ? json_encode($data) : void, $deleteEmpty)
 method write(string $data, bool $deleteEmpty = false){
 	if (!$data && $deleteEmpty) return $this->delete
-	if ($written = file_put_contents($this->file, $data) !== false) debug('Written '.$this->basename.' ('.$this->sizeHuman.')')
+	if ($written = file_put_contents($this->file, $data, LOCK_EX) !== false) debug('Written '.$this->basename.' ('.$this->sizeHuman.')')
 	else error('Could not write '.$this->file)
 	return $written
 }
