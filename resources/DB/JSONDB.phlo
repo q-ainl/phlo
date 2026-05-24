@@ -1,22 +1,27 @@
-@ version:  1.0
+@ version:  1.1
 @ creator:  q-ai.nl
-@ summary:  JSON file database driver
+@ summary:  JSON file database driver (lightweight subset of DB-interface). Eén tabel = één JSON-file. Geen joins, geen transactions, geen schema-introspectie.
 @ extends:  DB
 @ package:  database
 @ frontend: false
 @ backend:  true
-@ requires: @DB
+@ requires: @DB @JSONResult
 @ tags:     json database file storage
 
-handle => "JSON/$dir"
-method __construct(private string $dir)
-prop PDO => error('JSON driver does not use PDO')
+static __handle => "JSONDB/$dir"
+method __construct(private string $dir){
+	is_dir($this->dir) || mkdir($this->dir, 0755, true) || error("JSONDB: cannot create dir $this->dir")
+}
+prop PDO => error('JSONDB driver does not use PDO')
+prop fieldQuotes = ''
+prop lastInsertedId = null
+
 method objRead(string $table){
 	$file = $this->dir.slash.$table.'.json'
 	return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : []
 }
-method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
-method objNextId(array $data) => $data ? max(array_column($data, 'id')) + 1 : 1
+method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode(array_values($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
+method objNextId(array $data) => $data ? (int)max(array_column($data, 'id')) + 1 : 1
 method objFilter(array $data, string $where = void, ...$args){
 	if (!$where) return $data
 	$filtered = []
@@ -40,32 +45,37 @@ method objFilter(array $data, string $where = void, ...$args){
 	}
 	return $filtered
 }
-method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
-	!$where && $args && $where = loop(array_keys($args), fn($column) => "$column=?", ' AND ')
-	$data = $this->objRead($table)
-	$data = $this->objFilter($data, $where, ...array_values($args))
+
+method objSelect(string $table, string $where = void, string $limit = void, string $order = void, ...$args){
+	$data = $this->objFilter($this->objRead($table), $where, ...array_values($args))
 	if ($order){
 		$desc = str_contains($order, 'DESC')
 		$col = trim(preg_replace('/\s+(ASC|DESC)/i', '', $order), '` ')
 		usort($data, fn($a, $b) => $desc ? ($b[$col] ?? 0) <=> ($a[$col] ?? 0) : ($a[$col] ?? 0) <=> ($b[$col] ?? 0))
 	}
 	$limit && $data = array_slice($data, 0, (int)$limit)
-	return new JSONResult($data, $columns)
+	return $data
 }
+
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
 	$all = $this->objRead($table)
 	$data['id'] ??= $this->objNextId($all)
 	foreach ($data AS $key => $value) is_a($value, 'obj') && $data[$key] = $value->id
+	if ($ignore){
+		foreach ($all AS $row) if (($row['id'] ?? null) == $data['id']) return $data['id']
+	}
 	$all[] = $data
 	$this->objWrite($table, $all)
+	$this->lastInsertedId = $data['id']
 	return $data['id']
 }
+
 method change(string $table, string $where, ...$data){
 	$all = $this->objRead($table)
 	$whereCount = substr_count($where, '?')
 	$whereArgs = array_slice(array_values($data), 0, $whereCount)
-	$updates = array_slice($data, $whereCount)
+	$updates = array_slice($data, $whereCount, null, true)
 	$changed = 0
 	foreach ($all AS &$row){
 		if ($this->objFilter([$row], $where, ...$whereArgs)){
@@ -73,20 +83,27 @@ method change(string $table, string $where, ...$data){
 			$changed++
 		}
 	}
+	unset($row)
 	$this->objWrite($table, $all)
 	return $changed
 }
+
 method delete(string $table, string $where, ...$args){
 	$all = $this->objRead($table)
 	$matching = $this->objFilter($all, $where, ...$args)
 	$matchIds = array_column($matching, 'id')
-	$remaining = array_values(array_filter($all, fn($row) => !in_array($row['id'], $matchIds)))
+	$remaining = array_values(array_filter($all, fn($row) => !in_array($row['id'] ?? null, $matchIds)))
 	$this->objWrite($table, $remaining)
 	return count($matching)
 }
-method column(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_COLUMN)
-method item(...$args) => $this->load(...$args)->fetch(\PDO::FETCH_COLUMN) ?: null
-method pair(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_KEY_PAIR)
-method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, 'obj')
-method record(...$args) => $this->load(...$args)->fetchObject('obj') ?: null
-method query($query, ...$args) => error('JSON driver does not support raw SQL queries')
+
+method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
+	!$where && $args && $where = loop(array_keys($args), fn($column) => "$column=?", ' AND ')
+	$data = $this->objSelect($table, $where, $limit, $order, ...array_values($args))
+	return new JSONResult($data)
+}
+method query($query, ...$args) => error('JSONDB driver does not support raw SQL queries')
+
+method begin => null
+method commit => null
+method rollback => null

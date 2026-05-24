@@ -1,0 +1,68 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Minimal PDOStatement-like wrapper voor JSONDB result-arrays
+@ package:  database
+@ frontend: false
+@ backend:  true
+@ tags:     json database result
+
+static __handle => null
+prop data = []
+method __construct(array $data){
+	$this->data = $data
+}
+
+method fetchAll($mode = 2){
+	if ($mode === \PDO::FETCH_COLUMN) return loop($this->data, fn($row) => reset((array)$row))
+	if ($mode === \PDO::FETCH_KEY_PAIR){
+		$out = []
+		foreach ($this->data AS $row){
+			$vals = array_values((array)$row)
+			$out[$vals[0] ?? null] = $vals[1] ?? null
+		}
+		return $out
+	}
+	if (($mode & (\PDO::FETCH_CLASS | \PDO::FETCH_UNIQUE)) === (\PDO::FETCH_CLASS | \PDO::FETCH_UNIQUE)){
+		$out = []
+		foreach ($this->data AS $row){
+			$o = new obj
+			foreach ((array)$row AS $k => $v) $o->$k = $v
+			$out[$row['id'] ?? count($out)] = $o
+		}
+		return $out
+	}
+	if (($mode & \PDO::FETCH_CLASS) === \PDO::FETCH_CLASS){
+		$out = []
+		foreach ($this->data AS $row){
+			$o = new obj
+			foreach ((array)$row AS $k => $v) $o->$k = $v
+			$out[] = $o
+		}
+		return $out
+	}
+	return $this->data
+}
+
+method fetchObject($class = 'obj'){
+	if (!$this->data) return null
+	$row = reset($this->data)
+	$o = new $class
+	foreach ((array)$row AS $k => $v) $o->$k = $v
+	return $o
+}
+
+method fetch($mode = 2){
+	if (!$this->data) return null
+	$row = reset($this->data)
+	if ($mode === \PDO::FETCH_COLUMN) return reset((array)$row)
+	return $row
+}
+
+method fetchColumn($col = 0){
+	if (!$this->data) return false
+	$row = reset($this->data)
+	$vals = array_values((array)$row)
+	return $vals[$col] ?? false
+}
+
+method rowCount => count($this->data)
