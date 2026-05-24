@@ -1,27 +1,26 @@
-@ version:  1.1
+@ version:  1.2
 @ creator:  q-ai.nl
-@ summary:  JSON file database driver (lightweight subset of DB-interface). Eén tabel = één JSON-file. Geen joins, geen transactions, geen schema-introspectie.
+@ summary:  JSON file database driver. Een JSONDB-instance = een JSON-file = een model-tabel. Geen joins, geen transactions, geen schema-introspectie.
 @ extends:  DB
 @ package:  database
 @ frontend: false
 @ backend:  true
-@ requires: @DB @JSONResult
+@ requires: @DB @JSON_result
 @ tags:     json database file storage
 
-static __handle => "JSONDB/$dir"
-method __construct(private string $dir){
-	is_dir($this->dir) || mkdir($this->dir, 0755, true) || error("JSONDB: cannot create dir $this->dir")
+static __handle => "JSONDB/$file"
+method __construct(private string $file){
+	$dir = dirname($this->file)
+	is_dir($dir) || mkdir($dir, 0755, true) || error("JSONDB: cannot create dir $dir")
 }
 prop PDO => error('JSONDB driver does not use PDO')
 prop fieldQuotes = ''
 prop lastInsertedId = null
 
-method objRead(string $table){
-	$file = $this->dir.slash.$table.'.json'
-	return file_exists($file) ? json_decode(file_get_contents($file), true) ?: [] : []
-}
-method objWrite(string $table, array $data) => file_put_contents($this->dir.slash.$table.'.json', json_encode(array_values($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
+method objRead => file_exists($this->file) ? json_decode(file_get_contents($this->file), true) ?: [] : []
+method objWrite(array $data) => file_put_contents($this->file, json_encode(array_values($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
 method objNextId(array $data) => $data ? (int)max(array_column($data, 'id')) + 1 : 1
+
 method objFilter(array $data, string $where = void, ...$args){
 	if (!$where) return $data
 	$filtered = []
@@ -46,8 +45,8 @@ method objFilter(array $data, string $where = void, ...$args){
 	return $filtered
 }
 
-method objSelect(string $table, string $where = void, string $limit = void, string $order = void, ...$args){
-	$data = $this->objFilter($this->objRead($table), $where, ...array_values($args))
+method objSelect(string $where = void, string $limit = void, string $order = void, ...$args){
+	$data = $this->objFilter($this->objRead(), $where, ...array_values($args))
 	if ($order){
 		$desc = str_contains($order, 'DESC')
 		$col = trim(preg_replace('/\s+(ASC|DESC)/i', '', $order), '` ')
@@ -59,20 +58,20 @@ method objSelect(string $table, string $where = void, string $limit = void, stri
 
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
-	$all = $this->objRead($table)
+	$all = $this->objRead()
 	$data['id'] ??= $this->objNextId($all)
 	foreach ($data AS $key => $value) is_a($value, 'obj') && $data[$key] = $value->id
 	if ($ignore){
 		foreach ($all AS $row) if (($row['id'] ?? null) == $data['id']) return $data['id']
 	}
 	$all[] = $data
-	$this->objWrite($table, $all)
+	$this->objWrite($all)
 	$this->lastInsertedId = $data['id']
 	return $data['id']
 }
 
 method change(string $table, string $where, ...$data){
-	$all = $this->objRead($table)
+	$all = $this->objRead()
 	$whereCount = substr_count($where, '?')
 	$whereArgs = array_slice(array_values($data), 0, $whereCount)
 	$updates = array_slice($data, $whereCount, null, true)
@@ -84,23 +83,23 @@ method change(string $table, string $where, ...$data){
 		}
 	}
 	unset($row)
-	$this->objWrite($table, $all)
+	$this->objWrite($all)
 	return $changed
 }
 
 method delete(string $table, string $where, ...$args){
-	$all = $this->objRead($table)
+	$all = $this->objRead()
 	$matching = $this->objFilter($all, $where, ...$args)
 	$matchIds = array_column($matching, 'id')
 	$remaining = array_values(array_filter($all, fn($row) => !in_array($row['id'] ?? null, $matchIds)))
-	$this->objWrite($table, $remaining)
+	$this->objWrite($remaining)
 	return count($matching)
 }
 
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	!$where && $args && $where = loop(array_keys($args), fn($column) => "$column=?", ' AND ')
-	$data = $this->objSelect($table, $where, $limit, $order, ...array_values($args))
-	return new JSONResult($data)
+	$data = $this->objSelect($where, $limit, $order, ...array_values($args))
+	return new JSON_result($data)
 }
 method query($query, ...$args) => error('JSONDB driver does not support raw SQL queries')
 

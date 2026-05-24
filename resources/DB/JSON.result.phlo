@@ -8,9 +8,7 @@
 
 static __handle => null
 prop data = []
-method __construct(array $data){
-	$this->data = $data
-}
+method __construct(array $data) => $this->data = $data
 
 method fetchAll($mode = 2){
 	if ($mode === \PDO::FETCH_COLUMN) return loop($this->data, fn($row) => reset((array)$row))
