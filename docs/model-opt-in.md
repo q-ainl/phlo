@@ -19,6 +19,18 @@ Sensitive fields uitsluiten:
 method afterCreate => %audit->log($this, 'create', [], (array)$this, exclude: ['password_hash'])
 ```
 
+Alleen in dev/build-mode (uit in release):
+```phlo
+static objAudit => debug
+```
+
+Alleen in release/productie (uit in dev):
+```phlo
+static objAudit => !debug
+```
+
+(`debug` is een Phlo-runtime-constant gezet door `phlo_app(debug: true|false)`.)
+
 ## 2. Validation
 
 Voeg `static objValidate = true` toe op een model. Vanaf dan:
