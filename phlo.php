@@ -164,19 +164,19 @@ function phlo_cli(array $args):void {
 	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 }
 
-function phlo(?string $name = null, ...$args):mixed {
+function phlo(?string $phloName = null, ...$args):mixed {
 	static $list = [];
-	if ($name === 'tech/reset') return array_keys($list = array_filter($list, static fn($obj) => $obj->objPers));
-	if ($name === null) return array_keys($list);
-	$class = strtr($name, [slash => us]);
-	$handle = method_exists($class, '__handle') ? $class::__handle(...$args) : ($args ? null : $name);
+	if ($phloName === 'tech/reset') return array_keys($list = array_filter($list, static fn($obj) => $obj->objPers));
+	if ($phloName === null) return array_keys($list);
+	$class = strtr($phloName, [slash => us]);
+	$handle = method_exists($class, '__handle') ? $class::__handle(...$args) : ($args ? null : $phloName);
 	if ($handle === true){
-		if (isset($list[$name])) return $list[$name]->objImport(...$args);
-		$handle = $name;
+		if (isset($list[$phloName])) return $list[$phloName]->objImport(...$args);
+		$handle = $phloName;
 	}
 	elseif ($handle && isset($list[$handle])) return $list[$handle];
 	$object = new $class(...$args);
 	if ($handle) $list[$handle] = $object;
-	if ($object->hasMethod('controller') && (!phlo('req')->cli || $name !== 'app')) $object->controller();
+	if ($object->hasMethod('controller') && (!phlo('req')->cli || $phloName !== 'app')) $object->controller();
 	return $object;
 }
