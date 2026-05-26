@@ -46,7 +46,9 @@ class phlo_dashboard {
 		if (str_contains($req, slash)) [$section, $arg] = explode(slash, $req, 2);
 
 		$cfg      = build_base::config();
-		$sections = ['home', 'config', 'graph', 'source', 'build'];
+		$sections = ['home'];
+		if (is_dir(data.'tasks/')) $sections[] = 'tasks';
+		$sections = array_merge($sections, ['config', 'graph', 'source', 'build']);
 		if (!empty($cfg['release'])) $sections[] = 'release';
 		$sections[] = 'errors';
 		$sections[] = 'inspect';
@@ -1030,13 +1032,15 @@ class phlo_dashboard {
 		$cfg  = build_base::config();
 		$title = $active === 'home' ? 'Phlo Dashboard' : ($subtitle ? ucfirst($active)." - $subtitle - Phlo Dashboard" : ucfirst($active).' - Phlo Dashboard');
 
-		$sections = ['home', 'config', 'graph', 'source', 'build'];
+		$sections = ['home'];
+		if (is_dir(data.'tasks/')) $sections[] = 'tasks';
+		$sections = array_merge($sections, ['config', 'graph', 'source', 'build']);
 		if (!empty($cfg['release'])) $sections[] = 'release';
 		$sections[] = 'errors';
 
 		$labels = [
 			'home' => 'Home', 'config' => 'Config', 'graph' => 'Graph', 'source' => 'Source',
-			'build' => 'Build', 'release' => 'Release', 'errors' => 'Errors',
+			'build' => 'Build', 'release' => 'Release', 'errors' => 'Errors', 'tasks' => 'Tasks',
 		];
 
 		$nav = void;
@@ -1067,5 +1071,78 @@ class phlo_dashboard {
 			.rtrim($body, "\n");
 		$res->type = 'text/html; charset=UTF-8';
 		$res->body = DOM($page, $head);
+	}
+
+	private static function tasks(?string $arg):void {
+		$dir   = data.'tasks/';
+		$tasks = is_dir($dir) ? array_diff(scandir($dir), ['.', '..']) : [];
+		$names = [];
+		foreach ($tasks as $f){
+			if (preg_match('/^(.+)\.(last|json)$/', $f, $m)) $names[$m[1]] = true;
+		}
+		ksort($names);
+
+		$rows = void;
+		foreach (array_keys($names) as $name){
+			$last     = is_file($dir.$name.'.last') ? (int)file_get_contents($dir.$name.'.last') : 0;
+			$lastAgo  = $last ? static::ago($last) : 'never';
+			$lastFull = $last ? date('Y-m-d H:i:s', $last) : 'never';
+			$lock     = is_file($dir.$name.'.lock');
+			$lockAge  = $lock ? (time() - filemtime($dir.$name.'.lock')) : 0;
+			$run      = is_file($dir.$name.'.json') ? json_read($dir.$name.'.json', true) : null;
+			$return   = is_array($run) && array_key_exists('return', $run) ? $run['return'] : null;
+			$schedule = is_array($run) ? ($run['schedule'] ?? []) : [];
+			$do       = is_array($run) && !empty($run['do']) ? $run['do'] : null;
+			$schedLbl = static::scheduleLabel((array)$schedule);
+			$doHtml   = $do ? " <code class=\"muted\">".esc($do)."</code>" : '';
+			$lockHtml = $lock ? " <span class=\"dash-pill warn\">running · {$lockAge}s</span>" : '';
+			$rows .= "<div class=\"dash-card\">\n"
+				."<div class=\"dash-card-head\"><strong>".esc($name)."</strong>$doHtml <span class=\"muted\">".esc($schedLbl)."</span>$lockHtml</div>\n"
+				."<div class=\"dash-card-body\">\n"
+				."<div class=\"dash-stats\">\n"
+				."<div class=\"dash-stat\"><strong>".esc($lastAgo)."</strong><span title=\"".esc($lastFull)."\">last run</span></div>\n"
+				.static::returnStats($return)
+				."</div>\n"
+				.static::returnDetail($return)
+				."</div>\n"
+				."</div>\n";
+		}
+		if (!$rows) $rows = "<div class=\"dash-card\"><div class=\"dash-card-body muted\">No tasks have run yet.</div></div>";
+
+		$body = "<main class=\"dash-main\">\n"
+			."<header class=\"dash-hero\"><div class=\"dash-badge\">Tasks</div><h1>Scheduled tasks</h1><p>State from <code>data/tasks/</code></p></header>\n"
+			."<div class=\"dash-grid\">\n$rows</div>\n"
+			."</main>\n";
+		static::render($body, 'tasks');
+	}
+
+	private static function scheduleLabel(array $schedule):string {
+		foreach (['every', 'daily', 'weekly'] as $key){
+			if (isset($schedule[$key])) return "$key {$schedule[$key]}";
+		}
+		return '(no schedule)';
+	}
+
+	private static function returnStats($return):string {
+		if (is_bool($return)) return "<div class=\"dash-stat\"><strong>".($return ? 'true' : 'false')."</strong><span>return</span></div>\n";
+		if (is_int($return) || is_float($return)) return "<div class=\"dash-stat\"><strong>".esc((string)$return)."</strong><span>return</span></div>\n";
+		if (is_string($return) && strlen($return) <= 40) return "<div class=\"dash-stat\"><strong>".esc($return)."</strong><span>return</span></div>\n";
+		if (is_null($return)) return "<div class=\"dash-stat\"><strong>null</strong><span>return</span></div>\n";
+		if (is_array($return)) return "<div class=\"dash-stat\"><strong>".count($return)."</strong><span>items</span></div>\n";
+		return '';
+	}
+
+	private static function returnDetail($return):string {
+		if ($return === null || is_scalar($return) && (is_bool($return) || strlen((string)$return) <= 40)) return '';
+		if (is_string($return)) return "<pre class=\"code\">".esc($return)."</pre>\n";
+		return "<pre class=\"code\">".esc(json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))."</pre>\n";
+	}
+
+	private static function ago(int $ts):string {
+		$d = time() - $ts;
+		if ($d < 60) return "{$d}s ago";
+		if ($d < 3600) return floor($d/60)."m ago";
+		if ($d < 86400) return floor($d/3600)."h ago";
+		return floor($d/86400).'d ago';
 	}
 }
