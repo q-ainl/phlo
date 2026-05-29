@@ -81,7 +81,20 @@ function phlo_app(...$args):void {
 			if ($name !== null) require_once engine.'classes/'.$name.'.php';
 		});
 	}
-	defined('composer') && require_once composer.'vendor/autoload.php';
+	defined('composer') && spl_autoload_register(static function(string $class):void {
+		static $loaded = false;
+		if ($loaded) return;
+		$loaded = true;
+		require_once composer.'vendor/autoload.php';
+		foreach (spl_autoload_functions() as $fn){
+			if (is_array($fn) && ($fn[0] ?? null) instanceof \Composer\Autoload\ClassLoader){
+				spl_autoload_unregister($fn);
+				spl_autoload_register($fn);
+				$fn[0]->loadClass($class);
+				return;
+			}
+		}
+	});
 	if ($args['thread'] !== false && PHP_SAPI !== 'cli'){
 		ignore_user_abort(true);
 		$handle = static function():void { phlo_thread(); };
