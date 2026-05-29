@@ -19,10 +19,10 @@ method label($record) => $record->{$this->name};
 prop objColumns => []
 
 method objValidate($value){
-	if (($value === null || $value === void) && $this->required) return $this->title.' is verplicht'
+	if (($value === null || $value === void) && $this->required) return $this->title.' is required'
 	if ($value === null || $value === void) return null
-	if ($this->length && is_string($value) && mb_strlen($value) > $this->length) return $this->title.' is te lang (max '.$this->length.')'
-	if ($this->pattern && is_string($value) && !preg_match('/'.str_replace('/', '\\/', $this->pattern).'/', $value)) return $this->title.' heeft ongeldig formaat'
-	if ($this->enum && !in_array($value, (array)$this->enum, true)) return $this->title.' moet een van: '.implode(', ', (array)$this->enum)
+	if ($this->length && is_string($value) && mb_strlen($value) > $this->length) return $this->title.' is too long (max '.$this->length.')'
+	if ($this->pattern && is_string($value) && !preg_match('/'.str_replace('/', '\\/', $this->pattern).'/', $value)) return $this->title.' has invalid format'
+	if ($this->enum && !in_array($value, (array)$this->enum, true)) return $this->title.' must be one of: '.implode(', ', (array)$this->enum)
 	return null
 }

@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Minimal PDOStatement-like wrapper voor JSONDB result-arrays
+@ summary:  Minimal PDOStatement-like wrapper for JSONDB result arrays
 @ package:  database
 @ frontend: false
 @ backend:  true

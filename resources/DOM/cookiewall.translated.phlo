@@ -1,0 +1,25 @@
+@ extends:  cookiewall
+@ class:    cookiewall_translated
+@ version:  1.1
+@ creator:  q-ai.nl
+@ summary:  Multilingual cookiewall variant. {en: ...} tags resolve via Phlo's lang system. For English-only: DOM/cookiewall.
+@ package:  privacy
+@ frontend: true
+@ backend:  true
+@ requires: @cookies
+@ tags:     gdpr consent cookies privacy multilingual
+
+view banner:
+<if !$this->hasChosen()>
+	<div#cookiewall role=region aria-label="{en: Cookie choice}">
+		<p>{en: We use essential cookies to make this site work. With your permission we also use analytics to improve the site.}</p>
+		<div.actions>
+			<form.async method=post action=/cookiewall/accept/essential>
+				<button.ghost type=submit>{en: Essential only}</button>
+			</form>
+			<form.async method=post action=/cookiewall/accept/all>
+				<button.primary type=submit>{en: Accept}</button>
+			</form>
+		</div>
+	</div>
+</if>

@@ -28,8 +28,8 @@ method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
 method detect($text, $fallback = 'en'){
 	$res = %OpenAI->chat (
 		model: $this->model,
-		system: 'Analyseer welke taal deze tekst is en geef alleen de ISO 639-1 code van de taal terug, zonder andere data!',
-		user: $text.lf.lf.'De ISO 639-1 code van de taal is: ',
+		system: 'Analyse which language this text is in and return only the ISO 639-1 code of the language, no other data!',
+		user: $text.lf.lf.'The ISO 639-1 code of the language is: ',
 		temperature: 0,
 	)->answer
 	return strlen($res) === 2 ? strtolower($res) : $fallback

@@ -1,12 +1,11 @@
-@ version:  1.0
-@ class:    cookiewall
+@ version:  1.2
 @ creator:  q-ai.nl
-@ summary:  Multilingual GDPR cookie-consent banner. Engels als bron-taal; vertalingen via Phlo lang-system ({en: ...} tags). Apps mounten cookiewall.translated OF cookiewall (Engels-only), niet beide.
+@ summary:  Subtle GDPR cookie-consent banner (English-only). For multilingual sites: DOM/cookiewall.translated.
 @ package:  privacy
 @ frontend: true
 @ backend:  true
 @ requires: @cookies
-@ tags:     gdpr consent cookies privacy multilingual
+@ tags:     gdpr consent cookies privacy
 
 static __handle => null
 
@@ -16,25 +15,25 @@ method canTrack => $this->choice === 'all'
 method canAnalytics => $this->choice === 'all'
 
 route async POST cookiewall accept all {
-	%cookies->objSet('cookieChoice', 'all', ['expires' => time() + 60 * 60 * 24 * 365])
+	%cookies->objSet('cookieChoice', 'all', ['expires' => time() + 60 * 60 * 24 * 365, 'httponly' => false])
 	apply(remove: '#cookiewall')
 }
 
 route async POST cookiewall accept essential {
-	%cookies->objSet('cookieChoice', 'essential', ['expires' => time() + 60 * 60 * 24 * 365])
+	%cookies->objSet('cookieChoice', 'essential', ['expires' => time() + 60 * 60 * 24 * 365, 'httponly' => false])
 	apply(remove: '#cookiewall')
 }
 
 view banner:
 <if !$this->hasChosen()>
-	<div#cookiewall role=region aria-label="{en: Cookie choice}">
-		<p>{en: We use essential cookies to make this site work. With your permission we also use analytics to improve the site.}</p>
+	<div#cookiewall role=region aria-label="Cookie choice">
+		<p>We use essential cookies to make this site work. With your permission we also use analytics to improve the site.</p>
 		<div.actions>
-			<form.async method=post action="/cookiewall/accept/essential">
-				<button type=submit class=ghost>{en: Essential only}</button>
+			<form.async method=post action=/cookiewall/accept/essential>
+				<button.ghost type=submit>Essential only</button>
 			</form>
-			<form.async method=post action="/cookiewall/accept/all">
-				<button type=submit class=primary>{en: Accept}</button>
+			<form.async method=post action=/cookiewall/accept/all>
+				<button.primary type=submit>Accept</button>
 			</form>
 		</div>
 	</div>
@@ -55,12 +54,8 @@ view banner:
 	position: fixed
 	right: 16px
 	z-index: 9999
-	@media(min-width: 600px) {
-		right: auto
-	}
-	p {
-		margin: 0 0 10px
-	}
+	@media(min-width: 600px): right: auto
+	p: margin: 0 0 10px
 	.actions {
 		display: flex
 		gap: 8px

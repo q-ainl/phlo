@@ -262,7 +262,7 @@ class reflect {
 				for ($j = $i + 1; $j < count($callers); $j++) static::graphEdge($edges, $callers[$i], $callers[$j], 'shared', 'inferred');
 			}
 		}
-		// Verwijder niet-verbonden file- en resource-nodes
+		// Remove disconnected file and resource nodes
 		$connected = [];
 		foreach ($edges as $e){
 			$connected[$e['from']] = true;

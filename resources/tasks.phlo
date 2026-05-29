@@ -1,6 +1,6 @@
 @ version:  1.1
 @ creator:  q-ai.nl
-@ summary:  Cron-runner voor %app->tasks. Eén cron-entry per app triggert dit elke minuut.
+@ summary:  Cron runner for %app->tasks. One cron entry per app triggers this every minute.
 @ package:  scheduling
 @ frontend: false
 @ backend:  true
