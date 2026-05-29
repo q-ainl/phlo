@@ -40,7 +40,7 @@ class build_builder {
 		$this->build     = $buildData['build'] ?? [];
 		$this->sources   = $buildData['sources'] ?? [];
 		$this->release   = $release;
-		$this->appSource = (string)($buildData['app_source'] ?? $this->resolveAppSource());
+		$this->appSource = $buildData['app_source'] ?? $this->resolveAppSource();
 		$this->read_sources();
 		$this->apply_mods();
 		if ($this->errors) error(implode(lf, $this->errors));
@@ -49,13 +49,13 @@ class build_builder {
 
 	private function setting(string $name, $default = null){
 		if ($this->release){
-			if ($name === 'exclude') return (array)($this->build['release']['exclude'] ?? []);
+			if ($name === 'exclude') return $this->build['release']['exclude'] ?? [];
 			if (isset($this->build['release'][$name])) return $this->build['release'][$name];
 		}
 		if (in_array($name, ['minifyCSS', 'minifyJS', 'minifyPHP'], true)){
 			$explicit = $this->build['_minifyExplicit'][$name] ?? false;
 			if (!$explicit) return $this->release ? true : false;
-			return (bool)$this->build[$name];
+			return $this->build[$name];
 		}
 		return $this->build[$name] ?? $default;
 	}

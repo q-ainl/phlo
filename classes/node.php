@@ -134,9 +134,9 @@ class build_node extends stdClass {
 			elseif ($trim === '<else>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'else {'];
 			elseif ($trim === '</if>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
 			else {
-				if (preg_match_all('/{\\s*([a-z]{2}):\\s*(.*?)\\s*(?:\\(\\s*(?=[^)]*[$%\'"\\d])(.+?)\\s*\\))?\\s*}/is', $trim, $matches, PREG_SET_ORDER)){
+				if (preg_match_all('/{\\s*([a-z]{2}):\\s*(.*?)\\s*}/is', $trim, $matches, PREG_SET_ORDER)){
 					foreach ($matches as $match){
-						$call = "{{ $match[1]('".strtr(rtrim($match[2]), [sq => bs.sq])."'".(isset($match[3]) ? ", $match[3]" : void).') }}';
+						$call = "{{ $match[1]('".strtr(rtrim($match[2]), [sq => bs.sq])."') }}";
 						$trim = str_replace($match[0], $call, $trim);
 					}
 				}

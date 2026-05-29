@@ -345,7 +345,7 @@ static createTable {
 	$idColumn = $fq.static::idColumn().$fq
 	$ddl = []
 	foreach (static::fields() AS $field){
-		foreach ((array)$field->dbColumns AS $col){
+		foreach ($field->dbColumns AS $col){
 			$ddl[] = $DB->columnSql($col).($field->required || $field->nullable === false ? ' NOT' : void).' NULL'
 		}
 	}
@@ -360,7 +360,7 @@ static objSchemaDiff {
 	$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: $where)->fetchAll(\PDO::FETCH_COLUMN)
 	$expectedColumns = []
 	foreach ($expected AS $field){
-		foreach ((array)$field->dbColumns AS $col) $expectedColumns[] = $col->name
+		foreach ($field->dbColumns AS $col) $expectedColumns[] = $col->name
 	}
 	$missing = array_diff($expectedColumns, $actual)
 	$extra = array_diff($actual, $expectedColumns, [static::idColumn()])

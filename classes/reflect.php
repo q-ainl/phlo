@@ -21,7 +21,7 @@ class reflect {
 	/** Returns a parsed node structure for every source file, keyed by file path. Pass true to include node bodies. */
 	public static function sourceNodes(bool $withBody = false):array {
 		$data = [];
-		foreach (static::sourceFiles() as $path) $data[$path] = static::sourcePruneNulls(static::sourceDumpFile(new build_file((string)$path), $withBody));
+		foreach (static::sourceFiles() as $path) $data[$path] = static::sourcePruneNulls(static::sourceDumpFile(new build_file($path), $withBody));
 		return $data;
 	}
 
@@ -40,7 +40,7 @@ class reflect {
 		foreach (static::routeFiles() as $entry){
 			$parsed = new build_file((string)$entry['file']);
 			$methodBodies = static::appMethodBodies($parsed);
-			foreach ((array)($parsed->nodes ?? []) as $node){
+			foreach (($parsed->nodes ?? []) as $node){
 				if (($node->node ?? null) !== 'route') continue;
 				$routes[] = static::routeNodeEntry((string)$entry['origin'], (string)$entry['name'], $node, $methodBodies, $deps);
 			}
@@ -52,15 +52,15 @@ class reflect {
 	public static function views(bool $withBody = false):array {
 		$out = [];
 		foreach (static::sourceNodes($withBody) as $path => $data){
-			foreach ((array)($data['nodes'] ?? []) as $node){
+			foreach (($data['nodes'] ?? []) as $node){
 				if (($node['node'] ?? null) !== 'view') continue;
 				$entry = [
-					'file'    => static::displayPath((string)$path),
-					'name'    => (string)($node['name'] ?? void) ?: null,
-					'line'    => (int)($node['line'] ?? 0),
-					'summary' => (string)($node['comments'] ?? void) ?: null,
+					'file'    => static::displayPath($path),
+					'name'    => ($node['name'] ?? void) ?: null,
+					'line'    => ($node['line'] ?? 0),
+					'summary' => ($node['comments'] ?? void) ?: null,
 				];
-				if ($withBody) $entry['body'] = (string)($node['body'] ?? void);
+				if ($withBody) $entry['body'] = ($node['body'] ?? void);
 				$out[] = static::sourcePruneNulls($entry);
 			}
 		}
@@ -75,32 +75,32 @@ class reflect {
 		$group = $type === 'function' ? 'functions' : 'nodes';
 		$location = null;
 		foreach (static::sourceNodes(false) as $path => $data){
-			foreach ((array)($data[$group] ?? []) as $node){
+			foreach (($data[$group] ?? []) as $node){
 				if (($node['node'] ?? null) !== $type) continue;
-				if (trim((string)($node['name'] ?? void)) !== $name) continue;
-				$location = (string)$path;
+				if (trim(($node['name'] ?? void)) !== $name) continue;
+				$location = $path;
 				break 2;
 			}
 		}
 		if ($location !== null){
 			$data = static::sourcePruneNulls(static::sourceDumpFile(new build_file($location), true));
-			foreach ((array)($data[$group] ?? []) as $node){
+			foreach (($data[$group] ?? []) as $node){
 				if (($node['node'] ?? null) !== $type) continue;
-				if (trim((string)($node['name'] ?? void)) !== $name) continue;
-				return (string)($node['body'] ?? void) ?: null;
+				if (trim(($node['name'] ?? void)) !== $name) continue;
+				return ($node['body'] ?? void) ?: null;
 			}
 		}
 		foreach (static::resourceNodes(false) as $resData){
-			foreach ((array)($resData[$group] ?? []) as $node){
+			foreach (($resData[$group] ?? []) as $node){
 				if (($node['node'] ?? null) !== $type) continue;
-				if (trim((string)($node['name'] ?? void)) !== $name) continue;
-				$filePath = (string)($resData['file'] ?? void);
+				if (trim(($node['name'] ?? void)) !== $name) continue;
+				$filePath = ($resData['file'] ?? void);
 				if ($filePath === void) continue;
 				$full = static::sourcePruneNulls(static::sourceDumpFile(new build_file($filePath), true));
-				foreach ((array)($full[$group] ?? []) as $fn){
+				foreach (($full[$group] ?? []) as $fn){
 					if (($fn['node'] ?? null) !== $type) continue;
-					if (trim((string)($fn['name'] ?? void)) !== $name) continue;
-					return (string)($fn['body'] ?? void) ?: null;
+					if (trim(($fn['name'] ?? void)) !== $name) continue;
+					return ($fn['body'] ?? void) ?: null;
 				}
 			}
 		}
@@ -116,7 +116,6 @@ class reflect {
 		$files    = array_values(array_unique(array_merge($appFiles, $resFiles)));
 		$hits = [];
 		foreach ($files as $file){
-			$file = (string)$file;
 			if (!is_file($file)) continue;
 			$lines = explode(lf, (string)file_get_contents($file));
 			foreach ($lines as $i => $line){
@@ -147,13 +146,13 @@ class reflect {
 		$group = $type === 'function' ? 'functions' : 'nodes';
 		$out   = [];
 		$sources = [];
-		if ($scope !== 'resources') foreach (static::sourceNodes($withBody) as $path => $data) $sources[static::displayPath((string)$path)] = $data;
+		if ($scope !== 'resources') foreach (static::sourceNodes($withBody) as $path => $data) $sources[static::displayPath($path)] = $data;
 		if ($scope !== 'app') foreach (static::resourceNodes($withBody) as $rname => $data) $sources[$rname] = $data;
 		foreach ($sources as $label => $data){
-			foreach ((array)($data[$group] ?? []) as $node){
+			foreach (($data[$group] ?? []) as $node){
 				if (($node['node'] ?? null) !== $type) continue;
-				if ($name !== null && trim((string)($node['name'] ?? void)) !== $name) continue;
-				$entry = ['file' => $label, 'line' => (int)($node['line'] ?? 0)];
+				if ($name !== null && trim(($node['name'] ?? void)) !== $name) continue;
+				$entry = ['file' => $label, 'line' => ($node['line'] ?? 0)];
 				($node['name']     ?? null) !== null && $entry['name']    = $node['name'];
 				($node['args']     ?? null) !== null && $entry['args']    = $node['args'];
 				($node['comments'] ?? null) !== null && $entry['summary'] = static::firstLineStr((string)$node['comments']);
@@ -176,18 +175,18 @@ class reflect {
 		$classIndex = static::graphClassIndex($sourceData, $resIndex, $appMethods);
 
 		foreach ($sourceData as $path => $data){
-			$fileKey = static::displayPath((string)$path);
+			$fileKey = static::displayPath($path);
 			$fileId  = 'file:'.$fileKey;
 			static::graphNode($nodes, $fileId, ['label' => static::displayName($fileKey), 'type' => 'file', 'categories' => ['app'], 'file' => $fileKey, 'mode' => 'app']);
 		}
 
-		foreach ($resIndex['loaded'] as $name => $_) static::graphAddResource($nodes, $resIndex, (string)$name);
+		foreach ($resIndex['loaded'] as $name => $_) static::graphAddResource($nodes, $resIndex, $name);
 
 		foreach ($sourceData as $path => $data){
-			$fileKey = static::displayPath((string)$path);
+			$fileKey = static::displayPath($path);
 			$fileId  = 'file:'.$fileKey;
-			$class   = trim((string)($data['class'] ?? void));
-			$extends = static::metaValue((array)($data['meta'] ?? []), 'extends');
+			$class   = trim(($data['class'] ?? void));
+			$extends = static::metaValue(($data['meta'] ?? []), 'extends');
 			if ($extends !== null && strtolower($extends) !== 'obj'){
 				$target = static::graphResourceByAlias($extends, $resIndex);
 				if ($target){
@@ -195,30 +194,30 @@ class reflect {
 					static::graphEdge($edges, $fileId, 'res:'.$target, 'extends', 'declared');
 				}
 			}
-			foreach ((array)($data['functions'] ?? []) as $fn){
-				$name = trim((string)($fn['name'] ?? void));
+			foreach (($data['functions'] ?? []) as $fn){
+				$name = trim(($fn['name'] ?? void));
 				if ($name === void) continue;
-				$body = (string)($fn['body'] ?? void);
-				if ($body !== void) static::graphScanCalls($nodes, $edges, $fileId, $body, $fileKey, $class, $extends, [], $fnIndex, $resIndex, $classIndex, (int)($fn['line'] ?? 0));
+				$body = ($fn['body'] ?? void);
+				if ($body !== void) static::graphScanCalls($nodes, $edges, $fileId, $body, $fileKey, $class, $extends, [], $fnIndex, $resIndex, $classIndex, ($fn['line'] ?? 0));
 			}
-			foreach ((array)($data['nodes'] ?? []) as $node){
-				$type = (string)($node['node'] ?? 'node');
-				$line = (int)($node['line'] ?? 0);
-				$body = (string)($node['body'] ?? void);
+			foreach (($data['nodes'] ?? []) as $node){
+				$type = ($node['node'] ?? 'node');
+				$line = ($node['line'] ?? 0);
+				$body = ($node['body'] ?? void);
 				if ($body !== void) static::graphScanCalls($nodes, $edges, $fileId, $body, $fileKey, $class, $extends, $appMethods[$fileKey] ?? [], $fnIndex, $resIndex, $classIndex, $line);
 			}
 		}
 
 		foreach ($resIndex['items'] as $name => $info){
 			if (!isset($resIndex['loaded'][$name])) continue;
-			foreach ((array)($info['requires'] ?? []) as $req){
+			foreach (($info['requires'] ?? []) as $req){
 				$target = static::graphResourceByAlias($req, $resIndex);
 				if ($target){
 					static::graphAddResource($nodes, $resIndex, $target);
 					static::graphEdge($edges, 'res:'.$name, 'res:'.$target, 'requires', 'declared');
 				}
 			}
-			$extends = (string)($info['extends'] ?? void);
+			$extends = ($info['extends'] ?? void);
 			if ($extends !== void && strtolower($extends) !== 'obj'){
 				$target = static::graphResourceByAlias($extends, $resIndex);
 				if ($target){
@@ -230,19 +229,19 @@ class reflect {
 
 		// Directe bestandsafhankelijkheden via klasse-aanroepen (phlo() instances + static calls)
 		foreach ($sourceData as $path => $data){
-			$fileKey = static::displayPath((string)$path);
+			$fileKey = static::displayPath($path);
 			$fileId  = 'file:'.$fileKey;
-			$content = (string)file_get_contents((string)$path);
+			$content = (string)file_get_contents($path);
 			if (preg_match_all('/\bphlo\s*\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]\s*[,\)]/i', $content, $m)){
-				foreach ((array)$m[1] as $name){
-					$entry = $classIndex[strtolower((string)$name)] ?? null;
+				foreach ($m[1] as $name){
+					$entry = $classIndex[strtolower($name)] ?? null;
 					if ($entry && ($entry['kind'] ?? null) === 'app' && $entry['file'] !== $fileKey)
 						static::graphEdge($edges, $fileId, 'file:'.$entry['file'], 'depends', 'exact');
 				}
 			}
 			if (preg_match_all('/\b([A-Z][A-Za-z0-9_]*)::/', $content, $m)){
-				foreach ((array)$m[1] as $name){
-					$entry = $classIndex[strtolower((string)$name)] ?? null;
+				foreach ($m[1] as $name){
+					$entry = $classIndex[strtolower($name)] ?? null;
 					if ($entry && ($entry['kind'] ?? null) === 'app' && $entry['file'] !== $fileKey)
 						static::graphEdge($edges, $fileId, 'file:'.$entry['file'], 'depends', 'exact');
 				}
@@ -279,19 +278,19 @@ class reflect {
 	public static function selectorGraph():array {
 		$nodes = [];
 		$edges = [];
-		$resRootPrefix  = rtrim(str_replace(bs, slash, (string)engine), slash).'/resources/';
+		$resRootPrefix  = rtrim(str_replace(bs, slash, engine), slash).'/resources/';
 		$selSources     = [];
 		$selEdges       = [];
 		$hasAppStyle    = false;
 		$hasAppScript   = false;
 		foreach (static::sourceFiles() as $path){
-			$file    = new build_file((string)$path);
-			$fileKey = static::displayPath((string)$path);
+			$file    = new build_file($path);
+			$fileKey = static::displayPath($path);
 			$fileId  = 'file:'.$fileKey;
 			$hasCss  = false;
 			$hasJs   = false;
 			foreach ($file->assets as $asset){
-				$body = (string)($asset->body ?? void);
+				$body = ($asset->body ?? void);
 				if ($body === void) continue;
 				if ($asset->node === 'style'){
 					$hasAppStyle = $hasCss = true;
@@ -310,7 +309,7 @@ class reflect {
 			}
 			foreach ($file->nodes as $node){
 				if ((string)($node->node ?? '') !== 'view') continue;
-				$body = trim((string)($node->body ?? void));
+				$body = trim(($node->body ?? void));
 				if ($body === void) continue;
 				$hasCss = true;
 				foreach (static::extractViewSelectors($body) as $sel){
@@ -329,19 +328,19 @@ class reflect {
 		$loadedRes = array_fill_keys(static::loadedConfigNames(), true);
 		foreach (static::resourceNodes(true) as $name => $node){
 			if (!isset($loadedRes[$name])) continue;
-			$filePath = str_replace(bs, slash, (string)($node['file'] ?? void));
+			$filePath = str_replace(bs, slash, ($node['file'] ?? void));
 			if ($filePath === void) continue;
 			$fileKey = str_starts_with($filePath, $resRootPrefix) ? substr($filePath, strlen($resRootPrefix)) : basename($filePath);
 			$fileId  = 'res:'.$name;
-			$meta    = (array)($node['meta'] ?? []);
+			$meta    = ($node['meta'] ?? []);
 			$f = new build_file($filePath);
 			foreach ($f->assets as $asset){
-				$body = (string)($asset->body ?? void);
+				$body = ($asset->body ?? void);
 				if ($body === void) continue;
 				if ($asset->node === 'style'){
 					$hasResStyle = true;
-					static::graphNode($nodes, $fileId, ['label' => (string)$name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
-					static::graphEdge($edges, $fileId, 'asset:resource:style', 'style', 'exact', (int)$asset->line);
+					static::graphNode($nodes, $fileId, ['label' => $name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
+					static::graphEdge($edges, $fileId, 'asset:resource:style', 'style', 'exact', $asset->line);
 					foreach (static::extractCssSelectors($body) as $sel){
 						$selSources[$sel][$fileId] = true;
 						$selEdges[] = [$fileId, $sel, 'selector-def'];
@@ -349,8 +348,8 @@ class reflect {
 				}
 				if ($asset->node === 'script'){
 					$hasResScript = true;
-					static::graphNode($nodes, $fileId, ['label' => (string)$name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
-					static::graphEdge($edges, $fileId, 'asset:resource:script', 'script', 'exact', (int)$asset->line);
+					static::graphNode($nodes, $fileId, ['label' => $name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
+					static::graphEdge($edges, $fileId, 'asset:resource:script', 'script', 'exact', $asset->line);
 					foreach (static::extractJsSelectors($body) as $sel){
 						$selSources[$sel][$fileId] = true;
 						$selEdges[] = [$fileId, $sel, 'selector-use'];
@@ -358,12 +357,12 @@ class reflect {
 				}
 			}
 			foreach (static::metaList($meta, 'provides') as $provided){
-				static::graphNode($nodes, $fileId, ['label' => (string)$name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
+				static::graphNode($nodes, $fileId, ['label' => $name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
 				static::graphNode($nodes, 'api:'.$provided, ['label' => $provided, 'type' => 'frontend-api', 'categories' => ['api']]);
 				static::graphEdge($edges, $fileId, 'api:'.$provided, 'provides', 'declared');
 			}
 			foreach (static::metaList($meta, 'binds') as $bind){
-				static::graphNode($nodes, $fileId, ['label' => (string)$name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
+				static::graphNode($nodes, $fileId, ['label' => $name, 'type' => 'resource', 'categories' => ['resource'], 'file' => $fileKey, 'mode' => 'resources']);
 				static::graphNode($nodes, 'bind:'.$bind, ['label' => $bind, 'type' => 'binding', 'categories' => ['binds']]);
 				static::graphEdge($edges, $fileId, 'bind:'.$bind, 'binds', 'declared');
 			}
@@ -383,12 +382,12 @@ class reflect {
 		$out = [];
 		$css = preg_replace('|/\*.*?\*/|s', '', $css);
 		preg_match_all('/([^{}]+)\{/', $css, $m);
-		foreach ((array)$m[1] as $block){
-			$block = trim((string)$block);
+		foreach ($m[1] as $block){
+			$block = trim($block);
 			if (str_starts_with($block, '@')) continue;
 			foreach (explode(',', $block) as $sel){
 				preg_match_all('/[.#][a-zA-Z_][a-zA-Z0-9_-]*|\[data-[a-zA-Z0-9_-]+\]/', $sel, $tokens);
-				foreach ((array)$tokens[0] as $t) $out[] = (string)$t;
+				foreach ($tokens[0] as $t) $out[] = $t;
 			}
 		}
 		return array_values(array_unique($out));
@@ -403,16 +402,16 @@ class reflect {
 		];
 		foreach ($selectorPatterns as $re){
 			preg_match_all($re, $js, $m);
-			foreach ((array)$m[1] as $sel){
+			foreach ($m[1] as $sel){
 				preg_match_all('/[.#][a-zA-Z_][a-zA-Z0-9_-]*|\[data-[a-zA-Z0-9_-]+\]/', $sel, $tokens);
-				foreach ((array)$tokens[0] as $t) $out[] = (string)$t;
+				foreach ($tokens[0] as $t) $out[] = $t;
 			}
 		}
 		// classList manipulation passes class names without dot prefix
 		preg_match_all('/\.classList\.(?:add|remove|toggle|contains|replace)\s*\(\s*[\'"]([^\'"]+)[\'"]/', $js, $m1);
-		foreach ((array)$m1[1] as $name){ $name = trim((string)$name); if ($name !== '') $out[] = '.'.$name; }
+		foreach ($m1[1] as $name){ $name = trim($name); if ($name !== '') $out[] = '.'.$name; }
 		preg_match_all('/\.classList\.replace\s*\(\s*[\'"][^\'"]+[\'"],\s*[\'"]([^\'"]+)[\'"]/', $js, $m2);
-		foreach ((array)$m2[1] as $name){ $name = trim((string)$name); if ($name !== '') $out[] = '.'.$name; }
+		foreach ($m2[1] as $name){ $name = trim($name); if ($name !== '') $out[] = '.'.$name; }
 		return array_values(array_unique($out));
 	}
 
@@ -420,9 +419,9 @@ class reflect {
 		$out = [];
 		// Phlo view syntax: <div.class1.class2>, extract .classname tokens after tag names
 		preg_match_all('/<[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z_][a-zA-Z0-9._-]*)/', $body, $m);
-		foreach ((array)$m[0] as $match){
+		foreach ($m[0] as $match){
 			preg_match_all('/\.[a-zA-Z_][a-zA-Z0-9_-]*/', $match, $tokens);
-			foreach ((array)$tokens[0] as $t) $out[] = (string)$t;
+			foreach ($tokens[0] as $t) $out[] = $t;
 		}
 		return array_values(array_unique($out));
 	}
@@ -455,15 +454,15 @@ class reflect {
 		$items  = [];
 		$alias  = [];
 		foreach ($resNodes as $name => $node){
-			$name = (string)$name;
-			$meta = (array)($node['meta'] ?? []);
-			$file = str_replace(bs, slash, (string)($node['file'] ?? void));
+			$name = $name;
+			$meta = ($node['meta'] ?? []);
+			$file = str_replace(bs, slash, ($node['file'] ?? void));
 			$fileKey = static::resourceFileKey($file);
-			$class = trim((string)($node['class'] ?? static::metaValue($meta, 'class') ?? void));
+			$class = trim(($node['class'] ?? static::metaValue($meta, 'class') ?? void));
 			$methods = [];
 			$statics = [];
-			foreach ((array)($node['nodes'] ?? []) as $item){
-				$n = trim((string)($item['name'] ?? void));
+			foreach (($node['nodes'] ?? []) as $item){
+				$n = trim(($item['name'] ?? void));
 				if ($n === void) continue;
 				if (($item['node'] ?? null) === 'static') $statics[strtolower($n)] = $item;
 				elseif (in_array(($item['node'] ?? null), ['method', 'route', 'view'], true)) $methods[strtolower($n)] = $item;
@@ -491,10 +490,10 @@ class reflect {
 	private static function graphFunctionIndex(array $resIndex):array {
 		$out = [];
 		foreach (static::availableFunctions() as $item){
-			$name = (string)($item['name'] ?? void);
+			$name = ($item['name'] ?? void);
 			if ($name === void) continue;
-			$resName = (string)($item['resource'] ?? void);
-			$mode = ($item['source'] ?? '') === 'native' ? 'native' : (string)($resIndex['items'][$resName]['mode'] ?? 'available');
+			$resName = ($item['resource'] ?? void);
+			$mode = ($item['source'] ?? '') === 'native' ? 'native' : ($resIndex['items'][$resName]['mode'] ?? 'available');
 			$out[strtolower($name)] = [
 				'name' => $name,
 				'id'   => 'fn:'.$name,
@@ -502,7 +501,7 @@ class reflect {
 				'mode' => $mode,
 				'resource' => $resName !== void ? $resName : null,
 				'file' => $resName !== void ? ($resIndex['items'][$resName]['file'] ?? null) : null,
-				'line' => (int)($item['line'] ?? 0),
+				'line' => ($item['line'] ?? 0),
 			];
 		}
 		return $out;
@@ -511,12 +510,12 @@ class reflect {
 	private static function graphClassIndex(array $sourceData, array $resIndex, array $appMethods):array {
 		$out = [];
 		foreach ($sourceData as $path => $data){
-			$class = trim((string)($data['class'] ?? void));
-			$fileKey = static::displayPath((string)$path);
-			if ($class !== void) $out[strtolower($class)] = ['kind' => 'app', 'file' => $fileKey, 'methods' => $appMethods[$fileKey] ?? [], 'extends' => static::metaValue((array)($data['meta'] ?? []), 'extends')];
+			$class = trim(($data['class'] ?? void));
+			$fileKey = static::displayPath($path);
+			if ($class !== void) $out[strtolower($class)] = ['kind' => 'app', 'file' => $fileKey, 'methods' => $appMethods[$fileKey] ?? [], 'extends' => static::metaValue(($data['meta'] ?? []), 'extends')];
 		}
 		foreach ($resIndex['items'] as $name => $item){
-			foreach (array_unique(array_filter([$name, basename((string)$name), $item['class'] ?? null])) as $alias){
+			foreach (array_unique(array_filter([$name, basename($name), $item['class'] ?? null])) as $alias){
 				$out[strtolower((string)$alias)] ??= ['kind' => 'resource', 'name' => $name];
 			}
 		}
@@ -526,10 +525,10 @@ class reflect {
 	private static function graphAppMethodIndex(array $sourceData):array {
 		$out = [];
 		foreach ($sourceData as $path => $data){
-			$fileKey = static::displayPath((string)$path);
+			$fileKey = static::displayPath($path);
 			$fileId = 'file:'.$fileKey;
-			foreach ((array)($data['nodes'] ?? []) as $node){
-				$name = trim((string)($node['name'] ?? void));
+			foreach (($data['nodes'] ?? []) as $node){
+				$name = trim(($node['name'] ?? void));
 				if ($name === void) continue;
 				$out[$fileKey][strtolower($name)] = $fileId;
 			}
@@ -570,7 +569,7 @@ class reflect {
 		$info = $fnIndex[$key] ?? null;
 		if (!$info) return null;
 		if ($info['mode'] === 'native') return null;
-		$resName = (string)($info['resource'] ?? void);
+		$resName = ($info['resource'] ?? void);
 		if ($resName === void) return null;
 		static::graphNode($nodes, 'res:'.$resName, [
 			'label' => $resName,
@@ -587,29 +586,29 @@ class reflect {
 		if ($source === void) return;
 		if (preg_match_all('/%([A-Za-z_][A-Za-z0-9_]*)(?:->([A-Za-z_][A-Za-z0-9_]*))?/', $source, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)){
 			foreach ($m as $match){
-				$resName = static::graphResourceByAlias((string)$match[1][0], $resIndex);
+				$resName = static::graphResourceByAlias($match[1][0], $resIndex);
 				if (!$resName) continue;
 				static::graphAddResource($nodes, $resIndex, $resName);
-				$line = $baseLine + substr_count(substr($source, 0, (int)$match[0][1]), lf);
-				$method = (string)($match[2][0] ?? void);
+				$line = $baseLine + substr_count(substr($source, 0, $match[0][1]), lf);
+				$method = ($match[2][0] ?? void);
 				$target = $method !== void ? static::graphResourceMethodTarget($nodes, $resIndex, $resName, $method) : 'res:'.$resName;
 				static::graphEdge($edges, $from, $target ?: 'res:'.$resName, $method !== void ? 'calls' : 'uses', 'exact', $line);
 			}
 		}
 		if (preg_match_all('/\bphlo\s*\(\s*[\'"]([^\'"]+)[\'"]/', $source, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)){
 			foreach ($m as $match){
-				$resName = static::graphResourceByAlias((string)$match[1][0], $resIndex);
+				$resName = static::graphResourceByAlias($match[1][0], $resIndex);
 				if (!$resName) continue;
 				static::graphAddResource($nodes, $resIndex, $resName);
-				$line = $baseLine + substr_count(substr($source, 0, (int)$match[0][1]), lf);
+				$line = $baseLine + substr_count(substr($source, 0, $match[0][1]), lf);
 				static::graphEdge($edges, $from, 'res:'.$resName, 'uses', 'exact', $line);
 			}
 		}
 		if (preg_match_all('/\b([A-Za-z_][A-Za-z0-9_]*|static|self)::([A-Za-z_][A-Za-z0-9_]*)\s*\(/', $source, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)){
 			foreach ($m as $match){
-				$owner = (string)$match[1][0];
-				$method = (string)$match[2][0];
-				$line = $baseLine + substr_count(substr($source, 0, (int)$match[0][1]), lf);
+				$owner = $match[1][0];
+				$method = $match[2][0];
+				$line = $baseLine + substr_count(substr($source, 0, $match[0][1]), lf);
 				$target = null;
 				if (in_array(strtolower($owner), ['static', 'self', strtolower($class)], true)){
 					$target = $externalOnly ? null : ($methods[strtolower($method)] ?? null);
@@ -617,7 +616,7 @@ class reflect {
 				} else {
 					$cls = $classIndex[strtolower($owner)] ?? null;
 					if (!$externalOnly && ($cls['kind'] ?? null) === 'app'){
-						$target = ((array)($cls['methods'] ?? []))[strtolower($method)] ?? null;
+						$target = (($cls['methods'] ?? []))[strtolower($method)] ?? null;
 						if (!$target && ($cls['extends'] ?? null) !== null && ($resName = static::graphResourceByAlias((string)$cls['extends'], $resIndex))) $target = static::graphResourceMethodTarget($nodes, $resIndex, $resName, $method);
 						$target ??= 'file:'.(string)$cls['file'];
 					}
@@ -629,29 +628,29 @@ class reflect {
 		if (preg_match_all('/\$this->([A-Za-z_][A-Za-z0-9_]*)\s*\(/', $source, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)){
 			foreach ($m as $match){
 				if ($externalOnly) continue;
-				$target = $methods[strtolower((string)$match[1][0])] ?? null;
+				$target = $methods[strtolower($match[1][0])] ?? null;
 				if (!$target) continue;
-				$line = $baseLine + substr_count(substr($source, 0, (int)$match[0][1]), lf);
+				$line = $baseLine + substr_count(substr($source, 0, $match[0][1]), lf);
 				static::graphEdge($edges, $from, $target, 'calls', 'exact', $line);
 			}
 		}
 		if (preg_match_all('/\b([A-Za-z_][A-Za-z0-9_]*)\s*\(/', $source, $m, PREG_SET_ORDER | PREG_OFFSET_CAPTURE)){
 			foreach ($m as $match){
-				$name = (string)$match[1][0];
+				$name = $match[1][0];
 				$offset = (int)$match[1][1];
 				$before = substr($source, max(0, $offset - 8), min(8, $offset));
 				if (preg_match('/(::|->|new\s+)$/', $before)) continue;
 				if (in_array(strtolower($name), ['if','elseif','foreach','for','while','switch','catch','isset','empty','array','fn','function','return'], true)) continue;
 				$target = static::graphFunctionTarget($nodes, $fnIndex, $name);
 				if (!$target) continue;
-				$line = $baseLine + substr_count(substr($source, 0, (int)$match[0][1]), lf);
+				$line = $baseLine + substr_count(substr($source, 0, $match[0][1]), lf);
 				static::graphEdge($edges, $from, $target, 'calls', 'exact', $line);
 			}
 		}
 	}
 
 	private static function resourceFileKey(string $file):string {
-		$resRootPrefix = rtrim(str_replace(bs, slash, (string)engine), slash).'/resources/';
+		$resRootPrefix = rtrim(str_replace(bs, slash, engine), slash).'/resources/';
 		return str_starts_with($file, $resRootPrefix) ? substr($file, strlen($resRootPrefix)) : basename($file);
 	}
 
@@ -664,13 +663,13 @@ class reflect {
 	public static function functionIndex():array {
 		$out = [];
 		foreach (static::availableFunctions() as $item){
-			$name = (string)($item['name'] ?? void);
+			$name = ($item['name'] ?? void);
 			if ($name === void) continue;
 			$out[$name] = [
 				'args'    => $item['args'] ?? void,
 				'return'  => $item['return'] ?? 'mixed',
-				'file'    => static::displayPath((string)($item['file'] ?? void)),
-				'line'    => (int)($item['line'] ?? 0),
+				'file'    => static::displayPath(($item['file'] ?? void)),
+				'line'    => ($item['line'] ?? 0),
 				'summary' => $item['summary'] ?? null,
 				'package' => $item['package'] ?? null,
 				'source'  => $item['source'] ?? null,
@@ -686,10 +685,10 @@ class reflect {
 	public static function objectIndex():array {
 		$out = [];
 		foreach (static::availableObjects() as $item){
-			$name = (string)($item['class'] ?? $item['name'] ?? void);
+			$name = ($item['class'] ?? $item['name'] ?? void);
 			if ($name === void) continue;
 			$out[$name] = [
-				'file'          => static::displayPath((string)($item['file'] ?? void)),
+				'file'          => static::displayPath(($item['file'] ?? void)),
 				'class'         => $item['class'] ?? null,
 				'summary'       => $item['summary'] ?? null,
 				'package'       => $item['package'] ?? null,
@@ -723,11 +722,11 @@ class reflect {
 		$packages  = [];
 		$requires  = [];
 		foreach ([...$functions, ...$objects] as $item){
-			$package = (string)($item['package'] ?? void);
+			$package = ($item['package'] ?? void);
 			$package !== void || $package = 'misc';
 			$packages[$package] ??= ['functions' => 0, 'objects' => 0];
 			isset($item['class']) ? $packages[$package]['objects']++ : $packages[$package]['functions']++;
-			foreach ((array)($item['requires'] ?? []) as $require) $requires[$require] = true;
+			foreach (($item['requires'] ?? []) as $require) $requires[$require] = true;
 		}
 		ksort($packages, SORT_NATURAL | SORT_FLAG_CASE);
 		ksort($requires, SORT_NATURAL | SORT_FLAG_CASE);
@@ -751,7 +750,7 @@ class reflect {
 		$queue  = [$root];
 		while ($queue){
 			$current = array_shift($queue);
-			foreach ((array)($resIndex['items'][$current]['requires'] ?? []) as $req){
+			foreach (($resIndex['items'][$current]['requires'] ?? []) as $req){
 				$req = (string)$req;
 				if (str_starts_with($req, 'php-ext:')){
 					$full && $phpExt[] = substr($req, 8);
@@ -781,23 +780,23 @@ class reflect {
 		$sourceData = static::sourceNodes(false);
 		$classToFile = [];
 		foreach ($sourceData as $path => $data){
-			$class = trim((string)($data['class'] ?? void));
-			if ($class !== void) $classToFile[strtolower($class)] = static::displayPath((string)$path);
+			$class = trim(($data['class'] ?? void));
+			if ($class !== void) $classToFile[strtolower($class)] = static::displayPath($path);
 		}
 		$out = [];
 		foreach ($sourceData as $path => $data){
-			$fileKey = static::displayPath((string)$path);
-			$content = (string)file_get_contents((string)$path);
+			$fileKey = static::displayPath($path);
+			$content = (string)file_get_contents($path);
 			$deps    = [];
 			if (preg_match_all('/\bphlo\s*\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]\s*[,\)]/i', $content, $m)){
-				foreach ((array)$m[1] as $name){
-					$t = $classToFile[strtolower((string)$name)] ?? null;
+				foreach ($m[1] as $name){
+					$t = $classToFile[strtolower($name)] ?? null;
 					if ($t && $t !== $fileKey) $deps[$t] = true;
 				}
 			}
 			if (preg_match_all('/\b([A-Z][A-Za-z0-9_]*)::/', $content, $m)){
-				foreach ((array)$m[1] as $name){
-					$t = $classToFile[strtolower((string)$name)] ?? null;
+				foreach ($m[1] as $name){
+					$t = $classToFile[strtolower($name)] ?? null;
 					if ($t && $t !== $fileKey) $deps[$t] = true;
 				}
 			}
@@ -811,20 +810,20 @@ class reflect {
 	public static function compactRoutes():array {
 		$out = [];
 		foreach (static::routes() as $route){
-			$method = (string)($route['method'] ?? 'ANY');
-			$path = trim((string)($route['path'] ?? void));
+			$method = ($route['method'] ?? 'ANY');
+			$path = trim(($route['path'] ?? void));
 			$item = [
 				'route' => $path === void ? $method : $method.space.$path,
 				'file'  => $route['file'] ?? null,
 				'line'  => $route['line'] ?? null,
 			];
-			$functions = array_values((array)($route['uses']['functions'] ?? []));
-			$resources = array_values((array)($route['uses']['resources'] ?? []));
-			$methods   = array_values((array)($route['uses']['appMethods'] ?? []));
+			$functions = array_values(($route['uses']['functions'] ?? []));
+			$resources = array_values(($route['uses']['resources'] ?? []));
+			$methods   = array_values(($route['uses']['appMethods'] ?? []));
 			$functions && $item['functions'] = $functions;
 			$resources && $item['resources'] = $resources;
 			$methods   && $item['methods']   = $methods;
-			$comments = array_values(array_filter((array)($route['comments'] ?? []), 'strlen'));
+			$comments = array_values(array_filter(($route['comments'] ?? []), 'strlen'));
 			$comments && $item['summary'] = static::firstLineStr($comments[0]);
 			$out[] = $item;
 		}
@@ -874,20 +873,20 @@ class reflect {
 		$loaded = array_fill_keys(array_map('strtolower', static::loadedConfigNames()), true);
 		$out = [];
 		foreach ($nodes as $name => $node){
-			$meta = (array)($node['meta'] ?? []);
+			$meta = ($node['meta'] ?? []);
 			$hasFunctions = !empty($node['functions']);
 			$hasClass = static::resourceHasClass($node);
 			$hasAssets = !empty($node['assets']);
 			$kind = $hasClass ? 'object' : ($hasFunctions ? 'function' : ($hasAssets ? 'frontend' : 'resource'));
 			$out[$name] = [
 				'name'      => $name,
-				'file'      => (string)($node['file'] ?? void),
+				'file'      => ($node['file'] ?? void),
 				'class'     => $hasClass ? ($node['class'] ?? null) : null,
 				'kind'      => $kind,
-				'loaded'    => isset($loaded[strtolower((string)$name)]),
-				'functions' => count((array)($node['functions'] ?? [])),
-				'nodes'     => count((array)($node['nodes'] ?? [])),
-				'assets'    => count((array)($node['assets'] ?? [])),
+				'loaded'    => isset($loaded[strtolower($name)]),
+				'functions' => count(($node['functions'] ?? [])),
+				'nodes'     => count(($node['nodes'] ?? [])),
+				'assets'    => count(($node['assets'] ?? [])),
 				'summary'   => static::metaSummary($meta),
 				'package'   => static::metaValue($meta, 'package'),
 				'frontend'  => static::metaBool($meta, 'frontend'),
@@ -923,7 +922,7 @@ class reflect {
 		foreach (static::coreFunctions() as $item) $available[$item['name']] = $item + ['loaded' => true];
 		foreach ($resources as $key => $node){
 			if (empty($node['functions'])) continue;
-			$item = static::functionEntryFromResource((string)$key, $node, isset($loaded[(string)$key]));
+			$item = static::functionEntryFromResource($key, $node, isset($loaded[$key]));
 			$available[$item['name']] = $item;
 		}
 		uksort($available, 'strnatcasecmp');
@@ -953,7 +952,7 @@ class reflect {
 		$available = [];
 		foreach ($resources as $key => $node){
 			if (!static::resourceHasClass($node)) continue;
-			$item = static::objectEntryFromResource((string)$key, $node, isset($loaded[strtolower((string)$key)]));
+			$item = static::objectEntryFromResource($key, $node, isset($loaded[strtolower($key)]));
 			$available[$item['name']] = $item;
 		}
 		uksort($available, 'strnatcasecmp');
@@ -1007,7 +1006,7 @@ class reflect {
 		$relPath = trim($relPath);
 		if ($relPath === void) return null;
 		foreach (static::sourceFiles() as $path){
-			if (static::displayPath((string)$path) === $relPath) return (string)file_get_contents((string)$path) ?: null;
+			if (static::displayPath($path) === $relPath) return (string)file_get_contents($path) ?: null;
 		}
 		return null;
 	}
@@ -1045,7 +1044,7 @@ class reflect {
 	private static function loadedConfigNames():array {
 		$items = [];
 		foreach ((array)(static::buildJson()['resources'] ?? []) as $name){
-			$name = trim((string)$name);
+			$name = trim($name);
 			if ($name === void) continue;
 			$items[static::resourceName($name)] = true;
 		}
@@ -1081,10 +1080,10 @@ class reflect {
 	}
 
 	private static function appPaths():array {
-		$paths = [rtrim((string)app, slash).slash];
+		$paths = [rtrim(app, slash).slash];
 		foreach ((array)(static::buildJson()['paths']['app'] ?? []) as $path){
-			$path    = (string)$path;
-			$paths[] = $path === void ? rtrim((string)app, slash).slash : rtrim($path, slash).slash;
+			$path    = $path;
+			$paths[] = $path === void ? rtrim(app, slash).slash : rtrim($path, slash).slash;
 		}
 		return array_values(array_unique(array_filter($paths, 'is_dir')));
 	}
@@ -1092,8 +1091,8 @@ class reflect {
 	private static function resourcePaths():array {
 		$paths = [dirname(__DIR__).slash.'resources'.slash];
 		foreach ((array)(static::buildJson()['paths']['resources'] ?? []) as $path){
-			$path    = (string)$path;
-			$paths[] = $path === void ? rtrim((string)app, slash).slash : rtrim($path, slash).slash;
+			$path    = $path;
+			$paths[] = $path === void ? rtrim(app, slash).slash : rtrim($path, slash).slash;
 		}
 		return array_values(array_unique(array_filter($paths, 'is_dir')));
 	}
@@ -1122,7 +1121,7 @@ class reflect {
 			if (!static::buildFileHasClass($file)) continue;
 			$name  = (string)$info['name'];
 			$item  = ['name' => $name, 'file' => (string)$info['file'], 'group' => 'resources'];
-			$class = trim((string)($file->class ?? void));
+			$class = trim(($file->class ?? void));
 			$aliases = [strtolower($name), strtolower(basename($name))];
 			if ($class !== void){
 				$item['class'] = $class;
@@ -1136,7 +1135,7 @@ class reflect {
 
 	private static function sourceDumpFile(build_file $file, bool $withBody = false):array {
 		$meta = [];
-		foreach ((array)$file->meta as $key => $value) $meta[(string)$key] = static::sourceInline((string)$value);
+		foreach ($file->meta as $key => $value) $meta[$key] = static::sourceInline($value);
 		ksort($meta, SORT_NATURAL | SORT_FLAG_CASE);
 		$nodes = [];
 		foreach ($file->nodes as $node) $nodes[] = static::sourceNodeItem($node, $withBody);
@@ -1145,9 +1144,9 @@ class reflect {
 		$assets = [];
 		foreach ($file->assets as $asset){
 			$assets[] = [
-				'node'     => (string)$asset->node,
+				'node'     => $asset->node,
 				'ns'       => $asset->ns ?: null,
-				'line'     => (int)$asset->line,
+				'line'     => $asset->line,
 				'bytes'    => $asset->body ? strlen((string)$asset->body) : 0,
 				'comments' => $asset->comments ? static::sourceInline((string)$asset->comments) : null,
 			];
@@ -1164,7 +1163,7 @@ class reflect {
 
 	private static function buildFileHasClass(build_file $file):bool {
 		foreach ($file->nodes as $key => $node){
-			if (str_starts_with((string)$key, '%')) continue;
+			if (str_starts_with($key, '%')) continue;
 			if (in_array($node->node, ['script', 'style'], true)) continue;
 			return true;
 		}
@@ -1172,7 +1171,7 @@ class reflect {
 	}
 
 	private static function resourceHasClass(array $node):bool {
-		foreach ((array)($node['nodes'] ?? []) as $item){
+		foreach (($node['nodes'] ?? []) as $item){
 			if (str_starts_with((string)($item['name'] ?? ''), '%')) continue;
 			if (in_array(($item['node'] ?? null), ['script', 'style'], true)) continue;
 			return true;
@@ -1182,20 +1181,20 @@ class reflect {
 
 	private static function sourceNodeItem(object $node, bool $withBody = false):array {
 		$out = [
-			'node'       => (string)$node->node,
+			'node'       => $node->node,
 			'name'       => $node->name ?: null,
 			'method'     => $node->method ?: null,
 			'mode'       => $node->mode ?: null,
-			'path'       => $node->path ? static::sourceInline((string)$node->path) : null,
+			'path'       => $node->path ? static::sourceInline($node->path) : null,
 			'visibility' => $node->visibility ?: null,
 			'type'       => $node->type ?: null,
-			'args'       => $node->args ? static::sourceInline((string)$node->args) : null,
+			'args'       => $node->args ? static::sourceInline($node->args) : null,
 			'operator'   => $node->operator ?: null,
 			'line'       => (int)$node->line,
-			'comments'   => $node->comments ? static::sourceInline((string)$node->comments) : null,
+			'comments'   => $node->comments ? static::sourceInline($node->comments) : null,
 		];
 		if ($withBody){
-			$body = trim((string)($node->body ?? void));
+			$body = trim(($node->body ?? void));
 			$out['body'] = $body === void ? null : $body;
 		}
 		return $out;
@@ -1223,9 +1222,9 @@ class reflect {
 
 	private static function routeFiles():array {
 		$files = [];
-		foreach (static::sourceFiles() as $file) $files[$file] = ['file' => $file, 'name' => static::displayPath((string)$file), 'origin' => 'app'];
+		foreach (static::sourceFiles() as $file) $files[$file] = ['file' => $file, 'name' => static::displayPath($file), 'origin' => 'app'];
 		foreach (static::loadedObjects() as $resource){
-			$file = (string)($resource['file'] ?? void);
+			$file = ($resource['file'] ?? void);
 			$file === void || $files[$file] ??= ['file' => $file, 'name' => static::displayPath($file), 'origin' => 'resource'];
 		}
 		return array_values($files);
@@ -1233,26 +1232,26 @@ class reflect {
 
 	private static function appMethodBodies(build_file $parsed):array {
 		$out = [];
-		foreach ((array)($parsed->nodes ?? []) as $node){
-			$name = trim((string)($node->name ?? void));
+		foreach (($parsed->nodes ?? []) as $node){
+			$name = trim(($node->name ?? void));
 			if ($name === void) continue;
-			$body = trim((string)($node->body ?? void));
+			$body = trim(($node->body ?? void));
 			if ($body !== void) $out[$name] = $body;
 		}
 		return $out;
 	}
 
 	private static function routeNodeEntry(string $origin, string $file, object $node, array $methodBodies, array $deps):array {
-		$scan = static::routeScanSource((string)($node->body ?? void), $methodBodies);
+		$scan = static::routeScanSource(($node->body ?? void), $methodBodies);
 		return static::sourcePruneNulls([
 			'origin'   => $origin,
 			'file'     => $file,
-			'line'     => (int)($node->line ?? 0),
-			'method'   => (string)($node->method ?? void) ?: null,
-			'mode'     => (string)($node->mode ?? void) ?: null,
-			'path'     => (string)($node->path ?? void) ?: null,
-			'operator' => (string)($node->operator ?? void) ?: null,
-			'comments' => (string)($node->comments ?? void) ?: null,
+			'line'     => ($node->line ?? 0),
+			'method'   => ($node->method ?? void) ?: null,
+			'mode'     => ($node->mode ?? void) ?: null,
+			'path'     => ($node->path ?? void) ?: null,
+			'operator' => ($node->operator ?? void) ?: null,
+			'comments' => ($node->comments ?? void) ?: null,
 			'uses'     => [
 				'functions'  => static::detectFunctions($scan, (array)$deps['functions']),
 				'resources'  => static::detectResources($scan, (array)$deps['resources']),
@@ -1272,7 +1271,7 @@ class reflect {
 			foreach ($queue as $method){
 				if (isset($seen[$method])) continue;
 				$seen[$method] = true;
-				$body = trim((string)($methodBodies[$method] ?? void));
+				$body = trim(($methodBodies[$method] ?? void));
 				if ($body === void) continue;
 				$scan .= lf.$body;
 				foreach (static::detectAppMethods($body, $methodBodies) as $m){
@@ -1288,8 +1287,8 @@ class reflect {
 		if ($source === void) return [];
 		$hits = [];
 		if (preg_match_all('/(?:\$this->|::)([A-Za-z_][A-Za-z0-9_]*)/', $source, $m)){
-			foreach ((array)$m[1] as $name){
-				$name = (string)$name;
+			foreach ($m[1] as $name){
+				$name = $name;
 				if (!isset($methodBodies[$name])) continue;
 				$hits[$name] = true;
 			}
@@ -1303,10 +1302,10 @@ class reflect {
 		if ($source === void) return [];
 		$hits = [];
 		if (preg_match_all('/\b([a-z_][a-z0-9_]*)\s*\(/i', $source, $m)){
-			foreach ((array)$m[1] as $name){
-				$key = strtolower((string)$name);
+			foreach ($m[1] as $name){
+				$key = strtolower($name);
 				if (!isset($map[$key])) continue;
-				$hits[(string)$map[$key]] = true;
+				$hits[$map[$key]] = true;
 			}
 		}
 		$out = array_keys($hits);
@@ -1318,24 +1317,24 @@ class reflect {
 		if ($source === void) return [];
 		$hits = [];
 		if (preg_match_all('/%([A-Za-z_][A-Za-z0-9_]*)/', $source, $m1)){
-			foreach ((array)$m1[1] as $name){
-				$key = strtolower((string)$name);
+			foreach ($m1[1] as $name){
+				$key = strtolower($name);
 				if (!isset($map[$key])) continue;
-				$hits[(string)$map[$key]] = true;
+				$hits[$map[$key]] = true;
 			}
 		}
 		if (preg_match_all('/\bphlo\s*\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]\s*[,\)]/i', $source, $m2)){
-			foreach ((array)$m2[1] as $name){
-				$key = strtolower((string)$name);
+			foreach ($m2[1] as $name){
+				$key = strtolower($name);
 				if (!isset($map[$key])) continue;
-				$hits[(string)$map[$key]] = true;
+				$hits[$map[$key]] = true;
 			}
 		}
 		if (preg_match_all('/\b([A-Z][A-Za-z0-9_]*)::/', $source, $m3)){
 			foreach ((array)$m3[1] as $name){
-				$key = strtolower((string)$name);
+				$key = strtolower($name);
 				if (!isset($map[$key])) continue;
-				$hits[(string)$map[$key]] = true;
+				$hits[$map[$key]] = true;
 			}
 		}
 		$out = array_keys($hits);
@@ -1369,13 +1368,13 @@ class reflect {
 		if ($cache !== null && $cacheStamp === $stamp) return $cache;
 		$functions = [];
 		foreach (static::availableFunctions() as $item){
-			$name = strtolower((string)($item['name'] ?? void));
+			$name = strtolower(($item['name'] ?? void));
 			$name === void || $functions[$name] = (string)$item['name'];
 		}
 		$resources = [];
 		foreach (static::availableObjects() as $item){
-			$name  = (string)($item['name'] ?? void);
-			$class = trim((string)($item['class'] ?? void));
+			$name  = ($item['name'] ?? void);
+			$class = trim(($item['class'] ?? void));
 			foreach (array_unique(array_filter([
 				strtolower($name),
 				strtolower(basename($name)),
@@ -1393,7 +1392,7 @@ class reflect {
 			if (!preg_match('/^\s*function\s+([a-zA-Z0-9_]+)\s*\((.*?)\)\s*(?::\s*([^{]+))?/', (string)$line, $m)) continue;
 			$name    = (string)$m[1];
 			$args    = trim((string)$m[2]);
-			$return  = trim((string)($m[3] ?? void));
+			$return  = trim(($m[3] ?? void));
 			$comment = static::phpFunctionComment($lines, $i);
 			$out[]   = [
 				'name'      => $name,
@@ -1416,7 +1415,7 @@ class reflect {
 
 	private static function phpFunctionComment(array $lines, int $lineIndex):?string {
 		for ($i = $lineIndex - 1; $i >= 0; --$i){
-			$line = trim((string)($lines[$i] ?? void));
+			$line = trim(($lines[$i] ?? void));
 			if ($line === void) continue;
 			if (str_starts_with($line, '//') || str_starts_with($line, '/*') || str_starts_with($line, '*')){
 				$line = trim($line, "/* \t");
@@ -1429,9 +1428,9 @@ class reflect {
 
 	private static function functionEntryFromResource(string $name, array $node, bool $loaded):array {
 		$fn     = static::primaryFunctionNode($node);
-		$meta   = (array)($node['meta'] ?? []);
-		$args   = trim((string)($fn['args'] ?? void));
-		$return = trim((string)($fn['type'] ?? void));
+		$meta   = ($node['meta'] ?? []);
+		$args   = trim(($fn['args'] ?? void));
+		$return = trim(($fn['type'] ?? void));
 		$display = (string)($fn['name'] ?? $name);
 		return [
 			'name'      => $display,
@@ -1440,8 +1439,8 @@ class reflect {
 			'args'      => $args ?: null,
 			'return'    => $return ?: null,
 			'summary'   => static::metaSummary($meta),
-			'file'      => (string)($node['file'] ?? void),
-			'line'      => (int)($fn['line'] ?? 0),
+			'file'      => ($node['file'] ?? void),
+			'line'      => ($fn['line'] ?? 0),
 			'source'    => 'function',
 			'loaded'    => $loaded,
 			'package'   => static::metaValue($meta, 'package'),
@@ -1455,19 +1454,19 @@ class reflect {
 	}
 
 	private static function objectEntryFromResource(string $name, array $node, bool $loaded):array {
-		$meta    = (array)($node['meta'] ?? []);
-		$class   = trim((string)($node['class'] ?? static::metaValue($meta, 'class') ?? void));
+		$meta    = ($node['meta'] ?? []);
+		$class   = trim(($node['class'] ?? static::metaValue($meta, 'class') ?? void));
 		$methods = [];
 		$statics = [];
 		$props   = [];
-		foreach ((array)($node['nodes'] ?? []) as $item){
-			$n = trim((string)($item['name'] ?? void));
+		foreach (($node['nodes'] ?? []) as $item){
+			$n = trim(($item['name'] ?? void));
 			if ($n === void) continue;
 			$entry = [
 				'name'     => $n,
 				'args'     => $item['args'] ?? null,
 				'return'   => $item['type'] ?? null,
-				'line'     => (int)($item['line'] ?? 0),
+				'line'     => ($item['line'] ?? 0),
 				'comments' => $item['comments'] ?? null,
 			];
 			$nodeType = ($item['node'] ?? null);
@@ -1484,7 +1483,7 @@ class reflect {
 			'type'     => static::metaValue($meta, 'type') ?? 'class',
 			'extends'  => static::metaValue($meta, 'extends'),
 			'summary'  => static::metaSummary($meta),
-			'file'     => (string)($node['file'] ?? void),
+			'file'     => ($node['file'] ?? void),
 			'line'     => static::firstLineNode($node),
 			'source'   => 'resource',
 			'loaded'   => $loaded,
@@ -1502,7 +1501,7 @@ class reflect {
 	}
 
 	private static function primaryFunctionNode(array $node):array {
-		foreach ((array)($node['functions'] ?? []) as $fn){
+		foreach (($node['functions'] ?? []) as $fn){
 			if (($fn['node'] ?? null) === 'function') return (array)$fn;
 		}
 		return ['name' => null, 'args' => null, 'type' => null, 'line' => 0, 'comments' => null];
@@ -1510,8 +1509,8 @@ class reflect {
 
 	private static function firstLineNode(array $node):int {
 		foreach (['nodes', 'functions', 'assets'] as $group){
-			foreach ((array)($node[$group] ?? []) as $item){
-				$line = (int)($item['line'] ?? 0);
+			foreach (($node[$group] ?? []) as $item){
+				$line = ($item['line'] ?? 0);
 				if ($line) return $line;
 			}
 		}
@@ -1520,18 +1519,18 @@ class reflect {
 
 	private static function firstLineStr(string $text):string {
 		$lines = explode(lf, $text);
-		return trim((string)($lines[0] ?? void));
+		return trim(($lines[0] ?? void));
 	}
 
 	private static function metaSummary(array $meta):?string { return static::metaValue($meta, 'summary'); }
 
 	private static function metaValue(array $meta, string $key):?string {
-		$value = trim((string)($meta[$key] ?? void));
+		$value = trim(($meta[$key] ?? void));
 		return $value !== void ? $value : null;
 	}
 
 	private static function metaBool(array $meta, string $key):?bool {
-		$value = strtolower(trim((string)($meta[$key] ?? void)));
+		$value = strtolower(trim(($meta[$key] ?? void)));
 		if ($value === void) return null;
 		if (in_array($value, ['1', 'true', 'yes'], true))  return true;
 		if (in_array($value, ['0', 'false', 'no'], true))  return false;
@@ -1539,7 +1538,7 @@ class reflect {
 	}
 
 	private static function metaList(array $meta, string $key):array {
-		$value = trim((string)($meta[$key] ?? void));
+		$value = trim(($meta[$key] ?? void));
 		if ($value === void) return [];
 		$parts = preg_split('/[\s,]+/', $value) ?: [];
 		$parts = array_values(array_filter(array_map('trim', $parts), 'strlen'));
@@ -1549,7 +1548,7 @@ class reflect {
 
 	private static function displayPath(string $file):string {
 		$file = str_replace(bs, slash, $file);
-		$app  = rtrim(str_replace(bs, slash, (string)app), slash).slash;
+		$app  = rtrim(str_replace(bs, slash, app), slash).slash;
 		$phlo = rtrim(str_replace(bs, slash, dirname(__DIR__)), slash).slash;
 		if (str_starts_with($file, $app))  return substr($file, strlen($app));
 		if (str_starts_with($file, $phlo)) return 'phlo/'.substr($file, strlen($phlo));
@@ -1559,12 +1558,12 @@ class reflect {
 	private static function entryMap(array $entries):array {
 		$out = [];
 		foreach ($entries as $entry){
-			$name = trim((string)($entry['name'] ?? void));
+			$name = trim(($entry['name'] ?? void));
 			if ($name === void) continue;
 			$out[$name] = [
 				'args'    => $entry['args'] ?? void,
 				'ret'     => $entry['return'] ?? 'mixed',
-				'line'    => (int)($entry['line'] ?? 0),
+				'line'    => ($entry['line'] ?? 0),
 				'summary' => $entry['comments'] ?? null,
 			];
 		}
@@ -1574,8 +1573,8 @@ class reflect {
 
 	private static function constructorArgs(array $methods):string {
 		foreach ($methods as $entry){
-			if ((string)($entry['name'] ?? void) !== '__construct') continue;
-			return (string)($entry['args'] ?? void);
+			if (($entry['name'] ?? void) !== '__construct') continue;
+			return ($entry['args'] ?? void);
 		}
 		return void;
 	}

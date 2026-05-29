@@ -84,9 +84,9 @@ function debug_page(string $file, int $line, array $trace, array $data):string {
 	}
 	$traceHtml = void;
 	foreach (phlo_error_format_trace($trace, $file, $line) as $frame){
-		$loc       = phlo_error_location_html((string)$frame['file'], (int)$frame['line']);
-		$call      = esc((string)($frame['call'] ?? void));
-		$active    = ($frame['file'] === $file && (int)$frame['line'] === $line) ? ' active' : void;
+		$loc       = phlo_error_location_html($frame['file'], $frame['line']);
+		$call      = esc($frame['call'] ?? void);
+		$active    = ($frame['file'] === $file && $frame['line'] === $line) ? ' active' : void;
 		$traceHtml .= '<tr class="row'.$active.'"><td class="loc">'.$loc.'</td><td class="call">'.$call.'</td></tr>';
 	}
 	$body = "<main class=\"wrap\">"
@@ -156,7 +156,7 @@ function debug_render(?int $contentLength = null):string {
 	if (class_exists('trace', false) && trace::$on && trace::$events){
 		$count   = count(trace::$events);
 		$traceMs = round((microtime(true) - trace::$t0) * 1000, 1);
-		$dashUrl = defined('dashboard') && dashboard ? '/'.ltrim((string)dashboard, '/').'/graph?trace='.trace::$id : void;
+		$dashUrl = defined('dashboard') && dashboard ? '/'.ltrim(dashboard, '/').'/graph?trace='.trace::$id : void;
 		$out .= ";console.log('%c[trace ".trace::$id."] $count events, {$traceMs}ms".($dashUrl ? "  '+location.origin+'$dashUrl" : void)."','color:#c88a40')";
 	}
 	if ($c = count($d['phlo'])) $out .= ";console.log('%cphlo ($c)','font-weight:bold','\\n".strtr(implode(space, $d['phlo']), [sq => bs.sq])."')";

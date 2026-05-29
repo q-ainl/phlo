@@ -203,7 +203,7 @@ class build_file {
 		if ($node->mode)   $parts[] = $node->mode;
 		if ($node->method) $parts[] = $node->method;
 		if ($node->path){
-			preg_match_all('/(?:^| |\$)([A-Za-z0-9_]+)/', (string)$node->path, $matches);
+			preg_match_all('/(?:^| |\$)([A-Za-z0-9_]+)/', $node->path, $matches);
 			$pathParts = $matches[1] ?? [];
 			$parts = array_merge($parts, $pathParts ?: ['home']);
 		}

@@ -120,16 +120,16 @@ class phlo_dashboard {
 
 		$routeRows = void;
 		foreach ($routes as $route){
-			$r    = esc((string)($route['route'] ?? ''));
-			$link = static::dashboardFileLink((string)($route['file'] ?? ''));
+			$r    = esc(($route['route'] ?? ''));
+			$link = static::dashboardFileLink(($route['file'] ?? ''));
 			$routeRows .= "<tr class=\"row\"><td><code>$r</code></td><td class=\"muted\">$link</td></tr>\n";
 		}
 		if (!$routeRows) $routeRows = "<tr class=\"row\"><td colspan=\"2\" class=\"muted\">No routes</td></tr>\n";
 
 		$viewRows = void;
 		foreach ($views as $view){
-			$vname = esc((string)($view['name'] ?? 'view'));
-			$link  = static::dashboardFileLink((string)($view['file'] ?? ''));
+			$vname = esc(($view['name'] ?? 'view'));
+			$link  = static::dashboardFileLink(($view['file'] ?? ''));
 			$viewRows .= "<tr class=\"row\"><td><code>$vname</code></td><td class=\"muted\">$link</td></tr>\n";
 		}
 		if (!$viewRows) $viewRows = "<tr class=\"row\"><td colspan=\"2\" class=\"muted\">No views</td></tr>\n";
@@ -204,7 +204,7 @@ class phlo_dashboard {
 
 	private static function config(?string $arg):void {
 		$req  = phlo('req');
-		$base = (string)dashboard;
+		$base = dashboard;
 
 		if ($arg === 'save' && $req->method === 'POST'){
 			$json    = trim((string)($_POST['json'] ?? ''));
@@ -228,7 +228,7 @@ class phlo_dashboard {
 
 		$resourceGroups = [];
 		foreach (reflect::availableResources() as $resource){
-			$config = (string)($resource['name'] ?? '');
+			$config = ($resource['name'] ?? '');
 			$url    = '/'.ltrim("$base/config/resource/".rawurlencode($config), '/');
 			$id     = 'resource-'.substr(md5($config), 0, 10);
 			$group  = str_contains($config, slash) ? dirname($config) : 'root';
@@ -238,7 +238,7 @@ class phlo_dashboard {
 				'loaded'  => !empty($resource['loaded']),
 				'name'    => $config,
 				'meta'    => trim((string)($resource['kind'] ?? 'resource').space.(string)($resource['class'] ?? void)),
-				'summary' => (string)($resource['summary'] ?? ''),
+				'summary' => ($resource['summary'] ?? ''),
 			];
 		}
 		ksort($resourceGroups, SORT_NATURAL | SORT_FLAG_CASE);
@@ -279,7 +279,7 @@ class phlo_dashboard {
 		$b64        = base64_encode((string)json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 		$b64E       = esc($b64);
 		$mode       = $isFrontend ? 'frontend' : 'backend';
-		$base       = '/'.ltrim((string)dashboard, '/');
+		$base       = '/'.ltrim(dashboard, '/');
 		$hrefBack   = esc("$base/graph");
 		$hrefFront  = esc("$base/graph/frontend");
 		$clsBack    = !$isFrontend ? ' active' : '';
@@ -353,7 +353,7 @@ class phlo_dashboard {
 
 	private static function source(?string $arg):void {
 		$req  = phlo('req');
-		$base = (string)dashboard;
+		$base = dashboard;
 
 		$mode        = (string)($req->query['mode'] ?? 'app');
 		$engineModes = ['native' => engine.'phlo.php', 'build' => engine.'classes/build.php', 'reflect' => engine.'classes/reflect.php'];
@@ -457,7 +457,7 @@ class phlo_dashboard {
 
 	private static function build(?string $arg):void {
 		$req  = phlo('req');
-		$base = (string)dashboard;
+		$base = dashboard;
 
 		if ($arg === 'run' && $req->method === 'POST'){
 			try {
@@ -488,7 +488,7 @@ class phlo_dashboard {
 		$requested = trim((string)($req->query['active'] ?? ''));
 		$active    = ($name && isset($fileMap[$name])) ? $name
 			: ($requested && isset($fileMap[$requested]) ? $requested : (string)array_key_first($fileMap));
-		$content   = $fileMap ? static::fileContent((string)($fileMap[$active] ?? ''), str_ends_with((string)($fileMap[$active] ?? ''), '.php')) : '<p class="muted">No built files.</p>';
+		$content   = $fileMap ? static::fileContent(($fileMap[$active] ?? ''), str_ends_with(($fileMap[$active] ?? ''), '.php')) : '<p class="muted">No built files.</p>';
 		$runUrl    = esc('/'.ltrim("$base/build/run", '/'));
 		$flushUrl  = esc('/'.ltrim("$base/build/flush", '/'));
 		$searchUrl = esc('/'.ltrim("$base/build/search", '/'));
@@ -519,7 +519,7 @@ class phlo_dashboard {
 
 	private static function release(?string $arg):void {
 		$req  = phlo('req');
-		$base = (string)dashboard;
+		$base = dashboard;
 
 		if ($arg === 'run' && $req->method === 'POST'){
 			try {
@@ -550,7 +550,7 @@ class phlo_dashboard {
 		$requested = trim((string)($req->query['active'] ?? ''));
 		$active    = ($name && isset($fileMap[$name])) ? $name
 			: ($requested && isset($fileMap[$requested]) ? $requested : (string)array_key_first($fileMap));
-		$content   = $fileMap ? static::fileContent((string)($fileMap[$active] ?? ''), str_ends_with((string)($fileMap[$active] ?? ''), '.php')) : '<p class="muted">No release files.</p>';
+		$content   = $fileMap ? static::fileContent(($fileMap[$active] ?? ''), str_ends_with(($fileMap[$active] ?? ''), '.php')) : '<p class="muted">No release files.</p>';
 		$runUrl    = esc('/'.ltrim("$base/release/run", '/'));
 		$flushUrl  = esc('/'.ltrim("$base/release/flush", '/'));
 		$searchUrl = esc('/'.ltrim("$base/release/search", '/'));
@@ -581,7 +581,7 @@ class phlo_dashboard {
 
 	private static function errors(?string $arg):void {
 		$req  = phlo('req');
-		$base = (string)dashboard;
+		$base = dashboard;
 
 		if ($arg === 'reset' && $req->method === 'POST'){
 			$file = data.'errors.json';
@@ -680,8 +680,8 @@ class phlo_dashboard {
 				];
 				$class = [];
 				foreach (array_unique($affected) as $res){
-					$rowId = $res === $name ? $id : 'resource-'.substr(md5((string)$res), 0, 10);
-					$isLoaded = in_array((string)$res, $cfg['resources'], true);
+					$rowId = $res === $name ? $id : 'resource-'.substr(md5($res), 0, 10);
+					$isLoaded = in_array($res, $cfg['resources'], true);
 					$inner["#$rowId"] = $isLoaded ? 'on' : 'off';
 					$class["#$rowId"] = $isLoaded ? 'on' : '-on';
 					$class["#{$rowId}-row"] = $isLoaded ? 'loaded' : '-loaded';
@@ -693,13 +693,13 @@ class phlo_dashboard {
 				return;
 			}
 		}
-		$base = (string)dashboard;
+		$base = dashboard;
 		location('/'.ltrim("$base/config", '/'));
 	}
 
 	private static function actionResultHtml(string $label, array $files, string $kind):string {
 		$count   = count($files);
-		$names   = array_map(static fn($f) => basename((string)$f), $files);
+		$names   = array_map(static fn($f) => basename($f), $files);
 		$labelE  = esc($label);
 		$details = $names
 			? '<div class="dash-action-preview">'.esc(implode(', ', $names)).'</div>'
@@ -708,13 +708,13 @@ class phlo_dashboard {
 	}
 
 	private static function fileActionApply(string $section, string $result):void {
-		$base     = (string)dashboard;
+		$base     = dashboard;
 		$allFiles = $section === 'release' ? build::releaseFiles() : build::buildFiles();
 		$fileMap  = static::buildFileMap($allFiles);
 		$viewBase = "/$base/$section/view";
 		$active   = (string)array_key_first($fileMap);
 		$noFiles  = $section === 'release' ? 'No release files.' : 'No built files.';
-		$content  = $fileMap ? static::fileContent((string)$fileMap[$active], str_ends_with((string)$fileMap[$active], '.php')) : "<p class=\"muted\">$noFiles</p>";
+		$content  = $fileMap ? static::fileContent($fileMap[$active], str_ends_with($fileMap[$active], '.php')) : "<p class=\"muted\">$noFiles</p>";
 		$shell    = "<nav class=\"dash-file-nav\">\n".static::filePicker(array_keys($fileMap), $active, $viewBase)."</nav>\n"
 			."<div class=\"dash-file-body\"><div id=\"file-content\">\n$content</div></div>\n";
 		apply(
@@ -742,8 +742,8 @@ class phlo_dashboard {
 		$cfg        = build_base::config();
 		$namespaces = [(string)($cfg['defaultNS'] ?? 'app')];
 		foreach (reflect::sourceFiles() as $file){
-			if (!is_file((string)$file)) continue;
-			foreach (explode(lf, (string)file_get_contents((string)$file)) as $line){
+			if (!is_file($file)) continue;
+			foreach (explode(lf, (string)file_get_contents($file)) as $line){
 				if (preg_match('/^\s*ns:\s*([A-Za-z_]\w*)/', $line, $m)) $namespaces[] = $m[1];
 			}
 		}
@@ -762,21 +762,21 @@ class phlo_dashboard {
 		if ($mode === 'available'){
 			foreach (reflect::availableResources() as $resource){
 				if (!empty($resource['loaded'])) continue;
-				$file = (string)($resource['file'] ?? '');
+				$file = ($resource['file'] ?? '');
 				if ($file && is_file($file)) $files[static::sourceFileKey($file)] = $file;
 			}
 		}
 		elseif ($mode === 'resources'){
 			foreach (reflect::availableResources() as $resource){
 				if (empty($resource['loaded'])) continue;
-				$file = (string)($resource['file'] ?? '');
+				$file = ($resource['file'] ?? '');
 				if ($file && is_file($file)) $files[static::sourceFileKey($file)] = $file;
 			}
 		}
 		else {
-			foreach (reflect::sourceFiles() as $file) $files[static::sourceFileKey((string)$file)] = (string)$file;
+			foreach (reflect::sourceFiles() as $file) $files[static::sourceFileKey($file)] = $file;
 		}
-			uksort($files, static fn($a, $b) => strnatcasecmp(basename((string)$a), basename((string)$b)) ?: strnatcasecmp((string)$a, (string)$b));
+			uksort($files, static fn($a, $b) => strnatcasecmp(basename($a), basename($b)) ?: strnatcasecmp($a, $b));
 			return $files;
 		}
 
@@ -792,12 +792,12 @@ class phlo_dashboard {
 	private static function buildFileMap(array $allFiles):array {
 		$phpFiles   = [];
 		$assetFiles = [];
-		foreach ((array)($allFiles['php'] ?? []) as $file){
-			$file = (string)$file;
+		foreach (($allFiles['php'] ?? []) as $file){
+			$file = $file;
 			$phpFiles[basename($file)] = $file;
 		}
-		foreach ((array)($allFiles['www'] ?? []) as $file){
-			$file = (string)$file;
+		foreach (($allFiles['www'] ?? []) as $file){
+			$file = $file;
 			$assetFiles[basename($file)] = $file;
 		}
 		ksort($phpFiles, SORT_NATURAL | SORT_FLAG_CASE);
@@ -838,7 +838,7 @@ class phlo_dashboard {
 
 		$buildMap = static::buildFileMap(build::buildFiles());
 		$key = array_search($full, $buildMap, true);
-		if ($key !== false) return '/build/view/'.rawurlencode((string)$key);
+		if ($key !== false) return '/build/view/'.rawurlencode($key);
 		return null;
 	}
 
@@ -897,21 +897,21 @@ class phlo_dashboard {
 		$html = void;
 		foreach ($groups as $group => $items){
 			$count      = count($items);
-			$groupName  = esc((string)$group);
+			$groupName  = esc($group);
 			$itemsLabel = $count === 1 ? '1 item' : "$count items";
 			$html .= "<section class=\"resource-group\">\n"
 				."<header><strong>$groupName</strong><span>$itemsLabel</span></header>\n"
 				."<div class=\"resource-list\">\n";
 			foreach ($items as $item){
-				$id      = (string)$item['id'];
+				$id      = $item['id'];
 				$loaded  = !empty($item['loaded']);
 				$rowCls  = $loaded ? ' loaded' : '';
 				$btnCls  = $loaded ? ' on' : '';
 				$btnTxt  = $loaded ? 'on' : 'off';
-				$iName   = esc((string)$item['name']);
-				$iMeta   = esc((string)$item['meta']);
-				$iUrl    = esc((string)$item['url']);
-				$summary = (string)$item['summary'] !== void ? '<p>'.esc((string)$item['summary']).'</p>' : void;
+				$iName   = esc($item['name']);
+				$iMeta   = esc($item['meta']);
+				$iUrl    = esc($item['url']);
+				$summary = $item['summary'] !== void ? '<p>'.esc($item['summary']).'</p>' : void;
 				$html .= "<article id=\"{$id}-row\" class=\"resource-item$rowCls\">\n"
 					."<form method=\"post\" action=\"$iUrl\">"
 					."<input type=\"hidden\" name=\"button_id\" value=\"$id\">"
@@ -969,7 +969,7 @@ class phlo_dashboard {
 		$sectionTitle = ucfirst($section);
 		$fname        = static::displayFileName($name);
 		apply(
-			path: ltrim((string)phlo('req')->path, slash),
+			path: ltrim(phlo('req')->path, slash),
 			pathReplace: true,
 			title: "$sectionTitle - $fname - Phlo Dashboard",
 			inner: ['#file-content' => static::fileContent($file, $php)],
@@ -986,7 +986,7 @@ class phlo_dashboard {
 		[$urlBase, $urlQuery] = array_pad(explode('?', $baseUrl, 2), 2, null);
 		$qs = $urlQuery ? "?$urlQuery" : '';
 		foreach ($files as $name){
-			$href    = rtrim((string)$urlBase, '/').'/'.rawurlencode($name).$qs;
+			$href    = rtrim($urlBase, '/').'/'.rawurlencode($name).$qs;
 			$hrefE   = esc($href);
 			$nameE   = esc($name);
 			$display = esc(static::displayFileName($name));
@@ -1010,9 +1010,9 @@ class phlo_dashboard {
 			ini_set('highlight.html',    '#e6edf3');
 			$hi = highlight_string($src, true);
 			foreach ($save as $k => $v) ini_set('highlight.'.$k, $v);
-			$hi = preg_replace('/^<code[^>]*>(.*)<\/code>$/s', '$1', trim((string)$hi));
-			$hi = preg_replace('/<br\\s*\\/?>/i', "\n", (string)$hi);
-			$lines = explode("\n", (string)$hi);
+			$hi = preg_replace('/^<code[^>]*>(.*)<\/code>$/s', '$1', trim($hi));
+			$hi = preg_replace('/<br\\s*\\/?>/i', "\n", $hi);
+			$lines = explode("\n", $hi);
 			$items = void;
 			foreach ($lines as $i => $line)
 				$items .= '<li id="L'.($i + 1).'">'.$line.'</li>';
@@ -1028,7 +1028,7 @@ class phlo_dashboard {
 	private static function render(string $body, string $active, string $subtitle = void):void {
 		$req  = phlo('req');
 		$res  = phlo('res');
-		$base = (string)dashboard;
+		$base = dashboard;
 		$cfg  = build_base::config();
 		$title = $active === 'home' ? 'Phlo Dashboard' : ($subtitle ? ucfirst($active)." - $subtitle - Phlo Dashboard" : ucfirst($active).' - Phlo Dashboard');
 
@@ -1052,7 +1052,7 @@ class phlo_dashboard {
 		}
 
 		if ($req->async){
-			$renderPath = ltrim((string)$req->path, slash);
+			$renderPath = ltrim($req->path, slash);
 			$renderQuery = array_filter((array)($req->query ?? []));
 			if ($renderQuery) $renderPath .= '?'.http_build_query($renderQuery);
 			apply(path: $renderPath, title: $title, inner: ['#dash-top-nav' => $nav], main: $body);

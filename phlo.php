@@ -100,6 +100,11 @@ function phlo_thread():void {
 	try {
 		$req = phlo('req');
 		if ($req->cli){
+			$target = $req->args[0] ?? void;
+			if (str_starts_with($target, 'build::') || str_starts_with($target, 'reflect::')){
+				phlo_cli($req->args);
+				return;
+			}
 			phlo_load(false);
 			phlo('app');
 			phlo_cli($req->args);
@@ -150,7 +155,7 @@ function phlo_load(bool $http):void {
 
 function phlo_cli(array $args):void {
 	if (!$args) return;
-	$target = (string)array_shift($args);
+	$target = array_shift($args);
 	if (str_contains($target, dot)){
 		[$object, $method] = explode(dot, $target, 2);
 		$handle = phlo($object);

@@ -47,13 +47,13 @@ method envValues(bool $hostScoped = false):array {
 }
 
 method hostKey {
-	$host = strtoupper((string)%req->host)
+	$host = strtoupper(%req->host)
 	$host = preg_replace('/[^A-Z0-9]+/', '_', $host)
 	return trim($host, '_')
 }
 
 method envAssign(array &$target, array $parts, string $value):void {
-	$parts = array_values(array_filter(loop($parts, fn($part) => trim((string)$part)), 'strlen'))
+	$parts = array_values(array_filter(loop($parts, fn($part) => trim($part)), 'strlen'))
 	if (!$parts) return
 	$node = &$target
 	$last = count($parts) - 1

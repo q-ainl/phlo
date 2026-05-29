@@ -6,7 +6,7 @@ class build extends build_base {
 	public static function run(bool $release = false, bool $runHooks = true):array {
 		static::requireEnabled('run');
 		$config = static::sources($release)['build'];
-		$hooks  = $release ? (array)($config['release'] ?? []) : $config;
+		$hooks  = $release ? ($config['release'] ?? []) : $config;
 		if ($runHooks) static::runHooks($hooks, 'runBefore');
 		require_once __DIR__.slash.'file.php';
 		require_once __DIR__.slash.'node.php';
@@ -51,9 +51,9 @@ class build extends build_base {
 	/** Returns lists of compiled PHP and web output files for the release build. */
 	public static function releaseFiles():array {
 		$config  = static::sources(true)['build'];
-		$release = (array)($config['release'] ?? []);
-		$phpDir  = rtrim((string)($release['php'] ?? (app.'release/')), slash).slash;
-		$wwwDir  = rtrim((string)($release['www'] ?? (app.'release/www/')), slash).slash;
+		$release = $config['release'] ?? [];
+		$phpDir  = rtrim($release['php'] ?? (app.'release/'), slash).slash;
+		$wwwDir  = rtrim($release['www'] ?? (app.'release/www/'), slash).slash;
 		return static::outputFiles($phpDir, $wwwDir);
 	}
 
@@ -150,7 +150,7 @@ class build extends build_base {
 	}
 
 	private static function runHooks(array $config, string $event):void {
-		foreach ((array)($config[$event] ?? []) as $cmd){
+		foreach ($config[$event] ?? [] as $cmd){
 			exec($cmd, $out, $code);
 			if ($code) error('Hook "'.$event.'" failed: '.$cmd.lf.implode(lf, $out));
 		}

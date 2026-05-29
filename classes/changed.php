@@ -61,7 +61,7 @@ class build_base {
 		if (array_key_exists('libs', $raw) || array_key_exists('functions', $raw)) error('Build error: data/app.json uses obsolete keys. Use "resources" only.');
 		if (isset($raw['paths']) && (array_key_exists('libs', (array)$raw['paths']) || array_key_exists('functions', (array)$raw['paths']))) error('Build error: data/app.json paths use obsolete keys. Use paths.resources only.');
 		$build = array_replace(static::defaults($raw, $release), $raw);
-		$build['resources'] = array_values(array_unique((array)($build['resources'] ?? [])));
+		$build['resources'] = array_values(array_unique($build['resources'] ?? []));
 		$build['_minifyExplicit'] = [
 			'minifyCSS' => array_key_exists('minifyCSS', $raw),
 			'minifyJS'  => array_key_exists('minifyJS',  $raw),
@@ -69,14 +69,10 @@ class build_base {
 		];
 		$build['paths'] ??= [];
 		$paths   = $build['paths'];
-		$exclude = $release ? (array)($build['release']['exclude'] ?? []) : (array)($build['exclude'] ?? []);
-		$normalize = static function($path) use ($appPath){
-			$path = (string)$path;
-			if ($path === void) return $appPath;
-			return $path;
-		};
+		$exclude = $release ? ($build['release']['exclude'] ?? []) : ($build['exclude'] ?? []);
+		$normalize = static fn(string $path) => $path === void ? $appPath : $path;
 		$appPaths = array_values(array_unique(array_filter(
-			array_map(static fn($v) => (string)$v, array_merge([$appPath], (array)($paths['app'] ?? []))),
+			array_merge([$appPath], $paths['app'] ?? []),
 			'strlen'
 		)));
 		$appFiles = [];
@@ -89,11 +85,11 @@ class build_base {
 			}
 		}
 		$resourcePaths = array_values(array_unique(array_filter(
-			array_merge([dirname(__DIR__).slash.'resources'.slash], (array)($paths['resources'] ?? [])),
+			array_merge([dirname(__DIR__).slash.'resources'.slash], $paths['resources'] ?? []),
 			'strlen'
 		)));
 		$resourceFiles = [];
-		foreach ((array)($build['resources'] ?? []) as $resource){
+		foreach ($build['resources'] ?? [] as $resource){
 			if ($exclude && in_array(basename($resource), $exclude, true)) continue;
 			$found = null;
 			foreach ($resourcePaths as $path){
@@ -105,13 +101,13 @@ class build_base {
 		}
 		$releaseCfg = $build['release'] ?? null;
 		if ($releaseCfg){
-			$releaseCfg = is_string($releaseCfg) ? ['php' => $releaseCfg] : (array)$releaseCfg;
+			$releaseCfg = is_string($releaseCfg) ? ['php' => $releaseCfg] : $releaseCfg;
 			$build['release'] = array_replace(['php' => $appPath.'release/'], $releaseCfg);
-			if (is_string($build['release']['php'] ?? null)) $build['release']['php'] = $normalize((string)$build['release']['php']);
-			$build['release']['www'] ??= rtrim((string)$build['release']['php'], slash).slash.'www/';
-			if (is_string($build['release']['www'] ?? null)) $build['release']['www'] = $normalize((string)$build['release']['www']);
+			$build['release']['php'] = $normalize($build['release']['php']);
+			$build['release']['www'] ??= rtrim($build['release']['php'], slash).slash.'www/';
+			$build['release']['www'] = $normalize($build['release']['www']);
 		}
-		if (isset($build['icons'])) $build['icons'] = $normalize((string)$build['icons']);
+		if (isset($build['icons'])) $build['icons'] = $normalize($build['icons']);
 		$result = [
 			'build'      => $build,
 			'app_path'   => $appPath,
@@ -134,9 +130,9 @@ class build_base {
 			'routes'    => true,
 			'buildCSS'  => true,
 			'buildJS'   => true,
-			'minifyCSS' => array_key_exists('minifyCSS', $raw) ? (bool)$raw['minifyCSS'] : $release,
-			'minifyJS'  => array_key_exists('minifyJS',  $raw) ? (bool)$raw['minifyJS']  : $release,
-			'minifyPHP' => array_key_exists('minifyPHP', $raw) ? (bool)$raw['minifyPHP'] : $release,
+			'minifyCSS' => $raw['minifyCSS'] ?? $release,
+			'minifyJS'  => $raw['minifyJS']  ?? $release,
+			'minifyPHP' => $raw['minifyPHP'] ?? $release,
 			'phloJS'    => false,
 			'phloNS'    => 'app',
 			'defaultNS' => 'app',
@@ -162,8 +158,8 @@ function phlo_auth(string $name, ?string $realm = null):bool {
 	}
 	else $cache ??= [];
 	$section = is_array($cache[$name] ?? null) ? $cache[$name] : [];
-	$user    = (string)($section['user']     ?? void);
-	$pass    = (string)($section['password'] ?? void);
+	$user    = $section['user']     ?? void;
+	$pass    = $section['password'] ?? void;
 	$ok = $user !== void && $pass !== void && isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && $_SERVER['PHP_AUTH_USER'] === $user && $_SERVER['PHP_AUTH_PW'] === $pass;
 	if ($ok || $realm === null) return $ok;
 	$res = phlo('res');

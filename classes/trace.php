@@ -98,12 +98,12 @@ class trace {
 		$cm = php.'classmap.php';
 		$sm = php.'sourcemap.php';
 		if (!is_file($cm) || !is_file($sm)) return [];
-		$classmap  = (array)(require $cm);
-		$sourcemap = (array)(require $sm);
+		$classmap  = require $cm;
+		$sourcemap = require $sm;
 		$out = [];
 		foreach ($classmap as $class => $phpFile){
 			$src = $sourcemap[php.$phpFile]['source'] ?? null;
-			if ($src) $out[strtolower((string)$class)] = (string)$src;
+			if ($src) $out[strtolower($class)] = $src;
 		}
 		return $out;
 	}

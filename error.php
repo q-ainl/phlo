@@ -66,12 +66,12 @@ function phlo_error_sourcemap(string $phpFile, int $phpLine):?array {
 	$entry = $map[$phpFile];
 	$source = $entry['source'] ?? null;
 	$best   = null;
-	foreach ((array)($entry['map'] ?? []) as $row){
+	foreach ($entry['map'] ?? [] as $row){
 		if (($row['php'] ?? 0) <= $phpLine && (!$best || $row['php'] > $best['php'])) $best = $row;
 	}
 	if ($best){
 		$source  = $best['source'] ?? $source;
-		$phpLine = (int)$best['phlo'] + ($phpLine - (int)$best['php']);
+		$phpLine = $best['phlo'] + ($phpLine - $best['php']);
 	}
 	if (!$source) return null;
 	return ['file' => $source, 'line' => $phpLine, 'name' => $best['name'] ?? null];
@@ -89,12 +89,12 @@ function phlo_error_render_debug(string $type, string $message, int $code, strin
 	$srcHtml   = void;
 	foreach (phlo_error_source_context($file, $line) as $ctx){
 		$active   = $ctx['active'] ? ' active' : void;
-		$srcHtml .= '<tr class="row'.$active.'"><td class="num">'.$ctx['num'].'</td><td class="code">'.phlo_error_highlight((string)$ctx['code'], $file).'</td></tr>';
+		$srcHtml .= '<tr class="row'.$active.'"><td class="num">'.$ctx['num'].'</td><td class="code">'.phlo_error_highlight($ctx['code'], $file).'</td></tr>';
 	}
 	$traceHtml = void;
 	foreach (phlo_error_format_trace($trace, $file, $line) as $frame){
-		$loc       = phlo_error_location_html((string)$frame['file'], (int)$frame['line']);
-		$call      = esc((string)($frame['call'] ?? void));
+		$loc       = phlo_error_location_html($frame['file'], $frame['line']);
+		$call      = esc($frame['call'] ?? void);
 		$traceHtml .= '<tr class="row"><td class="loc">'.$loc.'</td><td class="call">'.$call.'</td></tr>';
 	}
 	$body = "<main class=\"wrap\">"
@@ -155,7 +155,7 @@ function phlo_error_source_mode(string $file, string $key):string {
 	if (defined('app') && str_starts_with($clean, rtrim(str_replace(bs, slash, app), slash).slash)) return 'app';
 	try { $config = class_exists('build_base') ? build_base::config() : []; }
 	catch (Throwable) { $config = []; }
-	return in_array(substr($key, 0, -5), (array)($config['resources'] ?? []), true) ? 'resources' : 'available';
+	return in_array(substr($key, 0, -5), $config['resources'] ?? [], true) ? 'resources' : 'available';
 }
 
 function phlo_error_build_target(string $file):?string {
@@ -163,9 +163,9 @@ function phlo_error_build_target(string $file):?string {
 	try {
 		$sections = ['build' => build::buildFiles(), 'release' => build::releaseFiles()];
 		foreach ($sections as $section => $groups){
-			foreach ((array)$groups as $prefix => $files){
-				foreach ((array)$files as $candidate){
-					$candidate = str_replace(bs, slash, (string)$candidate);
+			foreach ($groups as $prefix => $files){
+				foreach ($files as $candidate){
+					$candidate = str_replace(bs, slash, $candidate);
 					if ($candidate === $file) return '/'.$section.'/view/'.rawurlencode($prefix.'/'.basename($candidate));
 				}
 			}
@@ -219,8 +219,8 @@ function phlo_error_format_trace(array $trace, string $file, int $line):array {
 	$frames = [['file' => $file, 'line' => $line, 'call' => 'error']];
 	foreach ($trace as $frame){
 		if (!isset($frame['file'], $frame['line'])) continue;
-		$source  = phlo_error_sourcemap((string)$frame['file'], (int)$frame['line']);
-		$call    = (string)($frame['function'] ?? void);
+		$source  = phlo_error_sourcemap($frame['file'], $frame['line']);
+		$call    = $frame['function'] ?? void;
 		isset($frame['class']) && $call = $frame['class'].($frame['type'] ?? '::').$call;
 		$frames[] = [
 			'file' => $source['file'] ?? $frame['file'],
