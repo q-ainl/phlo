@@ -16,7 +16,7 @@ method input($record){
 	return tag('div', class: 'wysiwyg-container', inner: "$toolbar$editor$hiddenInput")
 }
 
-prop dbColumns => [obj(name: $this->name, type: 'text')]
+prop objColumns => [$this->name]
 
 <script>
 on('click', '.wysiwyg-container .toolbar button', (button, e) => {

@@ -11,20 +11,3 @@
 prop PDO => new \PDO('mysql:host='.%creds->mysql->host.';dbname='.%creds->mysql->database, %creds->mysql->user, %creds->mysql->password)
 prop objPers = true
 
-method columnSql($col){
-	$base = $this->fieldQuotes.$col->name.$this->fieldQuotes.' '
-	if ($col->type === 'bool') return $base.'tinyint(1) unsigned'
-	if ($col->type === 'int'){
-		$l = (int)($col->length ?? 10)
-		$intType = $l <= 3 ? 'tinyint' : ($l <= 5 ? 'smallint' : ($l <= 7 ? 'mediumint' : ($l <= 10 ? 'int' : 'bigint')))
-		return $base.$intType.'('.$l.')'.(($col->unsigned ?? true) ? ' unsigned' : void)
-	}
-	if ($col->type === 'decimal') return $base.'decimal('.(($col->length ?? 0) + ($col->decimals ?? 0)).comma.($col->decimals ?? 0).')'.(($col->unsigned ?? true) ? ' unsigned' : void)
-	if ($col->type === 'timestamp') return $base.'int(10) unsigned'
-	if ($col->type === 'date') return $base.'DATE'
-	if ($col->type === 'string') return $base.'varchar('.($col->length ?? 255).')'
-	if ($col->type === 'char') return $base.'char('.($col->length ?? 20).')'
-	if ($col->type === 'text') return $base.'TEXT'
-	if ($col->type === 'enum') return $base."enum('".implode("','", (array)($col->options ?? []))."')"
-	error('Unknown column type: '.$col->type)
-}

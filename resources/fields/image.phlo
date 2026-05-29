@@ -27,7 +27,7 @@ method input($record){
 
 method write($file) => %img($file->file)->scale($this->thumbSize, $this->thumbSize)->save($this->writePath($file, $this->thumbPath)) && $file->move($this->writePath($file))
 
-prop dbColumns => [obj(name: $this->name, type: 'string', length: 100), obj(name: $this->name.'_token', type: 'char', length: 20)]
+prop objColumns => [$this->name, $this->name.'_token']
 
 <script>
 on('click', '.input.image .image', (img) => img.nextElementSibling.click())

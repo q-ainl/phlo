@@ -10,4 +10,4 @@
 
 prop handle = true
 
-prop dbColumns => [obj(name: $this->name, type: 'date')]
+prop objColumns => [$this->name]

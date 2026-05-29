@@ -18,4 +18,4 @@ method label($record) => loop($record->{$this->name}, fn($relation) => $this->li
 method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
 method input($record) => $this->label($record)
 
-prop dbColumns => []
+prop objColumns => []

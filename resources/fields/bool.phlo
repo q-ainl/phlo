@@ -16,4 +16,4 @@ method input($record) => tag('label', inner: input(type: 'checkbox', name: $this
 method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
 method nullable => false
 
-prop dbColumns => [obj(name: $this->name, type: 'bool')]
+prop objColumns => [$this->name]

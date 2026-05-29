@@ -35,7 +35,7 @@ static columns {
 }
 static _columns {
 	$fq = static::DB()->fieldQuotes
-	$list = array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop($field->dbColumns, fn($col) => static::$table."$fq.$fq".$col->name)))))
+	$list = array_merge(...array_values(array_filter(loop(static::fields(), fn($field) => loop($field->objColumns, fn($col) => static::$table."$fq.$fq".$col)))))
 	return $fq.implode("$fq,$fq", $list).$fq
 }
 static fields {
@@ -336,33 +336,4 @@ static objMany {
 	if (property_exists(static::class, 'objMany')) return static::$objMany
 	if (!method_exists(static::class, 'schema')) return []
 	return loop(array_filter(static::fields(), fn($f) => $f->type === 'many'), fn($f) => arr(obj: static::objResolveClass($f->obj), table: $f->table, localKey: $f->localKey ?? static::objShortName(), foreignKey: $f->foreignKey ?? $f->obj))
-}
-
-static createTable {
-	method_exists(static::class, 'schema') || error(static::class.' has no schema()')
-	$DB = static::DB()
-	$fq = $DB->fieldQuotes
-	$idColumn = $fq.static::idColumn().$fq
-	$ddl = []
-	foreach (static::fields() AS $field){
-		foreach ($field->dbColumns AS $col){
-			$ddl[] = $DB->columnSql($col).($field->required || $field->nullable === false ? ' NOT' : void).' NULL'
-		}
-	}
-	return 'CREATE TABLE '.$fq.static::$table.$fq.' ('.lf.tab.implode(",\n\t", $ddl).",\n\tPRIMARY KEY ($idColumn)\n)"
-}
-
-static objSchemaDiff {
-	if (!method_exists(static::class, 'schema')) return []
-	$expected = static::fields()
-	$where = "TABLE_NAME='".static::$table."'"
-	static::DB()->fieldQuotes === bt && $where .= ' AND TABLE_SCHEMA = DATABASE()'
-	$actual = static::DB()->load(table: 'information_schema.COLUMNS', columns: 'COLUMN_NAME', where: $where)->fetchAll(\PDO::FETCH_COLUMN)
-	$expectedColumns = []
-	foreach ($expected AS $field){
-		foreach ($field->dbColumns AS $col) $expectedColumns[] = $col->name
-	}
-	$missing = array_diff($expectedColumns, $actual)
-	$extra = array_diff($actual, $expectedColumns, [static::idColumn()])
-	return arr(missing: $missing ?: null, extra: $extra ?: null)
 }

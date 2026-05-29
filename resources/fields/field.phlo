@@ -16,7 +16,7 @@ prop title => ucfirst($this->name)
 method input($record) => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
 method label($record) => $record->{$this->name};
 
-prop dbColumns => []
+prop objColumns => []
 
 method objValidate($value){
 	if (($value === null || $value === void) && $this->required) return $this->title.' is verplicht'

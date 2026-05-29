@@ -21,4 +21,4 @@ method parse($record){
 	elseif ($payload = %payload->{$this->name}) $record->{$this->name} = strtotime($payload)
 }
 
-prop dbColumns => [obj(name: $this->name, type: 'timestamp')]
+prop objColumns => [$this->name]
