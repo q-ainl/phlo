@@ -25,7 +25,7 @@ method input($record){
 }
 
 method parse($record){
-	$file = %payload->{$this->name}
+	$file = %payload->{$this->name};
 	if ($delete = %payload->{$this->name.'Delete'}) unset(%payload->{$this->name.'Delete'})
 	if ($record->{$this->name} && $delete && $this->canDelete) $record->{$this->name} = $record->{$this->name.'_token'} = null
 	if (is_a($file, 'file')){
@@ -37,8 +37,8 @@ method parse($record){
 }
 
 method read($record, $path = null){
-	$filename = $record->{$this->name}
-	$token = $record->{$this->name.'_token'}
+	$filename = $record->{$this->name};
+	$token = $record->{$this->name.'_token'};
 	return %file(($path ?? $this->path).($info = substr($token, 0, 2).slash.substr($token, 2).dot.pathinfo($filename, PATHINFO_EXTENSION)), name: $filename, info: $info)
 }
 
