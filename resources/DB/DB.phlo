@@ -47,6 +47,7 @@ method item(...$args) => $this->load(...$args)->fetch(\PDO::FETCH_COLUMN) ?: nul
 method pair(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_KEY_PAIR)
 method group(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_GROUP|\PDO::FETCH_CLASS, obj::class)
 method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, obj::class)
+method rows(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS, obj::class)
 method record(...$args) => $this->load(...$args)->fetchObject(obj::class) ?: null
 
 method create(string $table, ...$data){

@@ -29,6 +29,7 @@ class obj implements IteratorAggregate, JsonSerializable {
 		if ($this->hasClosure($method)) return $this->objClosures[$method]->call($this, ...$args);
 		if ($this->hasMethod($method)) return $this->$method(...$args);
 		if ($prop = $this->hasProp($method)) return $args ? $this->objProps[$method][serialize($args)] ??= $this->$prop(...$args) : $this->objProps[$method][void] ??= $this->$prop();
+		if (property_exists(static::class, $method)) return static::$$method;
 		error('Unknown call '.static::class.'->'.$method);
 	}
 	public function &__get($key){

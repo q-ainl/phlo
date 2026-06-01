@@ -241,7 +241,7 @@ method getMany($key){
 		if ($parentIds){
 			$fq = static::DB()->fieldQuotes
 			$lk = $relation['localKey']; $fk = $relation['foreignKey']
-			$pivotRows = static::DB()->records(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn($parentIds).')')
+			$pivotRows = static::DB()->rows(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn($parentIds).')')
 			$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
 			$targetRecords = $targetIds ? $class::records(where: $class::idColumn().' IN ('.$this->objIn($targetIds).')') : []
 			foreach ($state->records[static::class] AS $parentRecord) $parentRecord->objState['many'][$key] = []
