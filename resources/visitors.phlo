@@ -60,7 +60,7 @@ let curpath = app.path
 let heartbeatTimeout
 const heartbeat = () => delay('heartbeat', 333, () => {
 	clearTimeout(heartbeatTimeout)
-	const consent = document.cookie.includes('phlo_consent=1')
+	const consent = document.cookie.includes('cookieChoice=all')
 	if (consent){
 		const m = document.cookie.match(/phlo_visitor=([a-z0-9]{8})/)
 		if (m) window.name = m[1]
