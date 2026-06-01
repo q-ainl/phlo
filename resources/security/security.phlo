@@ -7,14 +7,17 @@
 @ requires: @session token
 @ tags:     security csp nonce headers
 
+prop whitelist = []
+
 method setNonce => %app->nonce = token(8)
 
 method frameProtect($mode = 'DENY') => %res->header('X-Frame-Options', $mode)
+method frameWhitelist => $this->whitelist ? ' '.implode(' ', array_map(fn($d) => "https://*.$d", (array)$this->whitelist)) : void
 
-method strict => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]]
-method full => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]]
-method basic => [$this->base, %req->async || %res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]
-method marketing => [$this->base, %req->async || %res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'")]
+method strict => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")]]
+method full => [$this->base, %req->async || [%res->header('Cache-Control', 'no-store'), %res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$this->setNonce'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")]]
+method basic => [$this->base, %req->async || %res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")]
+method marketing => [$this->base, %req->async || %res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")]
 method api => [%res->header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'"), %res->header('X-Content-Type-Options', 'nosniff'), %res->header('Referrer-Policy', 'no-referrer')]
 
 method base {
