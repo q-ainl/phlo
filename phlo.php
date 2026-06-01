@@ -101,6 +101,7 @@ function phlo_app(...$args):void {
 		for ($i = 1; !$args['thread'] || $i <= $args['thread']; ++$i){
 			$keepRunning = frankenphp_handle_request($handle);
 			phlo('tech/reset');
+			if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
 			gc_collect_cycles();
 			if (!$keepRunning) break;
 		}
