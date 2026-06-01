@@ -109,10 +109,6 @@ class build_builder {
 				$node->name = $nodeName;
 				if (!isset($this->files[$class])) continue;
 				$target = $this->files[$class];
-				if (isset($target->nodes[$nodeName])){
-					$this->errors[] = 'Build error: Node "'.$nodeName.'" exists in '.$target->file;
-					continue;
-				}
 				$target->nodes[$nodeName] = $node;
 			}
 		}

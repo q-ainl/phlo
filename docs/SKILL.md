@@ -331,6 +331,21 @@ static cashCoupures => [100, 50, 25]
 ```
 Call computed statics with `ClassName::cashCoupures()`. Primitive scalar `static name = value` works, but complex literal `static name = [...]` can produce misleading parser errors in current Delta builds.
 
+### Cross-resource node modifiers
+
+Any `.phlo` file can inject or override a node in **another** resource's class at build time by naming the node `%<targetClass>.<nodeName>`:
+```phlo
+static %visitors.table = 'control.visitors'
+prop %visitors.db = 'control'
+method %model.greet => 'hi'
+```
+The first line overrides the `visitors` model's `static $table`; the second adds or overrides a `db` prop on `visitors`; the third adds a `greet` method to the `model` class. At build the compiler strips the `%<class>.` prefix and writes the node into `<class>`, **overwriting** an existing node of that name (or adding a new one). The target class must be part of the current build (its resource loaded), otherwise the modifier is silently ignored. Match the node *type* you replace (override a `static` with `static`, a `prop` with `prop`), the whole node is swapped.
+
+Use it to adapt an engine/shared resource per app without forking it, e.g. point the shared `visitors` model at a central analytics database while every other query stays on the app's own connection:
+```phlo
+static %visitors.table = 'control.visitors'
+```
+
 ### Routing
 
 ```
