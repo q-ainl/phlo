@@ -24,7 +24,7 @@ class build extends build_base {
 		return static::run(true, $runHooks);
 	}
 
-	/** Deletes all compiled PHP files from php/. Returns an array of deleted filenames. */
+	/** Deletes compiled PHP from php/ and the build's own www/ namespace bundles (<ns>.css/.js); vendored assets (e.g. chart.js) are left untouched. Returns an array of deleted filenames. */
 	public static function flush():array {
 		static::requireEnabled('flush');
 		$deleted = [];
@@ -32,13 +32,16 @@ class build extends build_base {
 			unlink($file);
 			$deleted[] = dash.basename($file);
 		}
-		foreach (glob(www.'*.css') ?: [] as $file){
-			unlink($file);
-			$deleted[] = dash.basename($file);
-		}
-		foreach (glob(www.'*.js') ?: [] as $file){
-			unlink($file);
-			$deleted[] = dash.basename($file);
+		require_once __DIR__.slash.'file.php';
+		require_once __DIR__.slash.'node.php';
+		require_once __DIR__.slash.'builder.php';
+		$builder = new build_builder(static::sources(false), false);
+		foreach ($builder->namespaces() as $ns){
+			foreach ([www.$ns.'.css', www.$ns.'.js'] as $file){
+				if (!is_file($file)) continue;
+				unlink($file);
+				$deleted[] = dash.basename($file);
+			}
 		}
 		return $deleted;
 	}

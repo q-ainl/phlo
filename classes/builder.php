@@ -288,6 +288,17 @@ class build_builder {
 		}
 	}
 
+	public function namespaces():array {
+		$list    = ['app' => true];
+		if (isset($this->build['icons'])) $list[$this->build['iconNS'] ?? 'app'] = true;
+		$exclude = $this->setting('exclude', []);
+		foreach (array_merge($this->appFiles, $this->resourceFiles) as $class => $file){
+			if (in_array($class, $exclude, true)) continue;
+			foreach ($file->assets as $asset) foreach (explode(comma, $asset->ns ?? $this->build['defaultNS'] ?? 'app') as $n) $list[trim($n)] = true;
+		}
+		return array_keys($list);
+	}
+
 	private function lint_written():void {
 		if (!$this->lintTargets) return;
 		$files = implode(space, array_map('escapeshellarg', $this->lintTargets));
