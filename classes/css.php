@@ -3,8 +3,9 @@
 class build_css {
 	public static function decode(string $input, bool $compact = true):string {
 		$input = str_replace(["\r\n", "\r"], "\n", $input);
-		$lines = explode("\n", $input);
+		$lines = self::merge_continuations(explode("\n", $input));
 		$rules = [];
+		$statements = [];
 		$selectorStack = [];
 		$atStack       = [];
 		$contextStack  = [];
@@ -44,19 +45,22 @@ class build_css {
 			$token = colon.space;
 			[$left, $right] = self::split_first($trim, $token);
 			if ($right === null) [$left, $right] = self::split_first($trim, colon);
-			if ($right === null) continue;
+			if ($right === null){
+					if ($trim[0] === '@') $statements[] = rtrim($trim, semi).semi;
+					continue;
+				}
 			$right = trim($right);
-			if (str_contains($right, $token)){
+			if (self::has_token($right, $token)){
 				$selector = trim($left);
 				if ($selector !== void && $selector[0] === '@'){
 					[$selector, $rest] = self::split_first($right, $token);
-					if (!str_contains($rest ?? void, $token)) continue;
+					if (!self::has_token($rest ?? void, $token)) continue;
 					[$prop, $value] = self::split_first($rest, $token);
 					self::add_rule($rules, array_merge($atStack, [trim($left)]), $selectorStack, $selector, $prop, $value);
 				}
 				else {
 					[$maybeSelector, $rest] = self::split_first($right, $token);
-					if (str_contains($rest ?? void, $token)){
+					if (self::has_token($rest ?? void, $token)){
 						[$prop, $value] = self::split_first($rest, $token);
 						$parentStack   = $selectorStack;
 						$parentStack[] = self::split_selector($selector);
@@ -71,7 +75,9 @@ class build_css {
 			}
 			self::add_rule($rules, $atStack, $selectorStack, null, $left, $right);
 		}
-		return self::render_rules($rules, $compact);
+		$css = self::render_rules($rules, $compact);
+		if ($statements) $css = implode(lf, $statements).($css !== void ? lf.$css : void);
+		return $css;
 	}
 
 	public static function encode(string $input):string {
@@ -191,12 +197,38 @@ class build_css {
 		return str_replace(['\\:', '\\.', '\\#'], [':', '.', '#'], $selector);
 	}
 
+	private static function merge_continuations(array $lines):array {
+		$out   = [];
+		$carry = void;
+		foreach ($lines as $line){
+			if ($carry !== void) $line = $carry.space.ltrim($line);
+			$carry = void;
+			$body  = ltrim($line);
+			$isComment = str_starts_with($body, '//') || ($body !== void && $body[0] === '#' && isset($body[1]) && ($body[1] === space || $body[1] === tab));
+			if (!$isComment && str_ends_with(rtrim($line), comma)){ $carry = rtrim($line); continue; }
+			$out[] = $line;
+		}
+		if ($carry !== void) $out[] = $carry;
+		return $out;
+	}
+
+	private static function has_token(string $line, string $token):bool {
+		return self::split_first($line, $token)[1] !== null;
+	}
+
 	private static function split_first(string $line, string $token):array {
 		$len   = strlen($line);
 		$tlen  = strlen($token);
 		$depth = 0;
+		$quote = void;
 		for ($i = 0; $i < $len; ++$i){
 			$c = $line[$i];
+			if ($quote !== void){
+				if ($c === bs){ ++$i; continue; }
+				if ($c === $quote) $quote = void;
+				continue;
+			}
+			if ($c === dq || $c === sq){ $quote = $c; continue; }
 			if ($c === '(') ++$depth;
 			elseif ($c === ')' && $depth > 0) --$depth;
 			if ($depth === 0 && substr($line, $i, $tlen) === $token) return [substr($line, 0, $i), substr($line, $i + $tlen)];
@@ -265,9 +297,9 @@ class build_css {
 		if (count($parts) === 1) return [($indent ? tab : void).$selector.space.'{'];
 		$lines = [];
 		foreach ($parts as $i => $part){
-			$lines[] = ($indent ? tab : void).$part.($i < count($parts) - 1 ? comma : void);
+			$last = $i === count($parts) - 1;
+			$lines[] = ($indent ? tab : void).$part.($last ? space.'{' : comma);
 		}
-		$lines[] = ($indent ? tab : void).'{';
 		return $lines;
 	}
 
