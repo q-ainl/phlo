@@ -5,7 +5,7 @@
 @ package:  analytics
 @ frontend: false
 @ backend:  true
-@ requires: @payload @model token wsCast
+@ requires: @payload @model token wsCast useragent
 @ tags:     visitors analytics heartbeat tracking
 
 static table = 'visitors'
