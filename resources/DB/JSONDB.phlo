@@ -99,7 +99,7 @@ method delete(string $table, string $where, ...$args){
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	!$where && $args && $where = loop(array_keys($args), fn($column) => "$column=?", ' AND ')
 	$data = $this->objSelect($where, $limit, $order, ...array_values($args))
-	return new JSON_result($data)
+	return %JSON_result($data)
 }
 method query($query, ...$args) => error('JSONDB driver does not support raw SQL queries')
 
