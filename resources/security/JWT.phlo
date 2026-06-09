@@ -1,0 +1,41 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Sign and verify compact HS256 JSON Web Tokens (RFC 7519), secure by default
+@ package:  security
+@ frontend: false
+@ backend:  true
+@ requires: php-ext:hash
+@ tags:     jwt jws hs256 token auth security
+
+method __construct(public string $secret, public string $issuer = void, public int $leeway = 30){
+	strlen($this->secret) >= 32 || error('JWT secret must be at least 32 bytes', 500)
+}
+
+method sign(array $claims, int $ttl = 3600):string {
+	$now = time()
+	$claims['iat'] = $now
+	$claims['exp'] = $now + $ttl
+	if ($this->issuer !== void) $claims['iss'] = $this->issuer
+	$body = $this->encode(['alg' => 'HS256', 'typ' => 'JWT']).dot.$this->encode($claims)
+	return $body.dot.$this->sig($body)
+}
+
+method verify(string $token):array {
+	$token = preg_replace('/^Bearer\s+/i', void, trim($token))
+	$parts = explode(dot, $token)
+	count($parts) === 3 || error('JWT malformed', 401)
+	[$h, $p, $s] = $parts
+	$header = (array)json_decode((string)$this->decode($h), true)
+	($header['alg'] ?? void) === 'HS256' || error('JWT algorithm not allowed', 401)
+	hash_equals($this->sig($h.dot.$p), $s) || error('JWT signature invalid', 401)
+	$claims = (array)json_decode((string)$this->decode($p), true)
+	$now = time()
+	isset($claims['nbf']) && $now + $this->leeway < $claims['nbf'] && error('JWT not yet valid', 401)
+	isset($claims['exp']) && $now - $this->leeway >= $claims['exp'] && error('JWT expired', 401)
+	$this->issuer === void || ($claims['iss'] ?? void) === $this->issuer || error('JWT issuer mismatch', 401)
+	return $claims
+}
+
+method sig(string $body):string => $this->encode(hash_hmac('sha256', $body, $this->secret, true))
+method encode($data):string => rtrim(strtr(base64_encode(is_string($data) ? $data : (string)json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), '+/', '-_'), eq)
+method decode(string $data):string => (string)base64_decode(strtr($data, '-_', '+/'))
