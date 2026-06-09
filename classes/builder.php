@@ -136,7 +136,7 @@ class build_builder {
 					if (isset($node->line)){
 						$line    = substr_count($prefix.$functions, lf);
 						$hasBody = str_contains($node->body ?? void, lf);
-						$map[]   = ['php' => $line + 1, 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name, 'source' => $file->file];
+						$map[]   = ['php' => $line + 1 + ($hasBody ? 1 : 0), 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name, 'source' => $file->file];
 					}
 					$functions .= $node->renderFunction().($minifyPHP ? void : lf);
 				}

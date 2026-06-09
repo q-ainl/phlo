@@ -1,0 +1,20 @@
+@ extends:  field
+@ class:    field_multiselect
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Multi-select via checkboxes; slaat de keuze als CSV op in één verborgen veld (geen save-aanpassing nodig).
+@ package:  fields
+@ frontend: false
+@ backend:  true
+@ tags:     field select multi
+
+method label($record) => ($v = (string)($record->{$this->name} ?? '')) !== '' ? $v : dash
+
+method input($record) {
+	$current = array_filter(array_map('trim', explode(',', (string)($record->{$this->name} ?? ''))))
+	$js = "var f=this.closest('.field');f.querySelector('input.msv').value=[...f.querySelectorAll('input.msc:checked')].map(c=>c.value).join(',')"
+	$boxes = loop((array)$this->options, fn($o) => tag('label', tag('input', type: 'checkbox', value: (string)$o, class: 'msc', checked: in_array((string)$o, $current) ? true : void, onchange: $js).esc((string)$o), class: 'ms-opt'), void)
+	return tag('input', type: 'hidden', name: $this->name, value: implode(',', $current), class: 'msv').tag('div', $boxes ?: tag('span', 'geen opties', class: 'muted'), class: 'ms-grid')
+}
+
+prop objColumns => [$this->name]

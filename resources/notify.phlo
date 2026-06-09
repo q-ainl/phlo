@@ -1,0 +1,28 @@
+@ summary:  Melding naar de centrale hub: POST [notify].url (secret-header) via de Phlo HTTP()-functie. No-op zonder [notify]-config.
+@ package:  fleet
+@ frontend: false
+@ backend:  true
+@ requires: HTTP
+
+# notify($title), stuur een melding naar het centrale dashboard (message-inbox + subscription-dispatch).
+# Leest [notify] uit creds (url + secret, optioneel app/server). Best-effort: fouten worden genegeerd.
+function notify(string $title, string $body = '', string $type = 'info', string $level = 'info', ?string $user = null): void {
+	$cfg = %creds->notify ?? null
+	if (!$cfg) return
+	$url = (string)($cfg->url ?? void)
+	$secret = (string)($cfg->secret ?? void)
+	if ($url === void || $secret === void) return
+	try {
+		HTTP($url, ['secret: '.$secret], true, [
+			'app' => (string)($cfg->app ?? (defined('id') ? id : 'app')),
+			'server' => (string)($cfg->server ?? 'local'),
+			'host' => (string)(%req->host ?? ''),
+			'type' => $type,
+			'level' => $level,
+			'title' => $title,
+			'body' => $body,
+			'user' => $user,
+		])
+	}
+	catch (\Throwable $e){}
+}

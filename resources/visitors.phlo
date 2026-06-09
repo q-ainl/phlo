@@ -33,7 +33,7 @@ route PUT heartbeat @n,v,l,u,w,h,a,p,r,c {
 	$n = strlen(%payload->n) === 8 ? %payload->n : date('Ymd')
 	$id = $consent ? token(20, $n.space.%app->token.space.%useragent->source) : token(20, $n.space.date('Ymd').space.%app->token.space.%req->ip)
 	$data = arr (
-		token: %app->token ?? error('No app token available'),
+		token: token(20, (string)(%app->token ?? error('No app token available'))),
 		host: host,
 		page: %payload->u,
 		lang: strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en',

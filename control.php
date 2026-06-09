@@ -7,13 +7,13 @@ class phlo_dashboard {
 			if (is_file(engine.'assets/logo.png')) output(file: engine.'assets/logo.png');
 			return;
 		}
-		if ($req === 'dashboard.css'){
-			if (is_file(engine.'assets/dashboard.css')) output(file: engine.'assets/dashboard.css');
+		if ($req === 'control.css'){
+			if (is_file(engine.'assets/control.css')) output(file: engine.'assets/control.css');
 			return;
 		}
-		if ($req === 'dashboard.js'){
+		if ($req === 'control.js'){
 			$js = void;
-			foreach (['phlo.js', 'highlight.js', 'dashboard.js'] as $f){
+			foreach (['phlo.js', 'highlight.js', 'control.js'] as $f){
 				$path = engine.'assets/'.$f;
 				if (is_file($path)) $js .= file_get_contents($path)."\n";
 			}
@@ -22,7 +22,7 @@ class phlo_dashboard {
 			$res->body = $js;
 			return;
 		}
-		if (!phlo_auth('dashboard', 'Phlo Dashboard - '.host)) return;
+		if (!phlo_auth('dashboard', 'Phlo Control - '.host)) return;
 
 		if ($req === 'trace' || str_starts_with($req, 'trace/') || $req === 'traces'){
 			$res     = phlo('res');
@@ -65,7 +65,7 @@ class phlo_dashboard {
 		if ($arg === 'readme' && $req->method === 'POST'){
 			file_put_contents(data.'app.md', (string)($_POST['md'] ?? ''));
 			if ($req->async){ apply(inner: ['#home-md-msg' => 'Saved']); return; }
-			location('/'.dashboard);
+			location('/'.control);
 			return;
 		}
 		$phpFiles     = glob(php.'*.php') ?: [];
@@ -136,7 +136,7 @@ class phlo_dashboard {
 
 		$mdFile    = data.'app.md';
 		$mdContent = esc(is_file($mdFile) ? (string)file_get_contents($mdFile) : void);
-		$mdUrl     = esc('/'.dashboard.'/home/readme');
+		$mdUrl     = esc('/'.control.'/home/readme');
 		$mdCard    = "<div class=\"dash-card dash-half\">\n"
 			."<div class=\"dash-card-head\">app.md</div>\n"
 			."<div class=\"dash-card-body\">\n"
@@ -204,7 +204,7 @@ class phlo_dashboard {
 
 	private static function config(?string $arg):void {
 		$req  = phlo('req');
-		$base = dashboard;
+		$base = control;
 
 		if ($arg === 'save' && $req->method === 'POST'){
 			$json    = trim((string)($_POST['json'] ?? ''));
@@ -279,7 +279,7 @@ class phlo_dashboard {
 		$b64        = base64_encode((string)json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 		$b64E       = esc($b64);
 		$mode       = $isFrontend ? 'frontend' : 'backend';
-		$base       = '/'.ltrim(dashboard, '/');
+		$base       = '/'.ltrim(control, '/');
 		$hrefBack   = esc("$base/graph");
 		$hrefFront  = esc("$base/graph/frontend");
 		$clsBack    = !$isFrontend ? ' active' : '';
@@ -353,7 +353,7 @@ class phlo_dashboard {
 
 	private static function source(?string $arg):void {
 		$req  = phlo('req');
-		$base = dashboard;
+		$base = control;
 
 		$mode        = (string)($req->query['mode'] ?? 'app');
 		$engineModes = ['native' => engine.'phlo.php', 'build' => engine.'classes/build.php', 'reflect' => engine.'classes/reflect.php'];
@@ -457,7 +457,7 @@ class phlo_dashboard {
 
 	private static function build(?string $arg):void {
 		$req  = phlo('req');
-		$base = dashboard;
+		$base = control;
 
 		if ($arg === 'run' && $req->method === 'POST'){
 			try {
@@ -519,7 +519,7 @@ class phlo_dashboard {
 
 	private static function release(?string $arg):void {
 		$req  = phlo('req');
-		$base = dashboard;
+		$base = control;
 
 		if ($arg === 'run' && $req->method === 'POST'){
 			try {
@@ -581,7 +581,7 @@ class phlo_dashboard {
 
 	private static function errors(?string $arg):void {
 		$req  = phlo('req');
-		$base = dashboard;
+		$base = control;
 
 		if ($arg === 'reset' && $req->method === 'POST'){
 			$file = data.'errors.json';
@@ -693,7 +693,7 @@ class phlo_dashboard {
 				return;
 			}
 		}
-		$base = dashboard;
+		$base = control;
 		location('/'.ltrim("$base/config", '/'));
 	}
 
@@ -708,7 +708,7 @@ class phlo_dashboard {
 	}
 
 	private static function fileActionApply(string $section, string $result):void {
-		$base     = dashboard;
+		$base     = control;
 		$allFiles = $section === 'release' ? build::releaseFiles() : build::buildFiles();
 		$fileMap  = static::buildFileMap($allFiles);
 		$viewBase = "/$base/$section/view";
@@ -720,7 +720,7 @@ class phlo_dashboard {
 		apply(
 			path: ltrim("$base/$section", '/'),
 			pathReplace: true,
-			title: ucfirst($section).' - Phlo Dashboard',
+			title: ucfirst($section).' - Phlo Control',
 			inner: ["#{$section}-result" => $result, '.dash-file-shell' => $shell],
 			class: ["#{$section}-result" => 'show'],
 		);
@@ -815,7 +815,7 @@ class phlo_dashboard {
 		$rawLabel = $file.($line > 0 ? ":$line" : '');
 		$label    = esc($rawLabel);
 		$anchor   = $line > 0 ? "#L$line" : '';
-		$base  = slash.dashboard;
+		$base  = slash.control;
 		$clean = str_replace(bs, slash, $file);
 
 		$link = static::dashboardFileTarget($clean);
@@ -971,7 +971,7 @@ class phlo_dashboard {
 		apply(
 			path: ltrim(phlo('req')->path, slash),
 			pathReplace: true,
-			title: "$sectionTitle - $fname - Phlo Dashboard",
+			title: "$sectionTitle - $fname - Phlo Control",
 			inner: ['#file-content' => static::fileContent($file, $php)],
 			call: 'dashActiveFile',
 		);
@@ -1028,9 +1028,9 @@ class phlo_dashboard {
 	private static function render(string $body, string $active, string $subtitle = void):void {
 		$req  = phlo('req');
 		$res  = phlo('res');
-		$base = dashboard;
+		$base = control;
 		$cfg  = build_base::config();
-		$title = $active === 'home' ? 'Phlo Dashboard' : ($subtitle ? ucfirst($active)." - $subtitle - Phlo Dashboard" : ucfirst($active).' - Phlo Dashboard');
+		$title = $active === 'home' ? 'Phlo Control' : ($subtitle ? ucfirst($active)." - $subtitle - Phlo Control" : ucfirst($active).' - Phlo Control');
 
 		$sections = ['home'];
 		if (is_dir(data.'tasks/')) $sections[] = 'tasks';
@@ -1064,8 +1064,8 @@ class phlo_dashboard {
 
 		$head = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
 			."<title>$titleE</title>\n"
-			."<link rel=\"stylesheet\" href=\"{$jsBase}dashboard.css\">\n"
-			."<script defer src=\"{$jsBase}dashboard.js\"></script>\n";
+			."<link rel=\"stylesheet\" href=\"{$jsBase}control.css\">\n"
+			."<script defer src=\"{$jsBase}control.js\"></script>\n";
 
 		$page = "<nav id=\"dash-top-nav\">\n{$nav}</nav>\n"
 			.rtrim($body, "\n");

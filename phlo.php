@@ -45,7 +45,7 @@ function phlo_app(...$args):void {
 	$args['debug']     ??= false;
 	$args['build']     ??= false;
 	$args['host']      ??= null;
-	$args['dashboard'] ??= false;
+	$args['control']   ??= ($args['build'] && $args['debug']) ? 'phlo' : false;
 	$args['auth']      ??= false;
 	$args['data']      ??= $args['app'].'data/';
 	$args['php']       ??= $args['app'].'php/';
@@ -124,14 +124,14 @@ function phlo_thread():void {
 			phlo_cli($req->args);
 			return;
 		}
-		$isDashboard = build && debug && dashboard && str_starts_with($req->path.slash, dashboard.slash);
+		$isDashboard = build && debug && control && str_starts_with($req->path.slash, control.slash);
 		if (auth && !$isDashboard){
 			phlo_auth('site', 'Phlo App - '.host);
 			if (phlo('res')->done) return;
 		}
 		if ($isDashboard){
-			require_once engine.'dashboard.php';
-			phlo_dashboard::handle(substr($req->path, strlen(dashboard) + 1));
+			require_once engine.'control.php';
+			phlo_dashboard::handle(substr($req->path, strlen(control) + 1));
 			phlo('res')->render();
 			return;
 		}

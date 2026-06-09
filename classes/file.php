@@ -134,6 +134,12 @@ class build_file {
 		$nodeType  = $match[2];
 		$operators = $nodeType === 'view' ? [':', '=>', '{'] : ['=>', '{', '='];
 		[$signature, $operator, $body] = $this->split_operator($nodeType.space.trim($match[3]), $operators);
+		// A keyword immediately followed by a call, view('x', scroll: 0) or static::foo(), with no node
+		// operator is a controller statement, not a node declaration. (Bare decls like `prop class` keep a name.)
+		if ($operator === null){
+			$rest = ltrim($match[3]);
+			if ($rest !== void && ($rest[0] === '(' || str_starts_with($rest, '::'))) return null;
+		}
 		[$name, $args, $type] = $this->parse_name_args_type(trim(substr($signature, strlen($nodeType))), $nodeType === 'view');
 		return [
 			'node'       => $nodeType,

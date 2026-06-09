@@ -148,12 +148,12 @@ const apply = (cmds, trans = false, state = true) => {
 		}
 	}
 	app.log && (delay(`apply-${Object.keys(cmds).join('-')}`, 1000) ? phlo.log('✅ APPLY') : phlo.log('✅ APPLY', cmds))
-	if (trans && document.startViewTransition && !window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+	if (trans && document.startViewTransition && app.state !== 'hidden' && !window.matchMedia('(prefers-reduced-motion:reduce)').matches){
 		const active = obj('html').classList
 		active.add(...trans.split(' '))
 		const VT = document.startViewTransition(execute)
 		VT.updateCallbackDone.then(app.update)
-		VT.finished.then(() => active.remove(...trans.split(' ')))
+		VT.finished.catch(() => {}).then(() => active.remove(...trans.split(' ')))
 	}
 	else [execute(), app.update()]
 }
