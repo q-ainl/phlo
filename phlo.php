@@ -154,7 +154,11 @@ function phlo_load(bool $http):void {
 		if ($http && !phlo('res')->type) phlo('res')->type = 'text/html; charset=UTF-8';
 		return;
 	}
-	if (build && (!is_file(php.'functions.php') || !is_file(php.'app.php') || build_base::changed())) build::run();
+	if (build && (!is_file(php.'functions.php') || !is_file(php.'app.php') || build_base::changed())){
+		debug('Builder started');
+		$changed = build::run();
+		$changed && debug('Rebuilt '.count($changed).': '.implode(', ', array_map('basename', $changed)));
+	}
 	if (!is_file(php.'functions.php') || !is_file(php.'app.php')) error('Compiled runtime not available');
 	if (!$loaded){
 		require_once php.'functions.php';
