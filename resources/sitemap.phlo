@@ -9,6 +9,8 @@
 
 route GET sitemap.xml => output($this)
 
+method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
+
 view:
 <?xml version=1.0 encoding="UTF-8"?>
 <urlset xmlns=http://www.sitemaps.org/schemas/sitemap/0.9 xmlns:xhtml=http://www.w3.org/1999/xhtml xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance xsi:schemaLocation=http://www.sitemaps.org/schemas/sitemap/0.9+http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd>
@@ -24,7 +26,7 @@ view page($uri):
 		<if $lang === %app->lang>
 			{{ $this->xlink('x-default', $uri ?: slash) }}
 		</if>
-		{{ $this->xlink($lang, ($lang === %app->lang ? void : "/$lang").$uri ?: slash) }}
+		{{ $this->xlink($lang, $lang === %app->lang ? ($uri ?: slash) : "/$lang".($this->intl($uri) ?: void)) }}
 	</foreach>
 </url>
 
