@@ -1,0 +1,18 @@
+@ summary: E2E smoke app
+
+prop title = 'E2E'
+
+app::route()
+
+route GET => $this->home
+route both GET ping => $this->pong
+
+method home => view($this->main, 'Home')
+
+method pong {
+	apply(pong: true)
+}
+
+view main:
+<h1>$this->title</h1>
+<p#status>up</p>

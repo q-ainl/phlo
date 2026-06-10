@@ -1,0 +1,17 @@
+@ summary: Widget resource fixture
+
+static theme = 'dark'
+
+method render => '<div class="widget '.static::$theme.'">W</div>'
+
+<style>
+.widget {
+	border: 1px solid #ccc
+}
+</style>
+
+<script>
+on('click', '.widget', (el, e) => {
+	el.classList.toggle('open')
+})
+</script>

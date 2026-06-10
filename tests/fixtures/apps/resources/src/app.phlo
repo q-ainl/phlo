@@ -1,0 +1,13 @@
+@ summary: Resource fixture app
+
+prop title = 'ResFix'
+
+static %widget.theme = 'light'
+
+route GET w => %widget->render
+
+method slugTitle => slug($this->title)
+
+view shell:
+<main>{{ %widget->render }}</main>
+<p>{{ camel('hello there') }}</p>

@@ -16,3 +16,9 @@ vendor/
 composer.lock
 .phpunit.cache/
 tests/.tmp/
+
+# E2E fixture build output
+tests/fixtures/e2e/php/
+tests/fixtures/e2e/www/app.css
+tests/fixtures/e2e/www/app.js
+tests/fixtures/e2e/data/errors.json

@@ -20,9 +20,12 @@ final class CompilerGoldenTest extends TestCase {
 		phlo_test_wipe(www);
 		$sources = glob($dir.'/src/*.phlo') ?: [];
 		$this->assertNotEmpty($sources, 'Fixture has no .phlo sources: '.$dir);
+		$meta      = is_file($dir.'/fixture.json') ? json_decode((string)file_get_contents($dir.'/fixture.json'), true) : [];
+		$resources = glob($dir.'/rsrc/*.phlo') ?: [];
+		foreach ($meta['engineResources'] ?? [] as $name) $resources[] = engine.'resources/'.$name.'.phlo';
 		$builder = new build_builder([
 			'build'      => self::config(),
-			'sources'    => ['app' => $sources, 'resources' => []],
+			'sources'    => ['app' => $sources, 'resources' => $resources],
 			'app_source' => $dir.'/src/app.phlo',
 		], true);
 		$this->assertNotEmpty($builder->written, 'Build wrote no files');
@@ -71,7 +74,7 @@ final class CompilerGoldenTest extends TestCase {
 	// Absolute fixture paths and the engine version would make goldens machine- and
 	// version-dependent; replace both with stable placeholders.
 	private static function normalize(string $content, string $dir):string {
-		$content = str_replace([$dir.'/src/', php], ['%SRC%/', '%PHP%/'], $content);
+		$content = str_replace([$dir.'/src/', $dir.'/rsrc/', php, engine], ['%SRC%/', '%RSRC%/', '%PHP%/', '%PHLO%/'], $content);
 		return (string)preg_replace('/^(\/\/ phlo:\s*).+$/m', '$1%VERSION%', $content);
 	}
 }
