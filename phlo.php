@@ -157,7 +157,7 @@ function phlo_load(bool $http):void {
 	if (build && (!is_file(php.'functions.php') || !is_file(php.'app.php') || build_base::changed())){
 		debug('Builder started');
 		$changed = build::run();
-		$changed && debug('Rebuilt '.count($changed).': '.implode(', ', array_map('basename', $changed)));
+		$changed && debug('Built '.implode(', ', array_map('basename', $changed)).' ('.count($changed).')');
 	}
 	if (!is_file(php.'functions.php') || !is_file(php.'app.php')) error('Compiled runtime not available');
 	if (!$loaded){
