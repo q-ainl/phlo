@@ -17,17 +17,17 @@ Each `.phlo` file compiles to exactly one PHP class. The class name is derived f
 
 These rules are absolute. Violations produce parse errors or silently broken output. Read before writing a single line.
 
-### 1. No comments, no semicolons
+### 1. Comments on their own line only, no semicolons
 
-Phlo source files contain **no comments of any kind** - no `//`, `/* */`, `#`, or HTML comments.
 Statements are terminated by **line endings**, never by semicolons.
+Comments are allowed only as **full lines** starting with `//` or `#`. A comment line is attached to the node below it and emitted into the compiled output. Never place a comment after code on the same line, and never put comments inside view HTML (they would render as visible text).
 
 ```
 OK  $x = 1
+OK  // explains the node below this line
 NO  $x = 1;            <- no semicolons
-NO  // comment         <- no comments
-NO  /* comment */      <- no comments
-NO  $x = 1 // inline  <- no inline comments either
+NO  $x = 1 // inline   <- no inline comments
+NO  /* comment */      <- no block comments in .phlo code
 ```
 
 ### 2. Multiline arguments require a trailing comma on every line
@@ -52,7 +52,7 @@ This applies to **every** multiline call: `apply()`, `view()`, `chunk()`, array 
 
 ### 3. No blank lines inside a view
 
-A **blank line immediately closes the current view**. HTML after a blank line becomes controller code - producing a PHP parse error (`unexpected token "<"`). This is the most common source of catastrophic errors.
+A **blank line immediately closes the current view**. HTML after a blank line would become controller code; the build stops with `HTML outside a view at <file>:<line>`, naming the blank line and the view it closed. This is the most common source of errors.
 
 ```
 NO  WRONG - blank line inside view breaks it:
@@ -72,20 +72,25 @@ view nextView:
 
 When adding or editing view content, **never insert a blank line for visual spacing**.
 
-The same block-terminator rule applies to `<script>` and `<style>` blocks: a blank line inside the block closes it. A new `view`, `<script>`, or `<style>` block after another block must start after the previous block has been closed.
+`<script>` and `<style>` blocks close only at their literal `</script>` / `</style>` line; blank lines inside them do not close them. A new `view`, `<script>`, or `<style>` block must still start after the previous view has been closed (a blank line after the view, then the block).
 
-### 4. CSS values must stay on one line
+### 4. CSS: one declaration per line
 
-The CSS parser treats each line as one complete declaration. Long values like gradients, font stacks, or `calc()` expressions must **never be wrapped** across multiple lines.
+The CSS parser treats each line as one complete declaration. A long value may only be wrapped in two ways: end the property line with a bare `:`, or end each continuation line with a `,`. Any other wrap is a build error (`CSS line is not a declaration`).
 
 ```
-NO  WRONG - parser sees two broken declarations:
+OK  entire value on one line:
+background: linear-gradient(to bottom, #000, #fff)
+
+OK  dangling colon; continuation lines are joined automatically:
+background:
+  radial-gradient(800px 500px at 80% 20%, rgba(255,199,107,.18), transparent 60%),
+  linear-gradient(180deg, #000 0%, #050714 100%)
+
+NO  wrapping inside a value without a trailing comma or dangling colon:
 background: linear-gradient(
   to bottom, #000, #fff
 )
-
-OK  CORRECT - keep the entire value on one line:
-background: linear-gradient(to bottom, #000, #fff)
 ```
 
 ### 5. Space around `=>` in single-line nodes
@@ -841,23 +846,22 @@ Use these functions instead of calling the internal `build_css` class directly. 
 
 ## Diagnosing parse errors
 
-### `unexpected token "<"` in generated PHP
+### `HTML outside a view at <file>:<line>`
 
-HTML has ended up in controller code because a blank line inside a view closed the block prematurely.
+A blank line inside a view closed the block prematurely, so the HTML below it would leak into controller code. The message names the blank line and the view that was closed.
 
 **Fix checklist:**
-1. Open the `.phlo` file and find every `view name:` block
-2. Remove any blank lines inside view bodies
-3. Ensure `<style>` and `<script>` blocks are preceded by a blank line (to close the preceding view before starting an asset block)
-4. Re-run `build::run` and `build::lint`
+1. Remove the blank line(s) inside the view body
+2. Ensure `<style>` and `<script>` blocks are preceded by a blank line (to close the preceding view before starting an asset block)
+3. Re-run `build::run` and `build::lint`
 
-### `unexpected ";"` / broken logic
+### `Missing trailing comma at <file>:<line>`
 
-A multiline argument list is missing trailing commas. Add a comma to the end of every argument line, including the last.
+A line of a multiline argument list does not end with a comma. Add a comma to the end of every argument line, including the last.
 
-### CSS not rendering correctly or truncated
+### `CSS line is not a declaration`
 
-A CSS property value was split across multiple lines. Merge the entire value onto one line.
+A CSS value was wrapped across lines without a legal continuation. Merge the value onto one line, or use the dangling-colon form (see syntax rule 4).
 
 ### Multiline strings break into multiple statements
 
@@ -893,10 +897,10 @@ Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syn
 
 | Never | Instead |
 |-------|---------|
-| Comments of any kind in `.phlo` | No comments |
+| Inline comments or comments inside views | Full-line `//` comments above code only |
 | Semicolons in `.phlo` | Line endings terminate statements |
 | Blank lines inside a view | Keep all view HTML contiguous |
-| Splitting a CSS value across multiple lines | Entire value on one line |
+| Wrapping a CSS value without `,` or dangling `:` continuation | One line, or the rule-4 continuation forms |
 | Multiline args without trailing comma on every line | Comma on every line including the last |
 | Multiline quoted strings | `implode(' ', [...])` with one-line string parts |
 | Edit generated PHP, CSS, JS, or release output | Edit only source files and rebuild |

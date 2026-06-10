@@ -56,6 +56,26 @@ final class CssTest extends TestCase {
 		$this->assertSame('html: height: 100dvh', build_css::encode('html{height:100dvh}'));
 	}
 
+	public function testDanglingColonValueWrapMerges():void {
+		$phlo = "body {\n\tbackground:\n\t\tradial-gradient(a),\n\t\tlinear-gradient(b)\n}";
+		$this->assertSame('body{background:radial-gradient(a), linear-gradient(b)}', build_css::decode($phlo));
+	}
+
+	public function testDanglingColonBeforeCloserDoesNotSwallowBrace():void {
+		$css = build_css::decode("body {\n\tcolor:\n}\np {\n\tmargin: 0\n}");
+		$this->assertStringContainsString('p{margin:0}', $css);
+	}
+
+	public function testWrappedValueLineThrows():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/CSS line is not a declaration/');
+		build_css::decode("body {\n\tbackground: linear-gradient(\n\tto bottom, #000, #fff)\n}");
+	}
+
+	public function testFullLineBlockCommentIsIgnored():void {
+		$this->assertSame('body{color:red}', build_css::decode("/* note */\nbody {\n\tcolor: red\n}"));
+	}
+
 	/** decode(encode(decode($phlo))) must equal decode($phlo): CSS is a fixpoint of the round trip. */
 	public function testRoundTripFixpoint():void {
 		$samples = [

@@ -23,6 +23,7 @@ class build_file {
 		$controllerClosed   = false;
 		$controllerComments = [];
 		$comments           = [];
+		$lastView           = null;
 		while (($line = fgets($fp)) !== false){
 			++$lineIndex;
 			$line = rtrim($line, "\r\n");
@@ -44,6 +45,10 @@ class build_file {
 			}
 			$nodeData = $this->parse_node_header($trim);
 			if (!$nodeData){
+				if (preg_match('/^<[A-Za-z!\/]/', $trim)){
+					$hint = $lastView ? '; the blank line on line '.$lastView[1].' closed view "'.$lastView[0].'" (views cannot contain blank lines)' : void;
+					error('Build error: HTML outside a view at '.$this->file.colon.$lineIndex.$hint);
+				}
 				if ($controllerClosed) error('Build error: Controller must be in one place '.$this->file);
 				if ($comments && !$controllerLines){
 					$controllerComments = $comments;
@@ -62,6 +67,7 @@ class build_file {
 					'line'     => $controllerLine,
 				]);
 				if ($controllerComments) $controller->comments = implode(lf, $controllerComments);
+				$this->check_commas($controller->body, $controller->line);
 				$this->add_node($controller);
 				$controllerClosed   = true;
 				$controllerLines    = [];
@@ -79,10 +85,26 @@ class build_file {
 				$this->assets[] = $node;
 				continue;
 			}
-			if ($node->operator === 'arrow')        $node->body = $this->collect_inline_block($fp, $lineIndex, $node->body ?? void);
-			elseif ($node->operator === 'method')   $node->body = ($node->body ?? void) === void ? $this->collect_block($fp, $lineIndex, '}') : $this->collect_inline_block($fp, $lineIndex, $node->body);
-			elseif ($node->operator === 'value')    $node->body = $this->collect_inline_block($fp, $lineIndex, $node->body ?? void);
-			elseif ($node->operator === 'view')     $node->body = ($node->body ?? void) === void ? $this->collect_block($fp, $lineIndex, void) : ltrim($node->body);
+			if ($node->operator === 'arrow'){
+				$node->bodyLine = $node->line;
+				$node->body     = $this->collect_inline_block($fp, $lineIndex, $node->body ?? void);
+			}
+			elseif ($node->operator === 'method'){
+				$node->bodyLine = ($node->body ?? void) === void ? $node->line + 1 : $node->line;
+				$node->body     = ($node->body ?? void) === void ? $this->collect_block($fp, $lineIndex, '}') : $this->collect_inline_block($fp, $lineIndex, $node->body);
+			}
+			elseif ($node->operator === 'value'){
+				$node->bodyLine = $node->line;
+				$node->body     = $this->collect_inline_block($fp, $lineIndex, $node->body ?? void);
+			}
+			elseif ($node->operator === 'view'){
+				if (($node->body ?? void) === void){
+					$node->body = $this->collect_block($fp, $lineIndex, void);
+					$lastView   = [$node->name ?: 'view', $lineIndex];
+				}
+				else $node->body = ltrim($node->body);
+			}
+			if ($node->operator !== 'view') $this->check_commas($node->body, $node->bodyLine ?? $node->line);
 			if ($node->node === 'function'){
 				if ($node->name) $this->functions[$node->name] = $node;
 				continue;
@@ -99,6 +121,7 @@ class build_file {
 				'line'     => $controllerLine,
 			]);
 			if ($controllerComments) $controller->comments = implode(lf, $controllerComments);
+			$this->check_commas($controller->body, $controller->line);
 			$this->add_node($controller);
 		}
 	}
@@ -253,6 +276,39 @@ class build_file {
 			$body .= $line.lf;
 		}
 		return rtrim($body.$end);
+	}
+
+	// Detects the classic multiline-argument mistake: a named-argument line inside an
+	// open call that does not end with a continuation character. The parser inserts a
+	// statement terminator at every line ending, so such a line compiles into broken PHP.
+	private function check_commas(?string $body, int $startLine):void {
+		if (!$body || !str_contains($body, lf)) return;
+		$depth   = 0;
+		$flagged = null;
+		foreach (explode(lf, $body) as $i => $line){
+			$trim = trim($line);
+			if ($trim === void || str_starts_with($trim, '//') || str_starts_with($trim, '#')) continue;
+			$isNamedArg = (bool)preg_match('/^[A-Za-z_]\w*:\s/', $trim);
+			if ($flagged !== null && ($isNamedArg || preg_match('/^[)\]}]/', $trim))) error('Build error: Missing trailing comma at '.$this->file.colon.$flagged.' (every line of a multiline argument list must end with a comma)');
+			$flagged = ($depth > 0 && $isNamedArg && !preg_match('/(?:[,(\[{.]|&&|\|\||=>|\?|:)$/', $trim)) ? $startLine + $i : null;
+			$depth  += $this->paren_delta($line);
+		}
+	}
+
+	private function paren_delta(string $line):int {
+		$len      = strlen($line);
+		$delta    = 0;
+		$inSingle = false;
+		$inDouble = false;
+		for ($i = 0; $i < $len; ++$i){
+			$char = $line[$i];
+			if ($char === sq && !$inDouble && ($i === 0 || $line[$i - 1] !== bs)) $inSingle = !$inSingle;
+			elseif ($char === dq && !$inSingle && ($i === 0 || $line[$i - 1] !== bs)) $inDouble = !$inDouble;
+			if ($inSingle || $inDouble) continue;
+			if ($char === '(') ++$delta;
+			elseif ($char === ')') --$delta;
+		}
+		return $delta;
 	}
 
 	private function find_top_level_token(string $line, string $token, bool $last = false):?int {

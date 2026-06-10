@@ -46,9 +46,10 @@ class build_css {
 			[$left, $right] = self::split_first($trim, $token);
 			if ($right === null) [$left, $right] = self::split_first($trim, colon);
 			if ($right === null){
-					if ($trim[0] === '@') $statements[] = rtrim($trim, semi).semi;
-					continue;
-				}
+				if ($trim[0] === '@'){ $statements[] = rtrim($trim, semi).semi; continue; }
+				if (str_starts_with($trim, '/*') && str_ends_with($trim, '*/')) continue;
+				error('Build error: CSS line is not a declaration: "'.$trim.'" (values cannot wrap across lines)');
+			}
 			$right = trim($right);
 			if (self::has_token($right, $token)){
 				$selector = trim($left);
@@ -206,11 +207,16 @@ class build_css {
 		$out   = [];
 		$carry = void;
 		foreach ($lines as $line){
-			if ($carry !== void) $line = $carry.space.ltrim($line);
-			$carry = void;
+			if ($carry !== void){
+				$next = ltrim($line);
+				if (str_ends_with($carry, colon) && ($next === '}' || str_ends_with(rtrim($next), '{'))) $out[] = $carry;
+				else $line = $carry.space.$next;
+				$carry = void;
+			}
 			$body  = ltrim($line);
 			$isComment = str_starts_with($body, '//') || ($body !== void && $body[0] === '#' && isset($body[1]) && ($body[1] === space || $body[1] === tab));
-			if (!$isComment && str_ends_with(rtrim($line), comma)){ $carry = rtrim($line); continue; }
+			$trimmed = rtrim($line);
+			if (!$isComment && (str_ends_with($trimmed, comma) || str_ends_with($trimmed, colon))){ $carry = $trimmed; continue; }
 			$out[] = $line;
 		}
 		if ($carry !== void) $out[] = $carry;

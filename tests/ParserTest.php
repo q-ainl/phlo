@@ -113,6 +113,63 @@ final class ParserTest extends TestCase {
 		$this->assertSame('arrow',      $node->operator);
 	}
 
+	public function testHtmlAfterBlankLineInViewGivesDiagnostic():void {
+		$src = "view main:\n<h1>Top</h1>\n\n<p>leaked</p>\n";
+		try {
+			$this->parse($src);
+			$this->fail('Expected HTML-outside-view diagnostic');
+		}
+		catch (PhloException $e){
+			$this->assertStringContainsString('HTML outside a view', $e->getMessage());
+			$this->assertStringContainsString(':4', $e->getMessage());
+			$this->assertStringContainsString('view "main"', $e->getMessage());
+			$this->assertStringContainsString('line 3', $e->getMessage());
+		}
+	}
+
+	public function testHtmlAtTopLevelGivesDiagnostic():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/HTML outside a view at .*:1/');
+		$this->parse("<p>raw html</p>\n");
+	}
+
+	public function testShiftAndComparisonAreNotFlaggedAsHtml():void {
+		$src = "\$x = 1\n\$y = \$x << 2\n";
+		$file = $this->parse($src);
+		$this->assertArrayHasKey('controller', $file->nodes);
+	}
+
+	public function testMissingTrailingCommaDiagnostic():void {
+		$src = "method save {\n\tapply(\n\t\ttitle: 'Home'\n\t\tmain: \$html,\n\t)\n}\n";
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/Missing trailing comma at .*:3/');
+		$this->parse($src);
+	}
+
+	public function testMissingTrailingCommaOnLastArgLine():void {
+		$src = "method save {\n\tapply(\n\t\ttitle: 'Home',\n\t\tmain: \$html\n\t)\n}\n";
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/Missing trailing comma at .*:4/');
+		$this->parse($src);
+	}
+
+	public function testMissingTrailingCommaInControllerCode():void {
+		$src = "\$x = 1\napply(\n\ttitle: 'Home'\n\tmain: \$html,\n)\n";
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/Missing trailing comma at .*:3/');
+		$this->parse($src);
+	}
+
+	public function testTrailingCommaNegatives():void {
+		$correct = "method save {\n\tapply(\n\t\ttitle: 'Home',\n\t\tmain: \$html,\n\t)\n}\n";
+		$switch  = "method kind(\$x) {\n\tswitch (\$x){\n\t\tdefault: return 'n'\n\t}\n}\n";
+		$dotted  = "method m {\n\tapply(\n\t\ttitle: 'a'.\n\t\t'b',\n\t)\n}\n";
+		foreach ([$correct, $switch, $dotted] as $src){
+			$file = $this->parse($src);
+			$this->assertNotEmpty($file->nodes);
+		}
+	}
+
 	public function testAnonymousViewGetsDefaultName():void {
 		$file = $this->parse("view:\n<p>anon</p>\n");
 		$this->assertArrayHasKey('view', $file->nodes);

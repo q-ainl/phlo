@@ -17,6 +17,20 @@ tagged release onward. The engine version constant lives in `phlo.php`
   golden-file compiler tests that build fixture apps end-to-end and compare
   the generated PHP/CSS/JS against committed snapshots.
 - GitHub Actions CI: build + test on PHP 8.3 / 8.4 / 8.5.
+- Source-level build diagnostics: HTML that leaks out of a view (a blank
+  line closed it) stops the build with the .phlo file, line and view name;
+  a multiline argument list with a missing trailing comma is reported on
+  its source line; a CSS line that is not a declaration is a build error
+  instead of being silently dropped.
+- CSS values may wrap across lines after a dangling colon on the property
+  line; continuation lines ending with a comma were already merged. Both
+  legal wrap forms are documented in SKILL.md (syntax rule 4).
+
+### Changed
+- SKILL.md: full-line `//` comments are documented as officially supported
+  (the parser always accepted and forwarded them); `<script>`/`<style>`
+  block termination is documented as the literal closing tag, matching
+  actual parser behaviour.
 
 ### Fixed
 - CSS transpiler: the inline media-query shorthand inside a selector block
