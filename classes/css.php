@@ -54,9 +54,14 @@ class build_css {
 				$selector = trim($left);
 				if ($selector !== void && $selector[0] === '@'){
 					[$selector, $rest] = self::split_first($right, $token);
-					if (!self::has_token($rest ?? void, $token)) continue;
-					[$prop, $value] = self::split_first($rest, $token);
-					self::add_rule($rules, array_merge($atStack, [trim($left)]), $selectorStack, $selector, $prop, $value);
+					if (self::has_token($rest ?? void, $token)){
+						[$prop, $value] = self::split_first($rest, $token);
+						self::add_rule($rules, array_merge($atStack, [trim($left)]), $selectorStack, $selector, $prop, $value);
+					}
+					else {
+						[$prop, $value] = self::split_first($right, $token);
+						self::add_rule($rules, array_merge($atStack, [trim($left)]), $selectorStack, null, $prop, $value);
+					}
 				}
 				else {
 					[$maybeSelector, $rest] = self::split_first($right, $token);
