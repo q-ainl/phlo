@@ -10,3 +10,9 @@ bak/
 *.tmp
 *.tmp.*
 .DS_Store
+
+# Composer + tests
+vendor/
+composer.lock
+.phpunit.cache/
+tests/.tmp/
