@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         # NTS builds; production worker mode runs on ZTS (FrankenPHP), which
-        # setup-php does not provide, the engine itself is SAPI-agnostic and
+        # setup-php does not provide; the engine itself is SAPI-agnostic and
         # detects ZTS at runtime (phlo.php: ZEND_THREAD_SAFE).
         php: ['8.3', '8.4', '8.5']
     steps:

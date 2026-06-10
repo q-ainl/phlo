@@ -47,7 +47,7 @@ final class CompilerGoldenTest extends TestCase {
 		ksort($expected);
 		$this->assertSame(array_keys($expected), array_keys($generated), 'Generated file set differs from expected/');
 		foreach ($expected as $name => $content){
-			$this->assertSame($content, $generated[$name], "Golden mismatch for $name, if the compiler change is intended, regenerate with PHLO_UPDATE_GOLDENS=1");
+			$this->assertSame($content, $generated[$name], "Golden mismatch for $name: if the compiler change is intended, regenerate with PHLO_UPDATE_GOLDENS=1");
 		}
 	}
 

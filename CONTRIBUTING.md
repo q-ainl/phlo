@@ -1,6 +1,6 @@
 # Contributing to Phlo
 
-Thanks for your interest in Phlo. Before you open a PR, please read this -
+Thanks for your interest in Phlo. Before you open a PR, please read this:
 Phlo is deliberately small and opinionated, and contributions are judged
 against that philosophy.
 
@@ -21,15 +21,15 @@ against that philosophy.
 
 ## Where to contribute
 
-- **Resources (`resources/`)**, the preferred surface for contributions.
+- **Resources (`resources/`)**: the preferred surface for contributions.
   Resources are isolated `.phlo` files with `@ summary` / `@ requires`
   metadata. New integrations, fields, DOM components, themes and transitions
   belong here. Follow the metadata conventions of the existing resources.
 - **The engine (`phlo.php`, `functions.php`, `error.php`, `debug.php`,
-  `control.php`, `classes/`)**, held to a stricter standard. Bug fixes and
+  `control.php`, `classes/`)**: held to a stricter standard. Bug fixes and
   diagnostics improvements are welcome; structural changes should start as
   an issue/discussion, not a PR.
-- **Docs (`docs/`)**, always welcome. Documentation is in English.
+- **Docs (`docs/`)**: always welcome. Documentation is in English.
 
 ## Requirements for every PR
 
@@ -49,11 +49,11 @@ against that philosophy.
 
 Changes to the `.phlo` language itself (syntax, semantics, build config keys)
 have the highest bar: open an issue first and describe the problem, not the
-solution. The strictness of the language is intentional, the goal is better
+solution. The strictness of the language is intentional: the goal is better
 *diagnostics* for sharp edges, not a more forgiving parser at the cost of
 compiler simplicity.
 
 ## Security issues
 
-Never report security problems through public issues, see
+Never report security problems through public issues; see
 [SECURITY.md](SECURITY.md).
