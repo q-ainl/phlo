@@ -37,7 +37,7 @@ method query($query, ...$args){
 		}
 	}
 	catch (\PDOException $e){
-		error('Database error'.(debug ? colon.lf.$query.lf.lf.$e->getMessage() : void))
+		error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
 	}
 	return $stmt
 }
