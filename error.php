@@ -47,7 +47,7 @@ function phlo_error_log(string $path, string $msg):int|false {
 	$row['msg']         = $msg;
 	$row['count']       = ($map[$id]['count'] ?? 0) + 1;
 	$row['lastOccurred'] = $now;
-	$row['build']       = (defined('build') && build) ? 1 : 0;
+	$row['build']       = build ? 1 : 0;
 	unset($row['lastOccured']);
 	unset($map[$id]);
 	$map = [...[$id => $row], ...$map];
