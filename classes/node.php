@@ -151,7 +151,7 @@ class build_node extends stdClass {
 				}
 				if (strpos($trim, '<') !== false){
 					$trim = $this->normalizeViewTags($trim);
-					$trim = preg_replace('/<([a-z][\\w-]*)([^<>]*?)\\/>/', "<$1$2></$1>", $trim);
+					$trim = preg_replace('/<([a-z][\\w:-]*)([^<>]*?)\\/>/', "<$1$2></$1>", $trim);
 					if (preg_match_all('/\\s([A-Za-z_:][\\w:.-]*)=([^\\s"\\\'=<>`]+)(?=[\\s>])/', $trim, $matches, PREG_SET_ORDER)){
 						foreach ($matches as $match) $trim = str_replace($match[0], space.$match[1].'="'.strtr($match[2], ['+' => space]).'"', $trim);
 					}
@@ -191,7 +191,7 @@ class build_node extends stdClass {
 	}
 
 	private function normalizeViewTags(string $line):string {
-		return preg_replace_callback('/<([a-z][\\w-]*)(#[A-Za-z][\\w-]*)?((?:\\.[A-Za-z][\\w-]*)+)?([^<>]*?)(\\/?)>/', function($m){
+		return preg_replace_callback('/<([a-z][\\w:-]*)(#[A-Za-z][\\w-]*)?((?:\\.[A-Za-z][\\w-]*)+)?([^<>]*?)(\\/?)>/', function($m){
 			$attrs = $this->mergeClassAndId($m[4], $m[2] ? substr($m[2], 1) : null, $m[3] ? strtr(substr($m[3], 1), [dot => space]) : null);
 			$attrs = trim($attrs);
 			$attrs = $attrs ? space.$attrs : void;
