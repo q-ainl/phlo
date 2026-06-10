@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # NTS builds; production worker mode runs on ZTS (FrankenPHP), which
+        # setup-php does not provide, the engine itself is SAPI-agnostic and
+        # detects ZTS at runtime (phlo.php: ZEND_THREAD_SAFE).
+        php: ['8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo, sodium
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Lint engine
+        run: |
+          for f in phlo.php functions.php error.php debug.php preload.php control.php functions.trace.php classes/*.php; do
+            php -l "$f"
+          done
+
+      - name: Run tests
+        run: vendor/bin/phpunit

@@ -1,0 +1,43 @@
+@ summary: Golden fixture app
+
+prop title = 'Fixture'
+prop version = '.7'
+prop now => time()
+
+$this->ready = true
+$first = %page_items->items[0]
+app::route()
+
+route GET => $this->home
+route async POST items save => page_items::save()
+
+method home => view($this->main, 'Home')
+
+view main:
+<h1#top.hero>$this->title</h1>
+<p>{{ ucfirst($this->title) }}</p>
+<p>{( $this->ready ? 'ready' : 'not ready' )}</p>
+
+<style>
+:root {
+	$accent: #ff4a00
+}
+body {
+	background: #0d0d0d
+	color: #fff
+	a {
+		text-decoration: none
+		\:hover: color: $accent
+	}
+}
+h1 {
+	font-size: 2em
+	@media (max-width: 768px): font-size: 1.2em
+}
+</style>
+
+<script>
+on('click', '#top', (el, e) => {
+	app.post('items/save', {go: 1})
+})
+</script>

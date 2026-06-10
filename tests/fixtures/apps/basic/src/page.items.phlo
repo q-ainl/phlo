@@ -1,0 +1,18 @@
+@ summary: Items page fixture
+
+prop items = ['alpha', 'beta']
+
+method label($x) => strtoupper($x)
+
+static save {
+	return ['saved' => true]
+}
+
+view list($items):
+<ul.list>
+	<foreach $items AS $item>
+	<li data-kind=item>{{ $this->label($item) }}</li>
+	</foreach>
+</ul>
+
+function slugify($value):string => strtolower(trim($value))

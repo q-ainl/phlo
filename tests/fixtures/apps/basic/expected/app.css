@@ -1,0 +1,21 @@
+:root {
+	--accent: #ff4a00;
+}
+body {
+	background: #0d0d0d;
+	color: #fff;
+}
+body a {
+	text-decoration: none;
+}
+body a:hover {
+	color: var(--accent);
+}
+h1 {
+	font-size: 2em;
+}
+@media (max-width: 768px){
+	h1 {
+		font-size: 1.2em;
+	}
+}
