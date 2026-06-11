@@ -52,6 +52,14 @@ tagged release onward. The engine version constant lives in `phlo.php`
   `token:not:`) and the `/health` endpoint. Server-specific port numbers
   removed from SKILL.md; WebSocket support is documented as optional.
 
+### Security
+- Removed the dashboard `inspect` section. It read any file resolvable on
+  disk (including `data/auth.ini` / `data/creds.ini`) for an authenticated
+  dashboard user. Nothing linked to it; the Source, Build and Release
+  views already cover every legitimate target and only serve files from
+  known maps. A regression test guards against reintroducing a raw file
+  reader.
+
 ### Fixed
 - CSS transpiler: the inline media-query shorthand inside a selector block
   (`@media (max-width: 768px): font-size: 1.2em`) was silently dropped from

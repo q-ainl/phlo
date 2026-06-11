@@ -51,7 +51,6 @@ class phlo_dashboard {
 		$sections = array_merge($sections, ['config', 'graph', 'source', 'build']);
 		if (!empty($cfg['release'])) $sections[] = 'release';
 		$sections[] = 'errors';
-		$sections[] = 'inspect';
 
 		if (!in_array($section, $sections, true)){
 			phlo('res')->render(404);
@@ -623,27 +622,6 @@ class phlo_dashboard {
 			."</main>\n";
 
 		static::render($body, 'errors');
-	}
-
-	private static function inspect(?string $arg):void {
-		$file = $arg !== null ? rawurldecode($arg) : '';
-		$file = static::resolveFilePath($file) ?? $file;
-		if (!$file || !is_file($file)){
-			static::render("<main class=\"dash-main dash-file-page\">\n<div class=\"dash-file-hero\"><span class=\"dash-badge\">Inspect</span></div>\n<div class=\"dash-file-shell\"><div class=\"dash-file-body\"><p class=\"muted\">File not found.</p></div></div>\n</main>\n", 'inspect');
-			return;
-		}
-		$content  = static::fileContent($file, str_ends_with($file, '.php'));
-		$fileName = esc(static::displayFileName($file));
-		$body = "<main class=\"dash-main dash-file-page\">\n"
-			."<div class=\"dash-file-hero\">\n"
-			."<span class=\"dash-badge\">Inspect</span>\n"
-			."<div class=\"muted\">$fileName</div>\n"
-			."</div>\n"
-			."<div class=\"dash-file-shell\">\n"
-			."<div class=\"dash-file-body\"><div id=\"file-content\">\n$content</div></div>\n"
-			."</div>\n"
-			."</main>\n";
-		static::render($body, 'inspect');
 	}
 
 	private static function toggleResource(string $name):void {

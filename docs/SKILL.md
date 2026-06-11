@@ -715,7 +715,7 @@ Current dashboard sections:
 | `release` | Run release build and inspect/search release output when release config exists |
 | `errors` | Inspect and clear `data/errors.json` |
 
-Dashboard file links resolve to app `.phlo` sources, resource `.phlo` files, compiled `php/` and `www/` output, or a hidden inspect view for other readable files. Hidden inspect views are not part of the nav and only exist to make error/home links usable.
+Dashboard file links resolve to app `.phlo` sources, resource `.phlo` files, and compiled `php/` and `www/` output, shown through the Source, Build and Release views. Links to files outside those known sets render as plain text rather than opening an arbitrary-file viewer.
 
 Dashboard POST actions should use the Phlo SPA response protocol where practical. Avoid redirect-only mutations for toggles, builds, release actions, and config edits unless the whole page state truly needs to reset.
 
