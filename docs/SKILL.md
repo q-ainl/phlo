@@ -165,27 +165,6 @@ Frontend edge kinds (`selectorGraph`): `style`, `script`, `selector-def`, `selec
 
 Disconnected nodes are excluded from both graphs. The backend graph only includes source files and resources that have at least one edge.
 
-### WhatsApp Resource Contract
-
-`resources/WhatsApp.phlo` is the official client for the current PhloWA whatsapp-web.js engine. Do not add Open-WA compatibility. Apps should configure one WhatsApp channel per engine instance and call the resource instead of making ad-hoc HTTP calls.
-
-Expected channel shape:
-- `config.instance`: human/server instance name such as `wa1`, `wa2`, or `wa3`
-- `config.url`: local or external engine URL, for example `http://127.0.0.1:8081`
-- `secrets.secret`: encrypted shared secret
-
-The same `secret` is used both ways:
-- App to engine: HTTP header `secret: ...`
-- Engine to app webhook: HTTP header `secret: ...`
-
-Webhook URLs use the instance, not a secret token:
-
-```
-https://example.test/receive/whatsapp/js/{instance}
-```
-
-The app must validate the instance, active plugin, and `secret` header before processing payloads.
-
 ### app.md: agent scratchpad and app documentation
 
 `data/app.md` is a plain-text Markdown file. It is optional but valuable:
