@@ -8,7 +8,7 @@ Only the latest tagged release and the `main` branch receive security fixes.
 
 Please do **not** open a public issue for security problems.
 
-Report vulnerabilities privately to **info@q-ai.nl** (or via GitHub's
+Report vulnerabilities privately to **j@rdi.nu** (or via GitHub's
 "Report a vulnerability" if enabled on the repository). Include:
 
 - A description of the issue and where it lives (engine file, resource,
