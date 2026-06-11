@@ -28,6 +28,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
 - VS Code extension with a TextMate grammar for `.phlo` under
   `editor/vscode/`: nodes, routes, views with interpolation and control
   tags, Phlo CSS, embedded JavaScript, `%object` shorthands and metadata.
+- `install.php`: interactive CLI scaffolder. Asks name, host, purpose and
+  resources (catalog and `@ requires` resolution come from the engine's
+  own resource metadata), writes a buildable app skeleton including
+  `data/app.md`, runs `build::run` + `build::lint`, and removes itself
+  when run as a copy inside the new app directory.
 
 ### Changed
 - SKILL.md: full-line `//` comments are documented as officially supported
