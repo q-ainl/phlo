@@ -50,6 +50,7 @@ class build_icons {
 		}
 		$tempFile = tempnam(sys_get_temp_dir(), void);
 		$iconFile = rtrim($buildPath, slash).slash.'icons.png';
+		is_dir($dir = dirname($iconFile)) || @mkdir($dir, 0775, true);
 		imagepng($icons, $tempFile);
 		if (is_file($iconFile) && md5_file($tempFile) === md5_file($iconFile)) unlink($tempFile);
 		else rename($tempFile, $iconFile);
