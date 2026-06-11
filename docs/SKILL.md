@@ -547,23 +547,30 @@ apply(
 
 | Command | Effect |
 |---------|--------|
-| `path` | Update browser URL |
-| `title` | Set page title |
-| `trans` | Page transition |
-| `scroll` | Scroll position |
 | `inner` | Replace innerHTML |
 | `outer` | Replace outerHTML |
-| `before` / `after` | Insert adjacent to element |
-| `prepend` / `append` | Insert inside element |
+| `main` | Replace `<main>` (or body if there is no main) |
+| `before` / `after` | Insert HTML adjacent to element |
+| `prepend` / `append` | Insert HTML as first / last child |
 | `remove` | Remove element(s) |
-| `attr` | Set attributes |
-| `class` | Modify classes |
-| `value` | Set form values |
-| `options` | Body classes |
-| `settings` | Body data attributes |
-| `call` | Execute JS function |
-| `state` | State data |
-| `log` / `error` | Console output |
+| `attr` | Set/remove attributes (null removes) |
+| `class` | Add / remove (`-`) / toggle (`!`) classes |
+| `value` | Set form value |
+| `data` | Set `dataset` key(s) |
+| `title` | Set page title |
+| `lang` | Set `html` lang |
+| `options` | Replace body class list |
+| `settings` | Set body data attributes |
+| `path` | Update browser URL |
+| `trans` | Page transition |
+| `scroll` | Scroll position (int or `#anchor`) |
+| `css` / `js` / `defer` | Add stylesheet / script / deferred script (once) |
+| `location` | Navigate (path, `true` reloads current; external URL via `assign`) |
+| `call` | Call `app[name]()` |
+| `log` / `error` | Console log / error handler |
+| `phlo` / `debug` / `dump` | Debug output to the browser console (debug mode) |
+
+For the full semantics (targeting forms, streaming, error handling and the `app.res` extension point) see [apply-protocol.md](apply-protocol.md).
 
 ---
 
