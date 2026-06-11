@@ -74,7 +74,7 @@ class build extends build_base {
 		return $errors;
 	}
 
-	/** Regenerates /srv/phlo/functions.trace.php from functions.php by injecting trace() as first statement of every function. */
+	/** Regenerates the engine's functions.trace.php from functions.php by injecting trace() as first statement of every function. */
 	public static function traceShadow():array {
 		$sourceFile = engine.'functions.php';
 		$shadowFile = engine.'functions.trace.php';
