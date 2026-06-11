@@ -1,72 +1,99 @@
 # Phlo WebSocket contract
 
-## Runtime
+WebSocket support is **optional**. It is provided by PhloWS, a small
+standalone Node.js server (its own repository; single dependency: `ws`).
+Nothing else in the framework depends on it.
 
-PhloWS = Node.js WebSocket-server in `/srv/websocket/phloWS.js`. Centraal proces op poort `3001` voor de hele Wapps-stack. Multi-host: vhost-routing via subprotocol-veld of host-header in de WS-handshake.
+## Runtime model
 
-Per inkomend WS-event start PhloWS een **one-shot CLI-call** naar PHP (`php-zts /srv/<app>/www/app.php ws::<event>`). Dat betekent: elke message = 1 PHP-request lifecycle, met alle resources beschikbaar (DB, session, etc), maar zonder persistent worker-state tussen messages.
+One PhloWS process serves one or more hosts on a single local port:
 
-## App-lifecycle hooks
+```js
+require('./phloWS.js')(3001, '/usr/bin/php', {
+    'example.com': '/srv/example.com/www/app.php',
+    'other.app':   '/srv/other.app/www/app.php',
+})
+```
 
-In `<app>/websocket.phlo` definieert een app 4 statische methods. PhloWS roept ze aan op de juiste momenten.
+Arguments: `(port, phpBinary, hostMap, listen = '127.0.0.1', maxBody = 1MB)`.
+Routing is by `Host` (or `X-Forwarded-Host`) header. The same port handles
+three endpoints:
 
-| Hook | Signature | Wanneer | Return |
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/websocket` | upgrade | Client WebSocket connections |
+| `/message` | POST | Server-to-client casts (used by the `wsCast` resource) |
+| `/health` | GET | Status: configured hosts, connected tokens/sockets |
+
+Per incoming event PhloWS spawns a **one-shot PHP CLI call**
+(`<php> <app>/www/app.php websocket::<hook> <args>`). Every message is one
+full Phlo request lifecycle with all resources available (DB, session, etc),
+but without persistent worker state between messages.
+
+The app side picks its port with the `websocket:` argument of `phlo_app()`;
+there are no fixed port numbers, any free local port works.
+
+## App hooks
+
+The engine `websocket` resource maps the four hooks onto plain app functions
+when they exist (`function_exists`):
+
+| Hook | App function | When | Behaviour |
 |---|---|---|---|
-| `wsConnect` | `($host, $socket)` | Direct na WS-handshake | true = accept, false = reject |
-| `wsAuth` | `($host, $token, $socket)` | Eerste auth-message (zie auth-flow hieronder) | true = authenticated, false = sluiten |
-| `wsReceive` | `($host, $data, $socket)` | Voor elk inkomend bericht | void (broadcasts via wsCast indien nodig) |
-| `wsClose` | `($host, $socket)` | Verbinding sluit (door client of server) | void |
+| `websocket::auth` | `wsAuth($host, $token, $socket)` | During the HTTP upgrade | Reject by throwing (`error()`); a clean exit accepts |
+| `websocket::connect` | `wsConnect($host, $token, $socket)` | After the connection is accepted | Side effects only |
+| `websocket::receive` | `wsReceive($host, $token, $socket, ...$data)` | Every client message (JSON-decoded into arguments) | Lines printed to stdout are streamed back to this client |
+| `websocket::close` | `wsClose($host, $token, $socket)` | Connection closed | Side effects only |
 
-`$socket` is een opaque identifier (string) waarmee je terug naar deze client kunt broadcasten.
+Authentication happens **at the upgrade**: PhloWS reads the `token` cookie
+(no cookie = immediate 401) and runs `websocket::auth`. Validate the token
+against `%session->token` or your own lookup and call `error()` to reject.
+Note: if the app defines no `wsAuth`, every connection that carries a token
+cookie is accepted.
 
-## Auth-flow
+`$socket` is an opaque per-connection identifier; `$token` groups all
+connections of the same user/session.
 
-PhloWS implementeert een 2-staps handshake:
+## Server-to-client: wsCast
 
-1. Browser opent WS naar `wss://<host>:3001/`.
-2. PhloWS roept `wsConnect`. Bij `false`: sluit.
-3. Eerste inkomend bericht moet `{type: 'auth', token: '<string>'}` zijn binnen N seconden.
-4. PhloWS roept `wsAuth($host, $token, $socket)`. App valideert token tegen `%session->token` of een eigen lookup.
-5. Bij `false`: sluit verbinding. Bij `true`: socket marked authenticated.
-6. Daarna roept PhloWS `wsReceive` voor elk volgend bericht.
+```phlo
+wsCast('all', host, websocket, channel: 'inbox', type: 'message.new')
+```
 
-Token in step 3 komt typisch uit `%user->token` (per ingelogde user) of een Stripe/OAuth-style API-key.
+`wsCast($target, $host, $port, ...$data)` posts `{host, target, data}` to
+`/message`. Targets:
 
-## Server-naar-client (wsCast)
+- `all`: every client on this host
+- `token:<token>`: all connections of one token
+- `token:not:<token>`: everyone except one token (e.g. the sender)
 
-PHP broadcast via `%wsCast->emit($target, $data)`:
-- `$target`: array van `$socket`-identifiers, of `*` voor alle clients op deze vhost
-- `$data`: serializable payload
+**No retry, no dead-letter, no ACK.** If PhloWS is down the POST fails
+silently. For guaranteed delivery (financial events, etc) pair it with a
+DB queue.
 
-Onder de motorkap: HTTP POST naar `localhost:3001/message` met `{host, target, data}`. PhloWS pusht naar betreffende sockets.
+## Message envelope (convention)
 
-**Geen retry, geen dead-letter, geen ACK**. Als PhloWS down is, faalt de POST stil. Voor zekere delivery (financial events, etc): dubbel via DB-queue + ws.
-
-## Message envelope (aanbevolen)
-
-Apps zijn vrij in payload-format, maar de stack-conventie is:
+Payload shape is per app, but the stack convention is:
 
 ```json
 {
   "channel": "inbox",
   "type": "message.new",
-  "data": {...},
+  "data": {},
   "id": "uuid-v4"
 }
 ```
 
-Met deze envelope kan een client-side helper `phlo.ws.onMessage(channel, type, cb)` filteren zonder per app eigen routing te schrijven.
+## Client side
 
-## Reconnect (client-side)
+The `DOM/websocket` resource provides the browser client: connect, token
+cookie, and exponential-backoff reconnect. PhloWS itself never retries.
 
-PhloWS doet geen herhalingen aan zijn kant. De client moet bij `close`-event een exponential-backoff-reconnect doen (1s, 2s, 4s, 8s, max 30s). Standaard helper hiervoor: `dom/websocket` resource (zie `phlo.dom websocket client helper.txt` prompt).
+## Known limitations
 
-## Bekende limitaties
-
-- **One-shot CLI per event**: elke message kost een PHP-opstart (~50-100ms). Bij hoog volume (POS realtime, telemetry burst) = bottleneck. Niet kritiek voor inbox-flows; wel voor real-time-trading scenarios.
-- **Geen versiebeheer**: payload-shape per app is impliciet. Bij refactor: alle clients tegelijk migreren.
-- **Single point of failure**: 1 PhloWS-proces voor stack. Bij crash: alle realtime-features down tot restart.
-
-## Multi-host routing
-
-PhloWS gebruikt de WS-handshake `Host` header om te bepalen welke `<app>/websocket.phlo` aan te roepen. Mapping in `/srv/websocket/phloWS.js`. Toevoegen van een nieuwe vhost = JSON-config edit + PhloWS restart.
+- **One-shot CLI per event**: each message costs a PHP startup (~50-100ms).
+  Fine for inbox-style flows; a bottleneck for high-frequency telemetry.
+- **Single process**: one PhloWS per runtime; if it crashes, realtime
+  features are down until restart (run it under systemd/supervisor).
+- **No payload versioning**: shape per app is implicit; migrate all clients
+  together when refactoring.

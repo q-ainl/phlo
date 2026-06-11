@@ -678,10 +678,7 @@ phlo_app (
 - `dashboard` - URL prefix for the built-in Phlo dashboard (omit to disable).
 - `websocket` - App-specific WebSocket port. PhloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
 
-**WebSocket ports on this server:**
-- `3001` - dashboard/control (`ws-dashboard`)
-- `3002` - production app (`ws-app`)
-- `3003` - development app (`ws-app-dev`)
+WebSocket support is optional and provided by the separate PhloWS server (its own repository). Each runtime picks any free local port via `websocket:`; PhloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
 
 **Worker mode:**
 ```php
