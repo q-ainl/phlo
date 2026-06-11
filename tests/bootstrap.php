@@ -13,10 +13,11 @@ require_once $root.'/classes/file.php';
 require_once $root.'/classes/node.php';
 require_once $root.'/classes/builder.php';
 require_once $root.'/classes/css.php';
+require_once $root.'/error.php';
 
 const PHLO_TEST_TMP = __DIR__.'/.tmp/';
 
-foreach ([PHLO_TEST_TMP, PHLO_TEST_TMP.'build/php/', PHLO_TEST_TMP.'build/www/', PHLO_TEST_TMP.'work/'] as $dir){
+foreach ([PHLO_TEST_TMP, PHLO_TEST_TMP.'build/php/', PHLO_TEST_TMP.'build/www/', PHLO_TEST_TMP.'build/data/', PHLO_TEST_TMP.'work/'] as $dir){
 	if (!is_dir($dir)) mkdir($dir, 0775, true);
 }
 

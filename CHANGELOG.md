@@ -61,6 +61,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   reader.
 
 ### Fixed
+- `phlo_error_log()` now wraps the whole read-modify-write of
+  `data/errors.json` in a single `flock(LOCK_EX)`, so concurrent errors no
+  longer overwrite each other's updates, and caps the log at the newest 200
+  entries to stop unbounded growth. Dedup-by-origin, newest-first ordering
+  and output formatting are unchanged.
 - CSS transpiler: the inline media-query shorthand inside a selector block
   (`@media (max-width: 768px): font-size: 1.2em`) was silently dropped from
   the output; it now inherits the surrounding selector and hoists correctly,

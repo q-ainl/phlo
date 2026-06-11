@@ -40,8 +40,12 @@ function phlo_error_log(string $path, string $msg):int|false {
 	$file = data.'errors.json';
 	$now  = date('j-n-Y G:i:s');
 	$id   = md5($path.preg_replace('/\s+/', void, trim(preg_replace('~(?:[A-Za-z]:)?[\\/](?:[^\s:/\\\\]+[\\/])*(?:([^\s:/\\\\]+\.[A-Za-z0-9]{1,8})|[^\s:/\\\\]+)(?::\d+)?~', '$1', $msg))));
-	$map  = is_file($file) ? (json_decode(file_get_contents($file), true) ?: []) : [];
-	$row  = $map[$id] ?? [];
+	$fh = fopen($file, 'c+');
+	if ($fh === false) return false;
+	if (!flock($fh, LOCK_EX)){ fclose($fh); return false; }
+	$raw = stream_get_contents($fh);
+	$map = $raw ? (json_decode($raw, true) ?: []) : [];
+	$row = $map[$id] ?? [];
 	$row['file']        = $path;
 	$row['path']        = phlo('req')->path;
 	$row['msg']         = $msg;
@@ -51,7 +55,14 @@ function phlo_error_log(string $path, string $msg):int|false {
 	unset($row['lastOccured']);
 	unset($map[$id]);
 	$map = [...[$id => $row], ...$map];
-	return json_write($file, $map);
+	if (count($map) > 200) $map = array_slice($map, 0, 200, true);
+	rewind($fh);
+	ftruncate($fh, 0);
+	$written = fwrite($fh, json_encode($map, jsonFlags));
+	fflush($fh);
+	flock($fh, LOCK_UN);
+	fclose($fh);
+	return $written;
 }
 
 function phlo_error_sourcemap(string $phpFile, int $phpLine):?array {
