@@ -1,9 +1,9 @@
 {
     "name": "phlo/tech",
-    "description": "Phlo, a compile-to-PHP web framework with its own .phlo language, built-in SPA runtime, dashboard and agent-first introspection.",
+    "description": "Full-stack web framework with its own .phlo language: express backend logic, routing, HTML views, scoped CSS and single-page behavior in one concise file format that compiles to plain PHP, CSS and JS.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["framework", "compiler", "spa", "frankenphp", "agent-first", "phlo"],
+    "keywords": ["phlo", "framework", "full-stack", "php", "compiler", "spa"],
     "homepage": "https://github.com/q-ainl/phlo",
     "authors": [
         {
