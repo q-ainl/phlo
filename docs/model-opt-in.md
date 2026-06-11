@@ -12,7 +12,7 @@ Voeg `static objAudit = true` toe op een model. Vanaf dan:
 
 Vereisten:
 - Voeg `security/audit` toe aan `data/app.json` resources.
-- Importeer eenmalig `/srv/phlo/resources/security/audit.sql` in de app-database (`mysql <database> < /srv/phlo/resources/security/audit.sql`).
+- Importeer eenmalig `resources/security/audit.sql` (in de engine-map) in de app-database: `mysql <database> < <engine>/resources/security/audit.sql`.
 
 Sensitive fields uitsluiten:
 ```phlo
