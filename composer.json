@@ -1,5 +1,5 @@
 {
-    "name": "q-ainl/phlo",
+    "name": "phlo/tech",
     "description": "Phlo, a compile-to-PHP web framework with its own .phlo language, built-in SPA runtime, dashboard and agent-first introspection.",
     "type": "library",
     "license": "MIT",
@@ -8,7 +8,7 @@
     "authors": [
         {
             "name": "Jordi Boerman",
-            "email": "info@q-ai.nl"
+            "email": "j@rdi.nu"
         }
     ],
     "require": {
