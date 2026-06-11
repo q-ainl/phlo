@@ -123,7 +123,7 @@ function route(?string $method = null, string $path = void, ?bool $async = null,
 				$default = $default ?: null;
 			}
 			elseif (is_null($reqItem)) return false;
-			if (str_contains($item, dot) && ([$item, $length] = explode(dot, $item, 2)) && strlen((string)$reqItem) != (int)$length) return false;
+			if (str_contains($item, dot) && ([$item, $length] = explode(dot, $item, 2)) && strlen($reqItem) != (int)$length) return false;
 			if (str_contains($item, colon)){
 				[$item, $list] = explode(colon, $item, 2);
 				$list = explode(comma, $list);
@@ -182,12 +182,13 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	trace('view', compact('body', 'title', 'css', 'js', 'defer', 'options', 'settings', 'ns', 'path', 'inline', 'bodyAttrs', 'htmlAttrs', 'cmds'));
 	$req = phlo('req');
 	$res = phlo('res');
-	$prefix = trim((string)($req->extra ?? void), slash);
+	$prefix = trim($req->extra ?? void, slash);
 	$async = $req->async || $res->streaming;
 	if (!$req->method) return $body ?? void;
+	$res->done && error('Output already started, invalid view()');
 	is_null($path) && $path = $req->path;
-	$asset = fn($item) => str_starts_with((string)$item, slash) && $prefix && !str_starts_with((string)$item, slash.$prefix.slash) && (string)$item !== slash.$prefix ? slash.$prefix.$item : $item;
-	!$async && !is_bool($path) && $path !== $req->path && location($asset(slash.trim((string)$path, slash)));
+	$asset = fn($item) => str_starts_with($item, slash) && $prefix && !str_starts_with($item, slash.$prefix.slash) && $item !== slash.$prefix ? slash.$prefix.$item : $item;
+	!$async && !is_bool($path) && $path !== $req->path && location($asset(slash.trim($path, slash)));
 	$app = phlo('app');
 	$viewTitle = $title;
 	$title ??= $app->title;
@@ -257,6 +258,7 @@ function apply(...$cmds):string {
 	trace('apply', compact('cmds'));
 	$req = phlo('req');
 	$res = phlo('res');
+	$res->done && error('Output already started, invalid apply()');
 	if (debug){
 		$d = debug_collect();
 		$d['dump'] && !isset($cmds['dump'])  && $cmds['dump']  = $d['dump'];
