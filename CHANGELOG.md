@@ -33,6 +33,12 @@ tagged release onward. The engine version constant lives in `phlo.php`
   own resource metadata), writes a buildable app skeleton including
   `data/app.md`, runs `build::run` + `build::lint`, and removes itself
   when run as a copy inside the new app directory.
+- Docker image (`Dockerfile`, FrankenPHP base): engine baked at `/phlo`,
+  app mounted at `/app`, `SERVER_NAME` env for automatic HTTPS; Compose
+  example under `docker/`. CI builds the image on every push.
+- `docs/deploy.md`: deployment guide for FrankenPHP bare metal (incl.
+  worker mode), Docker, classic PHP-FPM/nginx and `php -S`, plus the cron
+  and WebSocket notes.
 
 ### Changed
 - SKILL.md: full-line `//` comments are documented as officially supported

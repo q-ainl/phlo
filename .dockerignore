@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+.codex
+.agents
+vendor
+tests
+editor
+bak
+.phpunit.cache
+composer.lock

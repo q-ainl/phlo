@@ -22,7 +22,7 @@ function engine_dir(string $self):string {
 	$dir = dirname($self);
 	if (is_file($dir.'/phlo.php') && is_dir($dir.'/classes')) return $dir;
 	$env = (string)getenv('PHLO_ENGINE');
-	foreach ([$env, '/srv/control/phlo', '/srv/phlo'] as $try){
+	foreach ([$env, '/phlo', '/srv/control/phlo', '/srv/phlo'] as $try){
 		if ($try && is_file($try.'/phlo.php') && is_dir($try.'/classes')) return rtrim($try, '/');
 	}
 	$try = rtrim(ask('Path to the Phlo engine'), '/');
