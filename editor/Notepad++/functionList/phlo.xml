@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<NotepadPlus>
+	<functionList>
+		<parser
+			displayName="Phlo"
+			id="phlo_syntax"
+			commentExpr="(?x)
+						(?s:\x2F\x2A.*?\x2A\x2F)        # Multi Line Comment
+					|	(?m-s:(?:\x23|\x2F{2}).*$)      # Single Line Comment # of //
+					"
+		>
+			<function
+				mainExpr="(?x)
+					^\h* # Start van de regel
+					(?:(?:public|private|protected|async|sync)\s+)* # Negeer modifiers, we willen puur de definitie
+					(?:
+						# --- 1. Assets ---
+						&lt;\s*(?:script|style)\b[^&gt;]*&gt;
+					|
+						# --- 2. Keywords ---
+						(?:function|route|view|method|prop|const|static|readonly)
+						
+						# --- 3. De Naam/Definitie (De Magic Fix) ---
+						# Pak alles (non-greedy) zolang het GEEN operator is
+						[^:={}=;(\r\n]*
+						
+						# Pak optioneel ook de haakjes (arguments) mee als je die wilt zien
+						(?: \s* \( [^)]* \) )?
+
+						# --- 4. Het Stopmoment (Lookahead) ---
+						# Stop met matchen zodra je een van deze tekens tegenkomt, 
+						# of het einde van de regel bereikt.
+						(?=
+							\s*[:={}=]   # Een operator: : = { } =>
+							|
+							\s*;         # Een puntkomma
+							|
+							\s*$         # Einde van de regel (belangrijk voor props!)
+						)
+					)
+				"
+			>
+				<functionName>
+					<nameExpr expr=".*" />
+				</functionName>
+			</function>
+		</parser>
+	</functionList>
+</NotepadPlus>
