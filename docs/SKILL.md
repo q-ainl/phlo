@@ -186,12 +186,12 @@ https://example.test/receive/whatsapp/js/{instance}
 
 The app must validate the instance, active plugin, and `secret` header before processing payloads.
 
-### app.md, agent scratchpad and app documentation
+### app.md: agent scratchpad and app documentation
 
 `data/app.md` is a plain-text Markdown file. It is optional but valuable:
 - Describes the app's purpose, main routes, and key data structures
 - Lists open TODOs, known issues, and ongoing work
-- Persists context between agent sessions, read it before starting, update it after finishing
+- Persists context between agent sessions: read it before starting, update it after finishing
 
 **Read it first:** `reflect::appInfo` returns its contents as a string (or null if it does not exist).
 
@@ -344,7 +344,7 @@ static %visitors.table = 'control.visitors'
 prop %visitors.db = 'control'
 method %model.greet => 'hi'
 ```
-The first line overrides the `visitors` model's `static $table`; the second adds or overrides a `db` prop on `visitors`; the third adds a `greet` method to the `model` class. At build the compiler strips the `%<class>.` prefix and writes the node into `<class>`, **overwriting** an existing node of that name (or adding a new one). The target class must be part of the current build (its resource loaded), otherwise the modifier is silently ignored. Match the node *type* you replace (override a `static` with `static`, a `prop` with `prop`), the whole node is swapped.
+The first line overrides the `visitors` model's `static $table`; the second adds or overrides a `db` prop on `visitors`; the third adds a `greet` method to the `model` class. At build the compiler strips the `%<class>.` prefix and writes the node into `<class>`, **overwriting** an existing node of that name (or adding a new one). The target class must be part of the current build (its resource loaded), otherwise the modifier is silently ignored. Match the node *type* you replace (override a `static` with `static`, a `prop` with `prop`); the whole node is swapped.
 
 Use it to adapt an engine/shared resource per app without forking it, e.g. point the shared `visitors` model at a central analytics database while every other query stays on the app's own connection:
 ```phlo

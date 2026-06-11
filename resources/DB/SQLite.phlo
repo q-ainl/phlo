@@ -8,6 +8,6 @@
 @ requires: @DB php-ext:pdo php-ext:pdo_sqlite
 @ tags:     sqlite pdo database sql
 
-handle => "SQLite/$file"
+static __handle => "SQLite/$file"
 method __construct(private string $file)
 prop PDO => new PDO('sqlite:'.$this->file)

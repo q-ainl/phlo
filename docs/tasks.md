@@ -58,7 +58,7 @@ Kies één per task:
 
 ## Error-flow
 
-Geen try/catch in `tasks::run`. Een Throwable bubblet naar Phlo's framework-exception-handler die naar `data/errors.json` schrijft (zoals build-errors). Lock blijft hangen tot TTL (1u), gefaalde task is geparkeerd, andere tasks worden volgende cron-tick uitgevoerd.
+Geen try/catch in `tasks::run`. Een Throwable bubblet naar Phlo's framework-exception-handler die naar `data/errors.json` schrijft (zoals build-errors). Lock blijft hangen tot TTL (1u); gefaalde task is geparkeerd, andere tasks worden volgende cron-tick uitgevoerd.
 
 ## Dashboard-integratie
 
@@ -66,7 +66,7 @@ Phlo's dev-dashboard detecteert `data/tasks/` automatisch:
 - **Tasks-tab** in nav (alleen zichtbaar als dir bestaat), direct na Home
 - Per task: schedule (uit JSON), last-run-ago, return-value (type-aware: scalar/array/string), lock-status pill
 
-Dashboard is **volledig agnostisch** over de `tasks`-resource en de app: leest puur uit `data/tasks/`. Schedule-info komt uit `<name>.json` (door runner geschreven), nooit via `phlo('app')`, dat zou een app-route trigger en HTTP-status verstoring veroorzaken.
+Dashboard is **volledig agnostisch** over de `tasks`-resource en de app: leest puur uit `data/tasks/`. Schedule-info komt uit `<name>.json` (door runner geschreven), nooit via `phlo('app')`; dat zou een app-route trigger en HTTP-status verstoring veroorzaken.
 
 ## Voorbeeld (demo)
 

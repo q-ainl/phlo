@@ -417,7 +417,7 @@ class reflect {
 
 	private static function extractViewSelectors(string $body):array {
 		$out = [];
-		// Phlo view syntax: <div.class1.class2>, extract .classname tokens after tag names
+		// Phlo view syntax: <div.class1.class2>: extract .classname tokens after tag names
 		preg_match_all('/<[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z_][a-zA-Z0-9._-]*)/', $body, $m);
 		foreach ($m[0] as $match){
 			preg_match_all('/\.[a-zA-Z_][a-zA-Z0-9_-]*/', $match, $tokens);

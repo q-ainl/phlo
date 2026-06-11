@@ -4,7 +4,7 @@
 @ backend:  true
 @ requires: HTTP
 
-# notify($title), stuur een melding naar het centrale dashboard (message-inbox + subscription-dispatch).
+# notify($title): stuur een melding naar het centrale dashboard (message-inbox + subscription-dispatch).
 # Leest [notify] uit creds (url + secret, optioneel app/server). Best-effort: fouten worden genegeerd.
 function notify(string $title, string $body = '', string $type = 'info', string $level = 'info', ?string $user = null): void {
 	$cfg = %creds->notify ?? null
