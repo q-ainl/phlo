@@ -1,6 +1,7 @@
 # Phlo tasks
 
-Cross-app cron-runner. Eén system-cron entry per app triggert `tasks::run` elke minuut; resource matched declaratief tegen `%app->tasks`.
+Cross-app cron runner. One system cron entry per app triggers `tasks::run`
+every minute; the resource matches declaratively against `%app->tasks`.
 
 ## Setup
 
@@ -19,58 +20,68 @@ prop tasks => arr(
 )
 ```
 
-**3. Eén cron-entry per app** (absoluut pad):
+**3. One cron entry per app** (absolute path):
 ```cron
-* * * * * php-zts /srv/<app>/www/app.php tasks::run
+* * * * * php /path/to/app/www/app.php tasks::run
 ```
 
-Plaats in `/etc/cron.d/<app>-tasks` (systeem, 6 velden incl user) of `crontab -u <user>` (per-user, 5 velden).
+Place it in `/etc/cron.d/<app>-tasks` (system, 6 fields incl. user) or
+`crontab -u <user>` (per user, 5 fields). On ZTS installations the binary may
+be called `php-zts`.
 
 ## Schedule
 
-Kies één per task:
+Pick one per task:
 
-| Key | Format | Voorbeeld |
+| Key | Format | Example |
 |---|---|---|
-| `every:` | PHP-leesbare duur-string | `'minute'`, `'5 minutes'`, `'2 hours'`, `'1 day'` |
+| `every:` | PHP-readable duration string | `'minute'`, `'5 minutes'`, `'2 hours'`, `'1 day'` |
 | `daily:` | `'HH:MM'` | `'03:00'` |
 | `weekly:` | `'<weekday> HH:MM'` | `'monday 09:00'` |
 
-`every: 'minute'` (geen leading number) wordt intern `'1 minute'`. Parsing via `strtotime("+$every", 0)`.
+`every: 'minute'` (no leading number) becomes `'1 minute'` internally.
+Parsing happens via `strtotime("+$every", 0)`.
 
 ## Callable (`do:`)
 
-| Type | Voorbeeld | Wordt |
+| Type | Example | Becomes |
 |---|---|---|
-| Closure | `fn() => external::pull()` | direct aangeroepen |
+| Closure | `fn() => external::pull()` | called directly |
 | `'Class::method'` | `'account::cleanup'` | `account::cleanup()` |
-| Resource-naam | `'backup'` | `phlo('backup')` |
+| Resource name | `'backup'` | `phlo('backup')` |
 
-## File-conventies (`data/tasks/`)
+## File conventions (`data/tasks/`)
 
-| File | Inhoud | Wanneer |
+| File | Content | When |
 |---|---|---|
-| `<name>.last` | raw unix-ts | Per succesvolle run, voor due-check |
-| `<name>.json` | `{schedule, return}` voor dashboard | Per succesvolle run |
-| `<name>.lock` | leeg (mtime telt) | Tijdens run, TTL 1u |
+| `<name>.last` | raw unix ts | After each successful run, for the due check |
+| `<name>.json` | `{schedule, return}` for the dashboard | After each successful run |
+| `<name>.lock` | empty (mtime matters) | During a run, TTL 1h |
 
-`data/tasks/` wordt auto-aangemaakt door `tasks::run`.
+`data/tasks/` is created automatically by `tasks::run`.
 
-## Error-flow
+## Error flow
 
-Geen try/catch in `tasks::run`. Een Throwable bubblet naar Phlo's framework-exception-handler die naar `data/errors.json` schrijft (zoals build-errors). Lock blijft hangen tot TTL (1u); gefaalde task is geparkeerd, andere tasks worden volgende cron-tick uitgevoerd.
+No try/catch in `tasks::run`. A Throwable bubbles up to Phlo's framework
+exception handler, which writes to `data/errors.json` (like build errors).
+The lock stays until its TTL (1h); the failed task is parked and the other
+tasks run on the next cron tick.
 
-## Dashboard-integratie
+## Dashboard integration
 
-Phlo's dev-dashboard detecteert `data/tasks/` automatisch:
-- **Tasks-tab** in nav (alleen zichtbaar als dir bestaat), direct na Home
-- Per task: schedule (uit JSON), last-run-ago, return-value (type-aware: scalar/array/string), lock-status pill
+Phlo's dev dashboard detects `data/tasks/` automatically:
+- A **Tasks tab** in the nav (visible only when the directory exists), right
+  after Home.
+- Per task: schedule (from JSON), last-run-ago, return value (type-aware:
+  scalar/array/string), lock-status pill.
 
-Dashboard is **volledig agnostisch** over de `tasks`-resource en de app: leest puur uit `data/tasks/`. Schedule-info komt uit `<name>.json` (door runner geschreven), nooit via `phlo('app')`; dat zou een app-route trigger en HTTP-status verstoring veroorzaken.
+The dashboard is **fully agnostic** about the `tasks` resource and the app:
+it reads purely from `data/tasks/`. Schedule info comes from `<name>.json`
+(written by the runner), never via `phlo('app')`; that would trigger an app
+route and disturb the HTTP status.
 
-## Voorbeeld (demo)
+## Example (demo)
 
-Zie `/srv/demo/app.phlo`:
 ```phlo
 prop tasks => arr(
     heartbeat: arr(do: 'app::heartbeat', every: 'minute'),
@@ -79,4 +90,4 @@ prop tasks => arr(
 static heartbeat => file_put_contents(data.'heartbeat.log', date('Y-m-d H:i:s').' tasks::run fired'.lf, FILE_APPEND | LOCK_EX)
 ```
 
-Cron: `* * * * * php-zts /srv/demo/www/app.php tasks::run`
+Cron: `* * * * * php /path/to/app/www/app.php tasks::run`

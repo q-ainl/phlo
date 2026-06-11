@@ -1,51 +1,53 @@
 # Phlo model: opt-in features
 
-`@ extends: model` levert standaard CRUD + identity-map + relaties + soft-delete. Sinds 2026-05 zijn er drie extra opt-in features.
+`@ extends: model` gives you CRUD + identity map + relations + soft-delete by
+default. There are three additional opt-in features.
 
-## 1. Audit-log
+## 1. Audit log
 
-Voeg `static objAudit = true` toe op een model. Vanaf dan:
-- `Class::create(...)`: na success, `%audit->log($record, 'create', [], (array)$record)`.
-- `Class::delete($where, ...)`: per geraakt record, `%audit->log($record, 'delete', (array)$record, [])`.
-- `$record->objSave()`: bij update, `%audit->log($saved, 'update', (array)$old, (array)$saved)`.
-- `Class::objLogChange($where, ...)`: alternatieve update die pre-fetcht + diff voor `%audit->log`. Gebruik in plaats van `Class::change()` als je per-record-audit op bulk-update wilt.
+Add `static objAudit = true` to a model. From then on:
+- `Class::create(...)`: on success, `%audit->log($record, 'create', [], (array)$record)`.
+- `Class::delete($where, ...)`: per affected record, `%audit->log($record, 'delete', (array)$record, [])`.
+- `$record->objSave()`: on update, `%audit->log($saved, 'update', (array)$old, (array)$saved)`.
+- `Class::objLogChange($where, ...)`: an alternative update that pre-fetches and diffs for `%audit->log`. Use it instead of `Class::change()` when you want per-record auditing on a bulk update.
 
-Vereisten:
-- Voeg `security/audit` toe aan `data/app.json` resources.
-- Importeer eenmalig `resources/security/audit.sql` (in de engine-map) in de app-database: `mysql <database> < <engine>/resources/security/audit.sql`.
+Requirements:
+- Add `security/audit` to the `data/app.json` resources.
+- Import `resources/security/audit.sql` (in the engine directory) into the app database once: `mysql <database> < <engine>/resources/security/audit.sql`.
 
-Sensitive fields uitsluiten:
+Exclude sensitive fields:
 ```phlo
 method afterCreate => %audit->log($this, 'create', [], (array)$this, exclude: ['password_hash'])
 ```
 
-Alleen in dev/build-mode (uit in release):
+Dev/build mode only (off in release):
 ```phlo
 static objAudit => debug
 ```
 
-Alleen in release/productie (uit in dev):
+Release/production only (off in dev):
 ```phlo
 static objAudit => !debug
 ```
 
-(`debug` is een Phlo-runtime-constant gezet door `phlo_app(debug: true|false)`.)
+(`debug` is a Phlo runtime constant set by `phlo_app(debug: true|false)`.)
 
 ## 2. Validation
 
-Voeg `static objValidate = true` toe op een model. Vanaf dan:
-- `Class::create($args)`: pre-flight `objRunValidation($args)`. Bij errors: `Class::$objLastErrors` populated, `create()` returnt `null`.
-- Per field in `static schema()` wordt `field->objValidate($value)` aangeroepen.
+Add `static objValidate = true` to a model. From then on:
+- `Class::create($args)`: pre-flight `objRunValidation($args)`. On errors, `Class::$objLastErrors` is populated and `create()` returns `null`.
+- Each field in `static schema()` has its `field->objValidate($value)` called.
 
-Veld-rules in `field()`:
+Field rules in `field()`:
 - `required: true`
-- `length: 100` (max-length)
+- `length: 100` (max length)
 - `pattern: '^[a-z]+$'` (regex)
 - `enum: ['draft', 'sent', 'paid']` (whitelist)
 
-Custom field-validatie: override `method objValidate($value)` in een field-subclass (`fields/email.phlo`, etc.) voor specifieke regels.
+Custom field validation: override `method objValidate($value)` in a field
+subclass (`fields/email.phlo`, etc.) for specific rules.
 
-Errors ophalen:
+Retrieve errors:
 ```phlo
 if (!user::create($args)){
     $errors = user::objErrors()
@@ -55,28 +57,28 @@ if (!user::create($args)){
 
 ## 3. Non-int / non-'id' primary key
 
-Voeg toe op een model:
+Add to a model:
 ```phlo
 static idColumn = 'sku'
 static idType = 'string'
 ```
 
-Vanaf dan:
-- Identity-map gebruikt `sku`-waarde als key.
-- `Class::record(sku: 'ABC')` werkt (niet `id:`).
-- `Class::recordCount()`, `Class::createTable()`, `Class::objSchemaDiff()`, `Class::objRestore()` werken met `sku`.
-- `getParent`/`getChildren`/`getMany`/`getLast` lookups gebruiken `sku` voor target.
+From then on:
+- The identity map uses the `sku` value as key.
+- `Class::record(sku: 'ABC')` works (not `id:`).
+- `Class::recordCount()`, `Class::createTable()`, `Class::objSchemaDiff()`, `Class::objRestore()` work with `sku`.
+- `getParent`/`getChildren`/`getMany`/`getLast` lookups use `sku` for the target.
 
-Caller-side:
-- Bij `create()`: meegeef PK-waarde zelf (geen auto-increment):
+Caller side:
+- On `create()`: pass the PK value yourself (no auto-increment):
   ```phlo
   giftcard::create(sku: 'XYZ-123', ...other)
   ```
-- `$record->id` werkt NIET voor non-`id` PK; gebruik `$record->sku` (de echte kolom-naam).
+- `$record->id` does NOT work for a non-`id` PK; use `$record->sku` (the real column name).
 
-## Combineren
+## Combining
 
-Alle drie samen mag:
+All three together is fine:
 ```phlo
 static objAudit = true
 static objValidate = true
@@ -84,8 +86,8 @@ static idColumn = 'sku'
 static idType = 'string'
 ```
 
-Geen interactie-effecten; elke flag staat los.
+No interaction effects; each flag is independent.
 
-## Backwards compat
+## Backwards compatibility
 
-Alle defaults: `false` of `'id'`/`'int'`. Bestaande models onveranderd.
+All defaults are `false` or `'id'`/`'int'`. Existing models are unchanged.

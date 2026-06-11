@@ -1,123 +1,137 @@
 # Phlo apply() protocol
 
-`apply()` is de Phlo-server-naar-client communicatie voor async responses. Server bouwt een object met opdrachten, frontend `phlo.js` voert ze uit op de DOM.
+`apply()` is Phlo's server-to-client channel for async responses. The server
+builds an object of commands; the frontend (`phlo.js`) executes them against
+the DOM.
 
-## Algemeen
+## General
 
 ```php
 apply(cmd1: value1, cmd2: value2, ...)
 ```
 
-Elke opdracht heeft een eigen handler in `app.mod.<opdracht>` (zie `phlo.js`). Een waarde kan zijn:
-- Een string/getal/object (1 doel)
-- Een associatieve array `{'#sel': 'value', '.cls': 'value'}` (meerdere doelen in 1 keer)
-- Een array van waarden (sequentieel)
+Each command has a handler in `app.mod.<command>` (see `phlo.js`). A value
+can be:
+- A string/number/object (one target).
+- An associative array `{'#sel': 'value', '.cls': 'value'}` (several targets
+  at once).
+- An array of values (applied in sequence).
 
-## DOM-mutaties
+## DOM mutations
 
 | Cmd | Argument | Effect |
 |---|---|---|
 | `inner` | `{selector: html}` | `el.innerHTML = html` |
 | `outer` | `{selector: html}` | `el.outerHTML = html` |
-| `main` | `html` | Vervang `<main>` (of body als geen main) |
-| `before` | `{selector: html}` | Insert HTML voor element |
-| `after` | `{selector: html}` | Insert HTML na element |
-| `prepend` | `{selector: html}` | Insert HTML als eerste child |
-| `append` | `{selector: html}` | Insert HTML als laatste child |
-| `remove` | `selector` of array | Verwijder elementen |
-| `attr` | `{selector: {attr: value}}` | Zet/verwijder attribuut (null = verwijder) |
-| `value` | `{selector: value}` | Zet `el.value` (forms) |
-| `data` | `{selector: {key: value}}` | Zet `el.dataset[key]` |
-| `class` | `{selector: 'a b -c !d'}` | Add/remove (-prefix)/toggle (!prefix) |
+| `main` | `html` | Replace `<main>` (or body if there is no main) |
+| `before` | `{selector: html}` | Insert HTML before the element |
+| `after` | `{selector: html}` | Insert HTML after the element |
+| `prepend` | `{selector: html}` | Insert HTML as first child |
+| `append` | `{selector: html}` | Insert HTML as last child |
+| `remove` | `selector` or array | Remove elements |
+| `attr` | `{selector: {attr: value}}` | Set/remove attribute (null removes) |
+| `value` | `{selector: value}` | Set `el.value` (forms) |
+| `data` | `{selector: {key: value}}` | Set `el.dataset[key]` |
+| `class` | `{selector: 'a b -c !d'}` | Add / remove (`-` prefix) / toggle (`!` prefix) |
 
-## App-state
+## App state
 
 | Cmd | Argument | Effect |
 |---|---|---|
 | `title` | `string` | `document.title` |
 | `lang` | `string` | `html.lang` |
-| `options` | `string` | Vervang `body.className` |
-| `settings` | `{key: value}` | Zet `body.dataset[key]` |
-| `path` | `string` | `history.pushState` (URL wijzigt) |
-| `trans` | `string` | Transition-classes voor view-animatie |
-| `scroll` | `int` of `#anchor` | Scroll-positie |
+| `options` | `string` | Replace `body.className` |
+| `settings` | `{key: value}` | Set `body.dataset[key]` |
+| `path` | `string` | `history.pushState` (URL changes) |
+| `trans` | `string` | Transition classes for the view animation |
+| `scroll` | `int` or `#anchor` | Scroll position |
 
 ## Assets
 
 | Cmd | Argument | Effect |
 |---|---|---|
-| `css` | `href` of array | Voeg `<link rel=stylesheet>` toe (eenmalig per href) |
-| `js` | `src` of array | Voeg `<script src>` toe (eenmalig) |
-| `defer` | `src` of array | Idem maar met `defer` attr |
+| `css` | `href` or array | Add `<link rel=stylesheet>` (once per href) |
+| `js` | `src` or array | Add `<script src>` (once) |
+| `defer` | `src` or array | Same, with the `defer` attribute |
 
-## Navigatie
-
-| Cmd | Argument | Effect |
-|---|---|---|
-| `location` | `path` of `true` | Volgende navigatie. `true` = huidige path opnieuw. Externe URL `http(s)://`: `location.assign()` |
-| `call` | `callback-name` | Roep `app[cb]()` aan |
-
-## Notificaties
+## Navigation
 
 | Cmd | Argument | Effect |
 |---|---|---|
-| `error` | `string` | Render error-toast (server-fout, validatie, etc.) |
-| `notice` | `string` | Render notice-toast (succes, info) |
-| `log` | `string` | `console.log` op client |
+| `location` | `path` or `true` | Next navigation. `true` re-requests the current path. External `http(s)://` URLs use `location.assign()` |
+| `call` | `callback-name` | Calls `app[cb]()` |
 
-## Speciale
+## Feedback and debug
 
 | Cmd | Argument | Effect |
 |---|---|---|
-| `phlo` | array van debug-strings | Server-side trace; logt naar browser-console in debug-mode |
-| `head` | `html` | Append naar `<head>` |
-| `redirect` | URL | Sync redirect (zelfde als location voor extern) |
-| `refresh` | bool | Forceer pagina-reload |
+| `error` | `string` | Client error handler (`phlo.error`) |
+| `log` | `string` | `console.log` on the client (debug mode) |
+| `phlo` | array of strings | Server-side trace, logged to the browser console in debug mode |
+| `debug` | array of strings | Debug lines, logged to the browser console |
+| `dump` | array | `d()`/`dx()` dumps, logged to the browser console |
 
-## Stream-semantiek
+## Custom responders (`app.res`)
 
-- 1 HTTP response = 1 of meer JSON-regels (newline-gescheiden).
-- Per regel een complete `apply({...})` object.
-- Frontend parsed regel-voor-regel, voert direct uit.
-- Geen rollback bij fout in 1 cmd: andere cmds in zelfde batch voeren wel uit.
+`apply()` only ships the commands above. To add app-specific behaviour,
+register a responder on `app.res`; for every key present in the response that
+matches a responder name, `app.res[key](cmds)` runs. This is the supported
+extension point, so the engine's command set stays small. A toast/notice
+system, for example, is a resource that registers its own responder, not a
+core command.
 
-## Error-handling
+## Stream semantics
 
-- Bij `apply(error: ...)`: toast verschijnt, verdere processing in dezelfde batch GAAT DOOR. Server kan na error nog DOM-updates sturen (bv. form-velden markeren met `class: '... error'`).
-- Bij niet-bestaande target (`inner: ['#niet-bestaande': '...']`): faalt stil (geen toast, geen warning). Bewuste keuze; voorkomt ruis bij optionele targets.
+- One HTTP response is one or more newline-separated JSON lines.
+- Each line is a complete `apply({...})` object.
+- The frontend parses line by line and executes immediately.
+- No rollback if one command fails: the other commands in the same batch
+  still run.
 
-## Voorbeelden
+## Error handling
+
+- After `apply(error: ...)` the rest of the batch still runs, so the server
+  can send DOM updates alongside the error (e.g. mark form fields with
+  `class: '... error'`).
+- A missing target (`inner: ['#does-not-exist' => '...']`) fails silently:
+  no toast, no warning. This is deliberate; it avoids noise for optional
+  targets.
+
+## Examples
 
 ```php
-// Form-error met veld-markering
+// Form error with field marking
 apply(
-    error: 'Vul alle verplichte velden in',
+    error: 'Please fill in all required fields',
     class: ['[name=email]' => 'error', '[name=name]' => 'error'],
 )
 
-// List-refresh + scroll
+// List refresh + scroll
 apply(
     outer: ['#list' => $this->newListHtml()],
     scroll: '#list',
     trans: 'forward',
 )
 
-// Modal openen
+// Open a modal
 apply(
     append: ['body' => '<dialog open>...</dialog>'],
     class: ['html' => 'modal-open'],
 )
 
-// Volledige page-update (vergelijkbaar met view())
+// Full page update (comparable to view())
 apply(
-    title: 'Nieuwe titel',
+    title: 'New title',
     inner: ['main' => $html],
-    path: '/nieuwe-route',
+    path: '/new-route',
     trans: 'forward',
     scroll: 0,
 )
 ```
 
-## Niet documenteren via lint
+## No lint for apply keys
 
-Phlo doet GEEN build-time checks op apply-keys. Een typo (`inner` -> `innr`) wordt stil genegeerd door phlo.js (`app.mod[mod]` is undefined). De ontwikkelaar bewaakt dit zelf via deze doc + agent-memory. Zie SKILL.md voor de bewuste keuze om Phlo's build slank te houden.
+Phlo does NOT check apply keys at build time. A typo (`inner` -> `innr`) is
+silently ignored by phlo.js (`app.mod[key]` is undefined). The developer
+guards this via this doc. See SKILL.md for the deliberate choice to keep
+Phlo's build lean.
