@@ -1,4 +1,4 @@
-@ version:  1.0
+@ version:  1.1
 @ creator:  q-ai.nl
 @ summary:  Language and translation resource
 @ package:  i18n
@@ -15,13 +15,107 @@ static asyncBatch($from, $to, $json){
 	%app->lang = $to
 	$texts = json_decode($json, true)
 	$translations = $this->translateBatch($from, $to, $texts)
-	foreach ($translations AS $hash => $translation) $this->translations->$hash = $translation
+	if ($translations) $this->save($to, $translations)
 }
 
 view => %app->lang
 
 prop model = 'gpt-4o-mini'
-prop translations => %INI(%app->lang, langs)
+static fileCache = []
+
+method file($lang) => langs.$lang.'.ini'
+
+method escape($value) => strtr((string)$value, [bs => bs.bs, dq => bs.dq, lf => '\n'])
+method unescape($value) => strtr(strtr($value, [bs.bs => "\x01", bs.dq => dq, '\n' => lf]), ["\x01" => bs])
+
+method lineValue($line, $eq){
+	$value = rtrim(substr($line, $eq + 3), cr.lf)
+	if (strlen($value) > 1 && $value[0] === dq && substr($value, -1) === dq) $value = substr($value, 1, -1)
+	return $this->unescape($value)
+}
+
+method readAll($file){
+	$items = []
+	if (!is_file($file)) return $items
+	foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] AS $line){
+		$eq = strpos($line, ' = ')
+		if ($eq === false) continue
+		$items[substr($line, 0, $eq)] = $this->lineValue($line, $eq)
+	}
+	return $items
+}
+
+method search($file, $hash){
+	$size = (int)@filesize($file)
+	if (!$size) return null
+	$h = @fopen($file, 'rb')
+	if (!$h) return null
+	$lo = 0
+	$hi = $size
+	while ($hi - $lo > 4096){
+		$mid = intdiv($lo + $hi, 2)
+		fseek($h, $mid)
+		fgets($h)
+		$pos = ftell($h)
+		if ($pos >= $hi){
+			$hi = $mid
+			continue
+		}
+		$line = (string)fgets($h)
+		$eq = strpos($line, ' = ')
+		if ($eq === false){
+			$hi = $mid
+			continue
+		}
+		$cmp = strcmp(substr($line, 0, $eq), $hash)
+		if ($cmp < 0) $lo = ftell($h)
+		elseif ($cmp > 0) $hi = $pos
+		else {
+			fclose($h)
+			return $this->lineValue($line, $eq)
+		}
+	}
+	fseek($h, $lo)
+	$value = null
+	while (ftell($h) < $hi && ($line = fgets($h)) !== false){
+		$eq = strpos($line, ' = ')
+		if ($eq === false) continue
+		$cmp = strcmp(substr($line, 0, $eq), $hash)
+		if ($cmp > 0) break
+		if ($cmp === 0){
+			$value = $this->lineValue($line, $eq)
+			break
+		}
+	}
+	fclose($h)
+	return $value
+}
+
+method lookup($hash){
+	$file = $this->file(%app->lang)
+	$mtime = (int)@filemtime($file)
+	$cache =& static::$fileCache[$file]
+	if (!$cache || $cache['mtime'] !== $mtime) $cache = ['mtime' => $mtime, 'items' => []]
+	if (array_key_exists($hash, $cache['items'])) return $cache['items'][$hash]
+	$value = $this->search($file, $hash)
+	if ($value === null && $mtime) $value = $this->readAll($file)[$hash] ?? null
+	return $cache['items'][$hash] = $value
+}
+
+method save($lang, $pairs){
+	$file = $this->file($lang)
+	$items = $this->readAll($file)
+	foreach ($pairs AS $hash => $value) $items[$hash] = $value
+	ksort($items, SORT_STRING)
+	$out = void
+	foreach ($items AS $hash => $value) $out .= $hash.' = '.dq.$this->escape($value).dq.lf
+	file_put_contents($file.'.tmp', $out, LOCK_EX)
+	@chmod($file.'.tmp', 0664)
+	rename($file.'.tmp', $file)
+	unset(static::$fileCache[$file])
+}
+
+method transContext => ($instr = trim((string)(%app->transInstr ?? void))) !== void ? lf.'Context from the app author about purpose and domain: '.$instr : void
 
 prop browser => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
 method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
@@ -36,14 +130,15 @@ method detect($text, $fallback = 'en'){
 }
 method hash($from, $text) => $from.($short = substr(implode(regex_all('/[A-Za-z0-9]+/', ucwords($text))[0]), 0, 8)).substr(md5($text), 0, 10 - strlen($short))
 method translation($from, $text, ...$args){
-	if ($from === %app->lang) $translation = $text
+	if ($from === %app->lang) $translation = strtr($text, ['\n' => lf])
 	else {
 		$translation = []
 		$missing = []
 		foreach (explode(lf, $text) AS $line){
 			if (trim($line)){
 				$hash = $this->hash($from, $line)
-				if (!$item = $this->translations->$hash) [$missing[$hash] = $item = $line, debug(%app->lang.': '.(strlen($line) > 20 ? substr($line, 0, 18).'...' : $line))]
+				$item = $this->lookup($hash)
+				if ($item === null) [$missing[$hash] = $item = $line, debug(%app->lang.': '.(strlen($line) > 20 ? substr($line, 0, 18).'...' : $line))]
 			}
 			else $item = void
 			$translation[] = $item
@@ -51,14 +146,13 @@ method translation($from, $text, ...$args){
 		if ($missing) phlo_async('lang::asyncBatch', $from, %app->lang, json_encode($missing))
 		$translation = implode(lf, $translation)
 	}
-	$translation = strtr($translation, ['\n' => lf])
 	return $args ? sprintf($translation, ...$args) : $translation
 }
 method translate($from, $to, $text){
 	if ($from === $to) return $text
 	return %OpenAI->chat (
 		model: $this->model,
-		system: "You will be provided with a word, sentence or (markdown) text in ISO 639-1 language $from, and your task is to translate this string into ISO 639-1 language $to. Respect markdown, missing interpunction and specific use of capitals. Give only the translation.",
+		system: "You will be provided with a word, sentence or (markdown) text in ISO 639-1 language $from, and your task is to translate this string into ISO 639-1 language $to. Respect markdown, missing interpunction and specific use of capitals. Give only the translation.".$this->transContext(),
 		user: $text,
 		temperature: 0,
 	)->answer
@@ -69,7 +163,7 @@ method translateBatch($from, $to, $texts){
 	$numbered = implode(lf, array_map(fn($i, $t) => ($i + 1).'. '.$t, array_keys($values = array_values($texts)), $values))
 	$answer = %OpenAI->chat (
 		model: $this->model,
-		system: "You will be provided with numbered lines in ISO 639-1 language $from. Translate each line into ISO 639-1 language $to. Return only the numbered translations in the same format. Respect markdown, missing interpunction and specific use of capitals.",
+		system: "You will be provided with numbered lines in ISO 639-1 language $from. Translate each line into ISO 639-1 language $to. Return only the numbered translations in the same format. Respect markdown, missing interpunction and specific use of capitals.".$this->transContext(),
 		user: $numbered,
 		temperature: 0,
 	)->answer
