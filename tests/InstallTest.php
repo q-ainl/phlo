@@ -7,11 +7,16 @@ use PHPUnit\Framework\TestCase;
 final class InstallTest extends TestCase {
 
 	private static function runInstaller(string $script, array $answers, array $args = [], ?string $cwd = null):array {
+		// PHLO_ENGINE pins the engine location so the run is deterministic; when the
+		// installer is a copy outside the engine its dirname can't locate it, and in CI
+		// none of the /srv fallbacks exist. A real user types the path at the prompt.
+		$env  = ['PHLO_ENGINE' => rtrim(engine, slash)] + getenv();
 		$proc = proc_open(
 			[PHP_BINARY, $script, ...$args],
 			[0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
 			$pipes,
-			$cwd
+			$cwd,
+			$env
 		);
 		fwrite($pipes[0], implode("\n", $answers)."\n");
 		fclose($pipes[0]);
