@@ -87,6 +87,8 @@ source, build, release and error views.
 
 - **[docs/SKILL.md](docs/SKILL.md)** the full language and build reference
   (also the agent skill).
+- **[docs/design.md](docs/design.md)** the rationale behind Phlo's
+  non-obvious design decisions (read before changing the engine).
 - **[docs/deploy.md](docs/deploy.md)** deployment options.
 - **[docs/apply-protocol.md](docs/apply-protocol.md)** the `apply()` SPA
   protocol.
