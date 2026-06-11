@@ -1,0 +1,37 @@
+{
+    "name": "phlo",
+    "displayName": "Phlo",
+    "description": "Syntax highlighting for Phlo (.phlo) source files",
+    "version": "0.1.0",
+    "publisher": "q-ainl",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "categories": ["Programming Languages"],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/q-ainl/phlo.git",
+        "directory": "editor/vscode"
+    },
+    "contributes": {
+        "languages": [
+            {
+                "id": "phlo",
+                "aliases": ["Phlo"],
+                "extensions": [".phlo"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "phlo",
+                "scopeName": "source.phlo",
+                "path": "./syntaxes/phlo.tmLanguage.json",
+                "embeddedLanguages": {
+                    "meta.embedded.block.js.phlo": "javascript"
+                }
+            }
+        ]
+    }
+}

@@ -25,6 +25,9 @@ tagged release onward. The engine version constant lives in `phlo.php`
 - CSS values may wrap across lines after a dangling colon on the property
   line; continuation lines ending with a comma were already merged. Both
   legal wrap forms are documented in SKILL.md (syntax rule 4).
+- VS Code extension with a TextMate grammar for `.phlo` under
+  `editor/vscode/`: nodes, routes, views with interpolation and control
+  tags, Phlo CSS, embedded JavaScript, `%object` shorthands and metadata.
 
 ### Changed
 - SKILL.md: full-line `//` comments are documented as officially supported

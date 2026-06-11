@@ -1,0 +1,267 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Phlo",
+    "scopeName": "source.phlo",
+    "patterns": [
+        { "include": "#metadata" },
+        { "include": "#comment" },
+        { "include": "#script-block" },
+        { "include": "#style-block" },
+        { "include": "#view-block" },
+        { "include": "#view-inline" },
+        { "include": "#route" },
+        { "include": "#node-header" },
+        { "include": "#expression" }
+    ],
+    "repository": {
+        "metadata": {
+            "match": "^(@)\\s*([A-Za-z]+)(:)\\s*(.*)$",
+            "captures": {
+                "1": { "name": "punctuation.definition.annotation.phlo" },
+                "2": { "name": "keyword.other.metadata.phlo" },
+                "3": { "name": "punctuation.separator.key-value.phlo" },
+                "4": { "name": "string.unquoted.metadata.phlo" }
+            }
+        },
+        "comment": {
+            "match": "^\\s*(//|#).*$",
+            "name": "comment.line.phlo"
+        },
+        "script-block": {
+            "begin": "^(<)(script)(\\s+ns=[^>]*)?(>)\\s*$",
+            "end": "^(</)(script)(>)\\s*$",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                "2": { "name": "entity.name.tag.script.phlo" },
+                "3": { "name": "entity.other.attribute-name.phlo" },
+                "4": { "name": "punctuation.definition.tag.end.phlo" }
+            },
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                "2": { "name": "entity.name.tag.script.phlo" },
+                "3": { "name": "punctuation.definition.tag.end.phlo" }
+            },
+            "contentName": "meta.embedded.block.js.phlo",
+            "patterns": [{ "include": "source.js" }]
+        },
+        "style-block": {
+            "begin": "^(<)(style)(\\s+ns=[^>]*)?(>)\\s*$",
+            "end": "^(</)(style)(>)\\s*$",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                "2": { "name": "entity.name.tag.style.phlo" },
+                "3": { "name": "entity.other.attribute-name.phlo" },
+                "4": { "name": "punctuation.definition.tag.end.phlo" }
+            },
+            "endCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                "2": { "name": "entity.name.tag.style.phlo" },
+                "3": { "name": "punctuation.definition.tag.end.phlo" }
+            },
+            "contentName": "meta.embedded.block.phlo-css.phlo",
+            "patterns": [{ "include": "#phlo-css" }]
+        },
+        "phlo-css": {
+            "patterns": [
+                { "include": "#comment" },
+                {
+                    "match": "^\\s*(@[\\w-]+)([^:{]*)(\\{)?\\s*$",
+                    "captures": {
+                        "1": { "name": "keyword.control.at-rule.phlo-css" },
+                        "2": { "name": "support.constant.media.phlo-css" },
+                        "3": { "name": "punctuation.section.block.begin.phlo-css" }
+                    }
+                },
+                {
+                    "match": "^\\s*(\\$[\\w-]+)\\s*(:)\\s*(.*)$",
+                    "captures": {
+                        "1": { "name": "variable.other.phlo-css" },
+                        "2": { "name": "punctuation.separator.key-value.phlo-css" },
+                        "3": { "name": "string.unquoted.value.phlo-css", "patterns": [{ "include": "#css-value" }] }
+                    }
+                },
+                {
+                    "match": "^\\s*([^:{}]+?)\\s*(\\{)\\s*$",
+                    "captures": {
+                        "1": { "name": "entity.name.tag.selector.phlo-css" },
+                        "2": { "name": "punctuation.section.block.begin.phlo-css" }
+                    }
+                },
+                {
+                    "match": "^\\s*(\\})\\s*$",
+                    "captures": {
+                        "1": { "name": "punctuation.section.block.end.phlo-css" }
+                    }
+                },
+                {
+                    "match": "^\\s*(\\\\?[$\\w@\\\\:.#%-]+(?:\\s*\\([^)]*\\))?)\\s*(:)\\s*(.*)$",
+                    "captures": {
+                        "1": { "name": "support.type.property-name.phlo-css" },
+                        "2": { "name": "punctuation.separator.key-value.phlo-css" },
+                        "3": { "name": "string.unquoted.value.phlo-css", "patterns": [{ "include": "#css-value" }] }
+                    }
+                }
+            ]
+        },
+        "css-value": {
+            "patterns": [
+                { "match": "\\$[\\w-]+", "name": "variable.other.phlo-css" },
+                { "match": "#[0-9A-Fa-f]{3,8}\\b", "name": "constant.other.color.phlo-css" },
+                { "match": "\\b\\d+(?:\\.\\d+)?(?:px|em|rem|vh|vw|dvh|dvw|s|ms|deg|fr|%)?", "name": "constant.numeric.phlo-css" }
+            ]
+        },
+        "view-block": {
+            "begin": "^(view)\\s*([A-Za-z_][\\w.]*)?\\s*(\\([^)]*\\))?\\s*(:)\\s*$",
+            "end": "^(?=\\s*$)",
+            "beginCaptures": {
+                "1": { "name": "storage.type.view.phlo" },
+                "2": { "name": "entity.name.function.view.phlo" },
+                "3": { "name": "meta.parameters.phlo", "patterns": [{ "include": "#expression" }] },
+                "4": { "name": "punctuation.separator.view.phlo" }
+            },
+            "contentName": "meta.view.phlo",
+            "patterns": [{ "include": "#view-content" }]
+        },
+        "view-inline": {
+            "match": "^(view)\\s*([A-Za-z_][\\w.]*)?\\s*(\\([^)]*\\))?\\s*(:)\\s+(\\S.*)$",
+            "captures": {
+                "1": { "name": "storage.type.view.phlo" },
+                "2": { "name": "entity.name.function.view.phlo" },
+                "3": { "name": "meta.parameters.phlo", "patterns": [{ "include": "#expression" }] },
+                "4": { "name": "punctuation.separator.view.phlo" },
+                "5": { "name": "meta.view.phlo", "patterns": [{ "include": "#view-content" }] }
+            }
+        },
+        "view-content": {
+            "patterns": [
+                {
+                    "match": "^\\s*(</?)(if|elseif|else|foreach)\\b([^>]*)(>)\\s*$",
+                    "captures": {
+                        "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                        "2": { "name": "keyword.control.phlo" },
+                        "3": { "name": "meta.embedded.expression.phlo", "patterns": [{ "include": "#expression" }] },
+                        "4": { "name": "punctuation.definition.tag.end.phlo" }
+                    }
+                },
+                { "include": "#interpolation" },
+                { "include": "#html-tag" },
+                { "include": "#variable" }
+            ]
+        },
+        "interpolation": {
+            "patterns": [
+                {
+                    "begin": "\\{\\{",
+                    "end": "\\}\\}",
+                    "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.phlo" } },
+                    "endCaptures": { "0": { "name": "punctuation.section.embedded.end.phlo" } },
+                    "contentName": "meta.embedded.expression.phlo",
+                    "patterns": [{ "include": "#expression" }]
+                },
+                {
+                    "begin": "\\{\\(",
+                    "end": "\\)\\}",
+                    "beginCaptures": { "0": { "name": "punctuation.section.embedded.begin.phlo" } },
+                    "endCaptures": { "0": { "name": "punctuation.section.embedded.end.phlo" } },
+                    "contentName": "meta.embedded.expression.phlo",
+                    "patterns": [{ "include": "#expression" }]
+                }
+            ]
+        },
+        "html-tag": {
+            "begin": "(</?)([A-Za-z][\\w:-]*)((?:#[\\w-]+)?(?:\\.[\\w-]+)*)",
+            "end": "(/?>)",
+            "beginCaptures": {
+                "1": { "name": "punctuation.definition.tag.begin.phlo" },
+                "2": { "name": "entity.name.tag.phlo" },
+                "3": {
+                    "patterns": [
+                        { "match": "#[\\w-]+", "name": "entity.other.attribute-name.id.phlo" },
+                        { "match": "\\.[\\w-]+", "name": "entity.other.attribute-name.class.phlo" }
+                    ]
+                }
+            },
+            "endCaptures": { "1": { "name": "punctuation.definition.tag.end.phlo" } },
+            "patterns": [
+                { "include": "#interpolation" },
+                { "match": "[\\w:@-]+(?==)", "name": "entity.other.attribute-name.phlo" },
+                { "include": "#string" },
+                { "include": "#variable" },
+                { "match": "=", "name": "punctuation.separator.key-value.phlo" }
+            ]
+        },
+        "route": {
+            "match": "^\\s*(route)\\s+(?:(sync|async|both)\\s+)?(GET|POST|PUT|PATCH|DELETE)\\b([^@{=>]*)(@[A-Za-z,]+)?\\s*(\\{|=>)?(.*)$",
+            "captures": {
+                "1": { "name": "storage.type.route.phlo" },
+                "2": { "name": "storage.modifier.route-mode.phlo" },
+                "3": { "name": "keyword.other.http-verb.phlo" },
+                "4": {
+                    "name": "meta.route-path.phlo",
+                    "patterns": [
+                        { "match": "\\$[A-Za-z_]\\w*", "name": "variable.parameter.phlo" },
+                        { "match": "[=*?:.,]", "name": "keyword.operator.route.phlo" }
+                    ]
+                },
+                "5": { "name": "entity.other.attribute-name.payload.phlo" },
+                "6": { "name": "keyword.operator.arrow.phlo" },
+                "7": { "name": "meta.route-target.phlo", "patterns": [{ "include": "#expression" }] }
+            }
+        },
+        "node-header": {
+            "match": "^\\s*(?:(public|protected|private)\\s+)?(method|prop|static|const|readonly|function)\\s+(%?[A-Za-z_][\\w.]*)",
+            "captures": {
+                "1": { "name": "storage.modifier.visibility.phlo" },
+                "2": { "name": "storage.type.node.phlo" },
+                "3": { "name": "entity.name.function.phlo" }
+            }
+        },
+        "string": {
+            "patterns": [
+                {
+                    "begin": "'",
+                    "end": "'",
+                    "name": "string.quoted.single.phlo",
+                    "patterns": [{ "match": "\\\\.", "name": "constant.character.escape.phlo" }]
+                },
+                {
+                    "begin": "\"",
+                    "end": "\"",
+                    "name": "string.quoted.double.phlo",
+                    "patterns": [
+                        { "match": "\\\\.", "name": "constant.character.escape.phlo" },
+                        { "include": "#variable" }
+                    ]
+                }
+            ]
+        },
+        "variable": {
+            "patterns": [
+                { "match": "\\$this\\b", "name": "variable.language.this.phlo" },
+                { "match": "\\$[A-Za-z_]\\w*", "name": "variable.other.phlo" },
+                { "match": "%[A-Za-z_]\\w*", "name": "support.class.phlo-object.phlo" }
+            ]
+        },
+        "expression": {
+            "patterns": [
+                { "include": "#string" },
+                { "include": "#variable" },
+                { "match": "\\b\\d+(?:\\.\\d+)?\\b|\\B\\.\\d+\\b", "name": "constant.numeric.phlo" },
+                {
+                    "match": "(->|::)([A-Za-z_]\\w*)",
+                    "captures": {
+                        "1": { "name": "keyword.operator.accessor.phlo" },
+                        "2": { "name": "variable.other.member.phlo" }
+                    }
+                },
+                { "match": "\\b(if|else|elseif|foreach|for|while|switch|case|default|break|continue|return|match|fn|use|new|as|AS|instanceof|try|catch|finally|throw|yield|global|echo|print)\\b", "name": "keyword.control.phlo" },
+                { "match": "\\b(true|false|null)\\b", "name": "constant.language.phlo" },
+                { "match": "\\b(void|lf|nl|cr|tab|space|comma|dot|dash|slash|colon|semi|sq|dq|bs|bt|br|eq|qm|us|perc|pipe|jsonFlags|debug|build|app|php|www|data|engine|host|cli|id|phlo)\\b", "name": "constant.language.phlo-const.phlo" },
+                { "match": "\\b(view|apply|route|error|phlo|location|output|title|esc|arr|obj|loop|first|last|debug|dx|d|regex|regex_all|json_read|json_write|files|dirs|mime|DOM|indent|indentView|duration|size_human)(?=\\s*\\()", "name": "support.function.phlo" },
+                { "match": "\\b[A-Za-z_]\\w*(?=\\s*\\()", "name": "entity.name.function.call.phlo" },
+                { "match": "=>|===|==|!==|!=|<=>|<=|>=|&&|\\|\\||\\?\\?=?|\\.=|[-+*/%.!?:=<>|&]", "name": "keyword.operator.phlo" },
+                { "match": "[(){}\\[\\],;]", "name": "punctuation.phlo" }
+            ]
+        }
+    }
+}
