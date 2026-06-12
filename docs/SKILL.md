@@ -30,9 +30,25 @@ NO  $x = 1 // inline   <- no inline comments
 NO  /* comment */      <- no block comments in .phlo code
 ```
 
-### 2. Multiline arguments require a trailing comma on every line
+### 2. The line parser: every line ends a statement, and how to continue one
 
-The parser inserts a semicolon at each line ending. Without a trailing comma, each argument line becomes its own broken statement.
+The compiler appends a `;` to **every** line, then removes it again where the line clearly continues. The complete rule set:
+
+- A `;` is appended at every line ending.
+- That `;` is removed when the line ends with `(`, `[`, `{`, `}`, `,` or `.`. These are **implicit continuations**: open delimiters, a trailing comma in an argument list, or a string concatenation broken after the `.`.
+- A line ending in a single backslash `\` is an **explicit continuation**: the parser removes both the backslash and the `;`, joining the line with the next. Use it for everything the implicit set does not cover, such as multi-line ternaries or conditions split across lines:
+
+```
+$html .= $prev === null \
+	? tag('span', void) \
+	: tag('a', $prev->title, href: "/guide/$prev->slug")
+```
+
+- Blank lines never produce a `;`.
+
+The mental model: never think about semicolons. Only ask "is my statement complete on this line?" If it is not, end the line with one of `( [ { , .` (natural in most multiline code) or an explicit `\`.
+
+Without an implicit or explicit continuation, every line becomes its own statement. This is why multiline arguments require a trailing comma on **every** line:
 
 ```
 NO  WRONG:
@@ -121,6 +137,28 @@ OK  <a href="/">Home</a>
 OK  <html lang="$this->lang">
 NO  <a href=/>
 NO  <html lang=$this->lang>
+```
+
+Attribute values interpolate `$var`, `$this->prop` and `%instance->prop` **directly**, including with a literal suffix. Never wrap plain property access in `{{ }}` inside an attribute; reserve `{{ }}` for function/method calls and `{( )}` for expressions:
+
+```
+OK  <a href="%base->view/install">
+OK  <a href="$this->url">
+NO  <a href="{{ %base->view }}/install">   <- redundant, ugly
+OK  <a class="card {( $active ? 'is-active' : void )}">
+OK  <button data-target="{{ $this->target() }}">
+```
+
+### 8. Never combine class/id shorthand with an explicit class or id attribute
+
+A tag uses EITHER the `.class`/`#id` shorthand OR an explicit attribute for that same property, never both. Combining them can emit a duplicate attribute (`class="a" class="b"`) and the browser keeps only the first, silently dropping the dynamic one. When part of the class is dynamic, write the whole thing as one attribute; keep shorthands for fully static tags, and prefer `#id` shorthand for static ids:
+
+```
+OK  <a.site-logo href="/">                          (fully static: shorthand)
+OK  <nav#index-nav.sidebar-nav>                     (static id + class shorthand)
+OK  <a class="site-logo {{ $this->extra }}" href="/">  (dynamic: one class attribute)
+NO  <a.site-logo class="{{ $this->extra }}">        <- duplicate class attribute
+NO  <div.panel id="panel-$key">                     -> write class in the attribute too
 ```
 
 ---
@@ -751,8 +789,20 @@ Build-only settings. Do **not** put `debug`, `host`, `cli`, or `websocket` here.
 | `minifyJS` | `false` (dev) / `true` (release) | Omit unless overriding |
 | `minifyPHP` | `false` (dev) / `true` (release) | Omit unless overriding |
 | `comments` | `true` | Source-map comments in output |
-| `phloJS` | `false` | Phlo JS namespace |
+| `defaultNS` | `"app"` | Namespace(s) for assets without an explicit `ns=` (comma-separated) |
+| `phloNS` | `["app"]` | Namespaces whose JS bundle embeds the phlo.js runtime |
+| `phloJS` | `false` | Inverts `phloNS`: embed the runtime in every namespace NOT listed there |
+| `iconNS` | `"app"` | Namespace that receives the generated icon-sprite CSS |
 | `exclude` | `[]` | Source files to skip |
+
+### Namespaces and bundles
+
+Every `<style>`/`<script>` block compiles into a per-namespace bundle: `ns=docs` goes into `www/docs.css`/`www/docs.js`, `ns=app,docs` into both, and blocks without `ns=` into `defaultNS`. A page selects its bundle with `view(..., ns: 'docs')`.
+
+Two rules keep multi-namespace apps working:
+
+1. **Every namespace whose pages load standalone needs the runtime**: list it in `phloNS` (e.g. `"phloNS": ["app", "docs"]`). Resource assets (helpers like `onExist`, cookiewall styles) carry no `ns=`, so widen `defaultNS` accordingly (e.g. `"defaultNS": "app,docs"`). Never work around a missing runtime by passing `defer: '/app.js'` to `view()`: on async navigation that re-injects the bundle and crashes with duplicate declarations.
+2. **Two runtimes must never meet in one page**: links that cross namespaces (an `app` page linking to a `docs` page) must be plain links (full page load), only same-namespace links get `class=async` (SPA navigation).
 
 A typical minimal config:
 
