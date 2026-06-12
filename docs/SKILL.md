@@ -1,9 +1,9 @@
 ---
 name: phlo
-description: "Work with Phlo v4 (Delta) projects: write and edit source files, trigger builds, introspect routes, views, functions and resources via CLI, diagnose build or parse errors, and understand app structure. Use for any task involving Phlo source files, the build system, or CLI introspection."
+description: "Work with Phlo projects: write and edit source files, trigger builds, introspect routes, views, functions and resources via CLI, diagnose build or parse errors, and understand app structure. Use for any task involving Phlo source files, the build system, or CLI introspection."
 ---
 
-# Phlo v4 (Delta) - Complete Language and Build Reference
+# Phlo - Complete Language and Build Reference
 
 ## Overview
 
@@ -366,7 +366,7 @@ For array or other complex static values, prefer computed statics:
 ```phlo
 static cashCoupures => [100, 50, 25]
 ```
-Call computed statics with `ClassName::cashCoupures()`. Primitive scalar `static name = value` works, but complex literal `static name = [...]` can produce misleading parser errors in current Delta builds.
+Call computed statics with `ClassName::cashCoupures()`. Primitive scalar `static name = value` works, but complex literal `static name = [...]` can produce misleading parser errors in current builds.
 
 ### The obj base class
 
@@ -614,7 +614,7 @@ app.options
 app.settings
 ```
 
-`app.path` is the current path. `app.uri` was v1 and should not be used in v4.
+`app.path` is the current path; `app.uri` does not exist.
 
 ### Apply commands
 
@@ -674,7 +674,7 @@ For the full semantics (targeting forms, streaming, error handling and the `app.
 
 ## Build and introspection workflow
 
-Every Phlo v4 app exposes a CLI layer via `build::` and `reflect::` commands. **Use these to understand an app before editing anything.**
+Every Phlo app exposes a CLI layer via `build::` and `reflect::` commands. **Use these to understand an app before editing anything.**
 
 > **Never run CLI commands against a live production server.** The CLI is only available when `build: true`. Always use a dev environment.
 
@@ -807,7 +807,7 @@ Control Center file links resolve to app `.phlo` sources, resource `.phlo` files
 
 Control Center POST actions should use the Phlo SPA response protocol where practical. Avoid redirect-only mutations for toggles, builds, release actions, and config edits unless the whole page state truly needs to reset.
 
-There are no separate `nodes`, `api`, or `reflection` Control Center sections in Delta. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
+There are no separate `nodes`, `api`, or `reflection` Control Center sections. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
 
 Debug error pages may link file locations back to Control Center source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or compiled `php/`/`www/` output.
 
@@ -891,7 +891,7 @@ Custom resource search paths (only needed when adding app-local resources alongs
 }
 ```
 
-`libs`, `functions`, `paths.libs`, and `paths.functions` are obsolete and must not be used. Delta build fails hard when these keys are present.
+`libs`, `functions`, `paths.libs`, and `paths.functions` are not config keys. The build fails hard when they are present.
 
 Use the object form for `release` only when `www` is not the default location or when overriding minify settings for release:
 
@@ -977,26 +977,6 @@ Phlo terminates statements by line ending and does not currently treat multiline
 ### `build::lint` reports an error in a generated file
 
 Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syntax there, and rebuild.
-
----
-
-## Migration from v1 (Alpha) to v4 (Delta)
-
-| Alpha (v1) | Delta (v4) |
-|------------|------------|
-| `uri` (everywhere) | `path` |
-| `apply(uri: ...)` | `apply(path: ...)` |
-| `app.uri` in JS | `app.path` |
-| `req()` function | `phlo('req')->part($index)` |
-| `define('req', ...)` | `phlo('req')->path`, `->method`, `->async` |
-| `cli` constant = boolean | `cli` constant = PHP binary path (string) |
-| `die()` / `exit()` in HTTP path | `return` - never `die()` in request path |
-| `title('Page Name')` | pass title to `view($this->view, 'Page Name')` |
-| `phlo_app_jsonfile()` | `phlo_app(build: true, ...)` |
-| `php www/app.php debug` | `php www/app.php build::run` then `build::lint` |
-| Thread via `function_exists` check | `thread: true` in `phlo_app()` |
-| `dx($v)` calls `die()` | `dx($v)` throws exception - safe in worker mode |
-| Basic auth credentials in `data/creds.ini [dashboard]` | credentials in `data/auth.ini` |
 
 ---
 

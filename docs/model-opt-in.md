@@ -88,6 +88,6 @@ static idType = 'string'
 
 No interaction effects; each flag is independent.
 
-## Backwards compatibility
+## Defaults
 
-All defaults are `false` or `'id'`/`'int'`. Existing models are unchanged.
+Every feature is off by default (`false`, `'id'`, `'int'`). A model without opt-ins stays a plain model.
