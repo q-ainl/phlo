@@ -38,7 +38,7 @@ comment naming the source, optional inline comments. A per-class sourcemap
 understand exactly what runs; there is no hidden runtime interpreting a
 template language. Second, a runtime error is translated back to the `.phlo`
 line that produced it (`phlo_error_sourcemap()` in `error.php`), so the error
-page and the dashboard links point at source you wrote, not at generated
+page and the Phlo Control Center links point at source you wrote, not at generated
 code.
 
 **The trade-off.** A build step exists. In development that is hidden by

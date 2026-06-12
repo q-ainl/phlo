@@ -55,7 +55,7 @@ Parsing happens via `strtotime("+$every", 0)`.
 | File | Content | When |
 |---|---|---|
 | `<name>.last` | raw unix ts | After each successful run, for the due check |
-| `<name>.json` | `{schedule, return}` for the dashboard | After each successful run |
+| `<name>.json` | `{schedule, return}` for the Control Center | After each successful run |
 | `<name>.lock` | empty (mtime matters) | During a run, TTL 1h |
 
 `data/tasks/` is created automatically by `tasks::run`.
@@ -67,15 +67,15 @@ exception handler, which writes to `data/errors.json` (like build errors).
 The lock stays until its TTL (1h); the failed task is parked and the other
 tasks run on the next cron tick.
 
-## Dashboard integration
+## Phlo Control Center integration
 
-Phlo's dev dashboard detects `data/tasks/` automatically:
+The Phlo Control Center detects `data/tasks/` automatically:
 - A **Tasks tab** in the nav (visible only when the directory exists), right
   after Home.
 - Per task: schedule (from JSON), last-run-ago, return value (type-aware:
   scalar/array/string), lock-status pill.
 
-The dashboard is **fully agnostic** about the `tasks` resource and the app:
+The Control Center is **fully agnostic** about the `tasks` resource and the app:
 it reads purely from `data/tasks/`. Schedule info comes from `<name>.json`
 (written by the runner), never via `phlo('app')`; that would trigger an app
 route and disturb the HTTP status.

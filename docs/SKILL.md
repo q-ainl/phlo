@@ -48,6 +48,8 @@ $html .= $prev === null \
 
 The mental model: never think about semicolons. Only ask "is my statement complete on this line?" If it is not, end the line with one of `( [ { , .` (natural in most multiline code) or an explicit `\`.
 
+**Pitfall (learned the hard way):** the FILE-level node parser tracks multiline node bodies by counting parentheses only, not square brackets. A multiline `prop x => [ ... ]` therefore ends the node at the first line and the rest becomes stray controller code (`Controller must be in one place`). Open multiline node bodies with a parenthesis: `prop x => arr(...)` or `prop x => array_merge(...)`.
+
 Without an implicit or explicit continuation, every line becomes its own statement. This is why multiline arguments require a trailing comma on **every** line:
 
 ```
@@ -170,7 +172,7 @@ www/app.php          <- entry point and runtime config (PHP, not .phlo)
 data/app.json        <- build config (resources, paths, flags)
 data/app.md          <- app documentation: structure, TODO items, agent notes (read/write)
 data/errors.json     <- runtime error log
-data/auth.ini        <- auth credentials (dashboard / site)
+data/auth.ini        <- auth credentials (Control Center / site)
 *.phlo               <- source files (app root)
 resources/           <- reusable resources: objects, functions, frontend assets, or hybrids
 php/                 <- generated PHP - never edit
@@ -184,7 +186,7 @@ Generated classes are loaded through `php/classmap.php`. Do not rely on classnam
 
 ### Resource dependencies and graph metadata
 
-Resource `@ requires` metadata is used by reflection and the dashboard. When a resource is enabled from the dashboard, required resources are added to `data/app.json` as well. Disabling a resource removes only that resource; dependencies remain enabled because they may be shared or intentionally loaded.
+Resource `@ requires` metadata is used by reflection and the Phlo Control Center. When a resource is enabled from the Control Center, required resources are added to `data/app.json` as well. Disabling a resource removes only that resource; dependencies remain enabled because they may be shared or intentionally loaded.
 
 Only resource requirements are auto-added. Optional requirements ending in `?`, `php-ext:*`, and `creds:*` stay informational.
 
@@ -229,10 +231,10 @@ Short description of what this app does.
 
 ## Notes
 - MySQL credentials are in data/auth.ini under [db]
-- The `visitor` class tracks page views per session and sends dashboard notifications to the dashboard WebSocket port by default
+- The `visitor` class tracks page views per session and sends notifications to the Phlo Dashboard (the separate fleet app) on its WebSocket port by default
 ```
 
-The dashboard shows `app.md` on the Home page and provides an editor under Config.
+The Phlo Control Center shows `app.md` on the Home page and provides an editor under Config.
 
 **Naming conventions:**
 - `app.phlo` - main controller and shared props
@@ -276,17 +278,28 @@ Remember that each `.phlo` file is its own class. `pos.view.phlo` compiles to cl
 %JSON('file')    -> phlo('JSON', 'file')
 ```
 
+**Pitfall (learned the hard way):** the compiler rewrites `%name` EVERYWHERE in a `.phlo` file, including inside string literals. A docs page that tried to print the literal text `%session` in example code shipped `phlo('session')` to visitors instead. Phlo example code that must stay verbatim belongs in external files (`.txt`, `.md`) loaded at runtime, never in `.phlo` string literals.
+
 ### Metadata annotations
 
-Placed at the top of a `.phlo` file, before any nodes:
+Placed at the top of a `.phlo` file, before any nodes. Any `@ key: value` line is stored as file metadata; these keys have engine or tooling meaning:
 
 ```
 @ class: myName       <- override the PHP class name
 @ extends: model      <- PHP inheritance (default: obj)
-@ summary: ...        <- description for tooling
+@ implements: A,B     <- PHP interfaces
+@ use: Full\Name as X <- PHP use statement
+@ namespace: My\Ns    <- PHP namespace
+@ type: class         <- node type: class (default), interface, trait, abstract class
+@ summary: ...        <- description for tooling (reflection, Control Center, manual)
 @ package: ...        <- package group for tooling
 @ frontend: true      <- marks lib as frontend-only
 @ backend: true       <- marks lib as backend-only
+@ requires: a, b?     <- dependencies (see Resource dependencies section)
+@ provides: app.mod.x <- frontend APIs this resource provides (selector graph)
+@ binds: form.async   <- frontend selectors/events this resource hooks (selector graph)
+@ tags: experimental  <- free-form tags, shown in reflection indexes
+@ advice: use X for Y <- developer guidance, shown in reflect::objectIndex
 ```
 
 ### Controller code
@@ -318,9 +331,11 @@ prop fullName => "$this->first $this->last"
 prop repeat($n) => str_repeat('*', $n)
 ```
 
-Usage: `$this->repeat(5)`.
+Usage: `$this->repeat(5)`. Results are cached per argument set; the no-argument form caches on first access.
 
 Props and methods **without arguments** are called without `()`. Static methods **always require `()`**.
+
+**Pitfall (learned the hard way):** a concrete prop in a parent class SHADOWS a computed prop in a child. `prop dir = void` in an abstract parent compiles to a real PHP property, so a child's `prop dir => guide` getter is never consulted: `$this->dir` reads the parent's `void`. When children must override a prop with a computed one, declare it computed in the parent too (`prop dir => void`).
 
 ### Methods and statics
 
@@ -352,6 +367,30 @@ For array or other complex static values, prefer computed statics:
 static cashCoupures => [100, 50, 25]
 ```
 Call computed statics with `ClassName::cashCoupures()`. Primitive scalar `static name = value` works, but complex literal `static name = [...]` can produce misleading parser errors in current Delta builds.
+
+### The obj base class
+
+Every compiled class extends `obj` (classes/obj.php). Its powers go well beyond `__get`/`__set`:
+
+**Interception hooks.** Implement any of these to trap the access chain; returning `null` falls through to the default behaviour, anything non-null short-circuits:
+
+```phlo
+method objCall($method, ...$args) => str_starts_with($method, 'find') ? $this->finder($method, $args) : null
+method objGet($key) => $this->lazy[$key] ?? null
+method objSet($key, $value) => $key === 'readonly' ? true : null
+```
+
+- `objCall($method, ...$args)` runs before closure/method/prop lookup on unknown calls.
+- `objGet($key)` runs before data/closure/method/prop lookup on reads.
+- `objSet($key, $value)` runs before assignment on writes; a non-null return swallows the write.
+
+**Bound closures.** Assigning a closure binds it to the instance: `$obj->greet = fn() => "Hi $this->name"` and `$obj->greet()` later runs with `$this` bound. Stored separately in `objClosures`, never serialized.
+
+**Data API.** `objImport(...$data)` bulk-assigns named values and returns `$this` (chainable; `new obj(name: 'x')` uses it). `objData` is the raw storage array; `objKeys()`/`objValues()`/`objLength()` inspect it; `objClear()` wipes it; iteration (`foreach $obj`) and `json_encode($obj)` expose exactly `objData`. Every write or unset flips `objChanged = true`, which is what the ORM uses as its dirty flag.
+
+**Computed prop caching.** `prop x => ...` compiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. The same works statically: `static x => ...` caches per class in `obj::$classProps`.
+
+**Worker persistence.** Set `$this->objPers = true` (or `prop objPers = true`) and the instance survives between worker-mode requests: `phlo()`'s internal registry only keeps `objPers` instances on the per-request reset. Use it for DB connections and parsed config; never for request- or user-scoped state.
 
 ### Cross-resource node modifiers
 
@@ -477,6 +516,10 @@ route async GET item $id {
 
 Routes may return exact `false` to signal a route miss and continue to the next matching routine. Do not use `return false` after a route has actually handled the request; use `return apply(...)`, `return view(...)`, `return location(...)` or a plain `return` after a final side-effect instead.
 
+**Pitfall (learned the hard way):** any other return value is DISCARDED. `route GET hello => 'Hello'` matches and returns a 200 with an empty body; the dispatcher only inspects the value for `=== false`. A route produces output exclusively through `view()`, `apply()`, `output()`, `location()` or the `%res` API.
+
+The `false` fall-through is also a tool: a `route GET guide $slug` catch-all that returns `false` for unknown slugs lets a later literal route (such as `GET guide index.json` in another file) still match.
+
 Correct:
 ```phlo
 method home => view($this->home, 'Home')
@@ -489,6 +532,8 @@ method dashboard {
   view($this->content)
 }
 ```
+
+**view() parameter glossary** (all optional, named): `title` (page title, combined via `title()`), `css`/`js`/`defer` (extra assets next to the ns bundles), `options` (body class list), `settings` (body `data-*` attributes), `ns` (bundle namespace, default `app`), `path` (browser URL; `false` keeps current), `inline` (embed local css/js into the HTML instead of linking), `bodyAttrs`/`htmlAttrs` (extra attributes), `lang`, plus any apply command (`scroll: 0`, `trans: 'fade'`) as trailing named args. App-level defaults come from `%app` props with the same names; the `<head>` is further fed by `%app->description`, `%app->viewport`, `%app->themeColor`, `%app->nonce`, `%app->head`, `%app->link` and `%app->version` (asset cache-buster).
 
 ### CSS
 
@@ -513,13 +558,15 @@ body {
 }
 ```
 
-Pseudo-selectors - backslash glues to parent:
+Pseudo-selectors - backslash glues to parent (works for classes, ids and attribute selectors too):
 ```phlo
 a {
   text-decoration: none
   \:hover: color: blue
+  \.is-active: color: lime
 }
 ```
+Output: `a:hover { ... }` and `a.is-active { ... }`; without the backslash, `.is-active` would nest as the descendant `a .is-active`.
 
 Media queries are hoisted automatically:
 ```phlo
@@ -607,6 +654,19 @@ apply(
 | `call` | Call `app[name]()` |
 | `log` / `error` | Console log / error handler |
 | `phlo` / `debug` / `dump` | Debug output to the browser console (debug mode) |
+
+**Streaming.** Set `%res->streaming = true` in a route and every subsequent `apply(...)` is printed and flushed immediately as one JSON line instead of buffered: progressive UI updates over a single HTTP response, no WebSocket needed. The frontend keeps applying commands as they arrive. This is how long-running work (AI token streams, batch progress) reaches the DOM:
+
+```phlo
+route async POST report::generate {
+	%res->streaming = true
+	foreach ($this->steps AS $i => $step){
+		$step->run
+		apply(inner: arr('#progress' => $i + 1 .'/'. count($this->steps)))
+	}
+	apply(toast: 'Done')
+}
+```
 
 For the full semantics (targeting forms, streaming, error handling and the `app.res` extension point) see [apply-protocol.md](apply-protocol.md).
 
@@ -699,7 +759,7 @@ phlo_app (
 
 - `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`).
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
-- `dashboard` - URL prefix for the built-in Phlo dashboard (omit to disable).
+- `dashboard` - URL prefix at which the built-in **Phlo Control Center** is mounted (dev convention: `'phlo'` → `/phlo`; omit to disable). Despite the argument name this is NOT the Phlo Dashboard, which is the separate fleet-management app.
 - `websocket` - App-specific WebSocket port. PhloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
 
 WebSocket support is optional and provided by the separate PhloWS server (its own repository). Each runtime picks any free local port via `websocket:`; PhloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
@@ -724,11 +784,15 @@ Worker-safe code rules: no `die()` or `exit()` in the HTTP path; no static prope
 
 Current ORM model helpers assume an `id` column for identity-map and relation tracking. Tables with a non-`id` primary key, such as `barcode` or `sku`, should use direct `%MySQL->query()` calls for record lookup until the model layer explicitly supports an id-column override. If a model extends `model`, prefer an integer `id` primary key unless you have a documented workaround.
 
-### Dashboard
+### Phlo Control Center
 
-The built-in dashboard is available when `dashboard` is set in `www/app.php` and `build: true`.
+**Terminology, keep these apart:**
+- **Phlo Control Center**: the per-app dev panel built into the engine. Mounted at the URL prefix given by the `dashboard:` argument in `www/app.php` (dev convention: `'phlo'`, so it lives at `/phlo`). Requires `build: true`.
+- **Phlo Dashboard**: a separate fleet-management application (its own repository, `phlo-dashboard`) for managing many apps and servers: fleet overview, hosts, domains, databases, notifications, visitors.
 
-Current dashboard sections:
+The `dashboard:` argument name is historical; what it mounts is the Control Center.
+
+Current Control Center sections:
 
 | Section | Purpose |
 |---------|---------|
@@ -739,13 +803,13 @@ Current dashboard sections:
 | `release` | Run release build and inspect/search release output when release config exists |
 | `errors` | Inspect and clear `data/errors.json` |
 
-Dashboard file links resolve to app `.phlo` sources, resource `.phlo` files, and compiled `php/` and `www/` output, shown through the Source, Build and Release views. Links to files outside those known sets render as plain text rather than opening an arbitrary-file viewer.
+Control Center file links resolve to app `.phlo` sources, resource `.phlo` files, and compiled `php/` and `www/` output, shown through the Source, Build and Release views. Links to files outside those known sets render as plain text rather than opening an arbitrary-file viewer.
 
-Dashboard POST actions should use the Phlo SPA response protocol where practical. Avoid redirect-only mutations for toggles, builds, release actions, and config edits unless the whole page state truly needs to reset.
+Control Center POST actions should use the Phlo SPA response protocol where practical. Avoid redirect-only mutations for toggles, builds, release actions, and config edits unless the whole page state truly needs to reset.
 
-There are no separate `nodes`, `api`, or `reflection` dashboard sections in Delta. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
+There are no separate `nodes`, `api`, or `reflection` Control Center sections in Delta. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
 
-Debug error pages may link file locations back to dashboard source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or compiled `php/`/`www/` output.
+Debug error pages may link file locations back to Control Center source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or compiled `php/`/`www/` output.
 
 ### Custom path constants
 
@@ -813,7 +877,7 @@ A typical minimal config:
 }
 ```
 
-`icons` is only needed when using the Phlo SVG sprite engine - omit it otherwise.
+`icons` is only needed when using the Phlo sprite engine - omit it otherwise. When set, it points to one or more folders of PNG files; the build composes them into a single `www/icons.png` sprite plus the CSS to use them. Naming convention: `name.png` becomes class `.icon.name`; `name.context.png` becomes `.icon.name` scoped to `body.context` (the same icon name can have per-context variants, e.g. per theme). Usage in views: `<i.icon.save/>`. The generated CSS lands in the `iconNS` bundle (default `app`), and the sprite is preloaded automatically by `view()`.
 
 Path placeholders: `%app/` (app root) and `%phlo/` (engine root). Never use plain relative paths.
 
@@ -855,6 +919,16 @@ Phlo kernel functions live in `phlo.php` and are always available. `reflect::fun
 - `group: "debug"` - debug helpers (`debug: true` only)
 
 Reusable function resources live under `resources/` and carry `source: "function"` in reflection. Some are in root, others are grouped by domain such as `AI/answer` or `Security/token`. Do not create a `.phlo` function whose PHP name matches a native function.
+
+### Debug helpers (debug: true only)
+
+Three levels, one lifecycle: collect during the request, render into the browser console at the end.
+
+- `d(...$data)` - dump values into the response. Inert without `debug: true`; safe to remove before release but harmless if forgotten.
+- `dx(...$data)` - dump and STOP. Sync requests get a full debug page with the source-mapped `.phlo` file and line; async/CLI/streaming requests get an `apply(error, dump)` so the dump lands in the browser console. Worker-safe: it throws `RuntimeException('PhloDump')` instead of calling `die()`.
+- `debug($msg)` - append a line to the debug log shown in the browser console; `debug()` without arguments returns everything collected so far.
+
+In debug mode every sync page ends with an inline script (`debug_render`) that logs dumps, debug lines, memory, duration and trace metadata to the console; async responses carry the same data in the apply payload. Objects are unwrapped via `objInfo()` to a depth of 10.
 
 Notable natives that are **not** obvious from their names:
 - `indent(string, depth)` / `indentView(string, depth)` - string indentation helpers; `indentView` is also emitted by the compiler for `{{ expr }}` on its own line inside `<foreach>`/`<if>` blocks, so it must stay native
@@ -948,6 +1022,16 @@ Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syn
 | Underscores in `.phlo` file names | Dots as separators (`page.home.phlo`) |
 | Runtime values (`host`, `debug`, `cli`) in `data/app.json` | Put them in `www/app.php` |
 | Relative paths in `data/app.json` | Use `%app/` or `%phlo/` prefixes |
+| Literal `%name` in `.phlo` string literals | External `.txt`/`.md` files; the compiler rewrites `%name` even inside strings |
+| `.class`/`#id` shorthand combined with a `class=`/`id=` attribute | One full attribute when any part is dynamic |
+| `{{ %x->prop }}` in view attributes | Direct interpolation: `href="%x->prop/suffix"` |
+| Multiline ternary without continuations | End each continued line with `\` |
+| Multiline `prop x => [ ... ]` | Open with a parenthesis: `arr(...)` or `array_merge(...)` |
+| `die($content)` to send a response | `output(...)` or `%res->type/text()->render()`; `die()` skips headers and breaks worker mode |
+| `defer: '/app.js'` to give another ns the runtime | `phloNS`/`defaultNS` in `data/app.json` |
+| `class=async` on links that cross ns bundles | Plain links; two runtimes must never meet in one page |
+| Returning a bare value from a route | `view()`/`apply()`/`output()`/`location()`; bare returns are discarded |
+| A hooks file named `websocket.phlo` | Another name (`app.ws.phlo`); it collides with the engine resource |
 
 ---
 

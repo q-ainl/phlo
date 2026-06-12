@@ -1,7 +1,7 @@
 # Phlo
 
 A compile-to-PHP web framework with its own `.phlo` language, a built-in
-SPA runtime, a development dashboard, and first-class introspection for AI
+SPA runtime, the Phlo Control Center (built-in dev panel), and first-class introspection for AI
 agents. Zero runtime dependencies.
 
 ```phlo
@@ -29,7 +29,7 @@ Phlo is opinionated on purpose. The bets it makes:
   build time. Errors at runtime map back to your `.phlo` line, not to
   generated soup.
 - **One closed loop.** Source to build to lint to sourcemap to error page to
-  dashboard to CLI introspection. Every layer points back at the source.
+  Control Center to CLI introspection. Every layer points back at the source.
 - **Small and dependency-free.** The engine ships its own CSS transpiler, JS
   minifier and SPA runtime. No vendor tree to audit.
 - **Agent-first.** `docs/SKILL.md` is a complete language reference written
@@ -80,7 +80,7 @@ php www/app.php reflect::context   # app identity, routes, views, recent errors
 php www/app.php reflect::routes    # full route map
 ```
 
-When `dashboard` is set (dev only), a web dashboard offers home, config,
+When `dashboard` is set (dev only), the Phlo Control Center (at `/phlo` by convention) offers home, config,
 source, build, release and error views.
 
 ## Documentation
