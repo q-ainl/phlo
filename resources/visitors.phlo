@@ -5,7 +5,7 @@
 @ package:  analytics
 @ frontend: false
 @ backend:  true
-@ requires: @payload @model token wsCast useragent
+@ requires: @payload @model token useragent
 @ tags:     visitors analytics heartbeat tracking
 
 static table = 'visitors'
@@ -49,10 +49,8 @@ route PUT heartbeat @n,v,l,u,w,h,a,p,r,c {
 	)
 	$record = static::record(id: $id, columns: 'id,page,referrer')
 	if (($referrer = %payload->r) && !$record?->referrer && !str_contains($referrer, host)) $data['referrer'] = static::parseReferrer($referrer)
-	$label = host.slash.%payload->u
-	$wsHost = defined('wsHost') ? wsHost : null
-	if ($record) [static::change('id=?', $id, ...$data), $record->page !== %payload->u && $wsHost && wsCast(wsHost: $wsHost, toast: 'Request: '.$label)]
-	else static::create(...$data, id: $id, created: time()) && $wsHost && wsCast(wsHost: $wsHost, toast: 'Visitor: '.$label)
+	if ($record) static::change('id=?', $id, ...$data)
+	else static::create(...$data, id: $id, created: time())
 }
 
 <script>
