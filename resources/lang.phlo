@@ -109,9 +109,10 @@ method save($lang, $pairs){
 	ksort($items, SORT_STRING)
 	$out = void
 	foreach ($items AS $hash => $value) $out .= $hash.' = '.dq.$this->escape($value).dq.lf
-	file_put_contents($file.'.tmp', $out, LOCK_EX)
-	@chmod($file.'.tmp', 0664)
-	rename($file.'.tmp', $file)
+	$tmp = $file.'.'.getmypid().'.tmp'
+	file_put_contents($tmp, $out, LOCK_EX)
+	@chmod($tmp, 0664)
+	rename($tmp, $file)
 	unset(static::$fileCache[$file])
 }
 
