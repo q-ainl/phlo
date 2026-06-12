@@ -12,6 +12,9 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ### Added
 - MIT `LICENSE`, `composer.json`, `CHANGELOG.md`, `CONTRIBUTING.md` and
   `SECURITY.md` in preparation for the public open-source release.
+- CI publishes the Docker image to `ghcr.io/<owner>/phlo` on version tags
+  (`v*`), tagged with the semver version and `latest`; branch/PR builds
+  still only smoke-build the image without pushing.
 - PHPUnit test harness (`tests/`): unit tests for the CSS transpiler, the
   `route()` matcher, the `obj` base class and the `.phlo` parser, plus
   golden-file compiler tests that build fixture apps end-to-end and compare
