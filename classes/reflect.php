@@ -248,7 +248,7 @@ class reflect {
 			}
 		}
 
-		// Inferred file→file edges via gedeelde resource-afhankelijkheden (max 8 callers per resource)
+		// Inferred file to file edges via shared resource dependencies (max 8 callers per resource)
 		$resCallers = [];
 		foreach ($edges as $e){
 			if (str_starts_with((string)($e['from'] ?? ''), 'file:') && str_starts_with((string)($e['to'] ?? ''), 'res:')){
