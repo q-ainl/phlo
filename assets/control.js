@@ -217,7 +217,7 @@ onExist('#rg-canvas', canvas => {
 			if (hasEdge('calls')) addLegend('edge:calls', 'Calls', 'rg-dot--app')
 			if (hasEdge('depends')) addLegend('edge:depends', 'Depends', 'rg-dot--ext')
 			if (hasEdge('uses')) addLegend('edge:uses', 'Uses', 'rg-dot--resource')
-			if (hasEdge('shared')) addLegend('edge:shared', 'Gedeeld', 'rg-dot--sel-id')
+			if (hasEdge('shared')) addLegend('edge:shared', 'Shared', 'rg-dot--sel-id')
 			if (hasEdge('extends')) addLegend('edge:extends', 'Extends', 'rg-dot--native')
 			if (hasEdge('requires')) addLegend('edge:requires', 'Requires', 'rg-dot--sel-id')
 		}
