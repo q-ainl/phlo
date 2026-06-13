@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="430" viewBox="0 0 760 430" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">
+	<rect width="760" height="430" rx="12" fill="#0d1117"/>
+	<text x="380" y="44" text-anchor="middle" fill="#e6edf3" font-size="20" font-weight="bold">One language. One platform. From code to fleet.</text>
+	<g>
+		<rect x="60" y="328" width="640" height="64" rx="8" fill="#101c16" stroke="#16c784" stroke-width="2"/>
+		<text x="84" y="355" fill="#16c784" font-size="15" font-weight="bold">01 Language</text>
+		<text x="84" y="377" fill="#9da7b3" font-size="13">.phlo source compiles to readable PHP, CSS and JS</text>
+	</g>
+	<g>
+		<rect x="60" y="244" width="640" height="64" rx="8" fill="#11241b" stroke="#16c784" stroke-width="2" stroke-opacity="0.8"/>
+		<text x="84" y="271" fill="#16c784" font-size="15" font-weight="bold">02 Application</text>
+		<text x="84" y="293" fill="#9da7b3" font-size="13">obj, resources, ORM + phlo.js SPA engine and the apply() protocol</text>
+	</g>
+	<g>
+		<rect x="60" y="160" width="640" height="64" rx="8" fill="#132c20" stroke="#16c784" stroke-width="2" stroke-opacity="0.6"/>
+		<text x="84" y="187" fill="#16c784" font-size="15" font-weight="bold">03 Server</text>
+		<text x="84" y="209" fill="#9da7b3" font-size="13">FrankenPHP worker mode, phloWS realtime, phloWA messaging, mail</text>
+	</g>
+	<g>
+		<rect x="60" y="76" width="640" height="64" rx="8" fill="#153425" stroke="#16c784" stroke-width="2" stroke-opacity="0.4"/>
+		<text x="84" y="103" fill="#16c784" font-size="15" font-weight="bold">04 Operations</text>
+		<text x="84" y="125" fill="#9da7b3" font-size="13">Phlo Dashboard: fleet, hosts, domains, databases, notifications</text>
+	</g>
+	<g stroke="#16c784" stroke-width="2" opacity="0.55">
+		<line x1="380" y1="328" x2="380" y2="312"/>
+		<line x1="380" y1="244" x2="380" y2="228"/>
+		<line x1="380" y1="160" x2="380" y2="144"/>
+	</g>
+	<g fill="#16c784" opacity="0.55">
+		<path d="M380 308 l-5 9 h10 z"/>
+		<path d="M380 224 l-5 9 h10 z"/>
+		<path d="M380 140 l-5 9 h10 z"/>
+	</g>
+</svg>

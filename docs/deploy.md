@@ -114,6 +114,6 @@ On ZTS installations the binary may be called `php-zts`. See `docs/tasks.md`.
 
 ## WebSockets (optional)
 
-WebSocket support requires the separate PhloWS Node.js server and is fully
+WebSocket support requires the separate phloWS Node.js server and is fully
 optional; nothing else in the framework depends on it. See
 `docs/websocket-contract.md`.

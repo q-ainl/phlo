@@ -1,12 +1,12 @@
 # Phlo WebSocket contract
 
-WebSocket support is **optional**. It is provided by PhloWS, a small
+WebSocket support is **optional**. It is provided by phloWS, a small
 standalone Node.js server (its own repository; single dependency: `ws`).
 Nothing else in the framework depends on it.
 
 ## Runtime model
 
-One PhloWS process serves one or more hosts on a single local port:
+One phloWS process serves one or more hosts on a single local port:
 
 ```js
 require('./phloWS.js')(3001, '/usr/bin/php', {
@@ -25,7 +25,7 @@ three endpoints:
 | `/message` | POST | Server-to-client casts (used by the `wsCast` resource) |
 | `/health` | GET | Status: configured hosts, connected tokens/sockets |
 
-Per incoming event PhloWS spawns a **one-shot PHP CLI call**
+Per incoming event phloWS spawns a **one-shot PHP CLI call**
 (`<php> <app>/www/app.php websocket::<hook> <args>`). Every message is one
 full Phlo request lifecycle with all resources available (DB, session, etc),
 but without persistent worker state between messages.
@@ -45,7 +45,7 @@ when they exist (`function_exists`):
 | `websocket::receive` | `wsReceive($host, $token, $socket, ...$data)` | Every client message (JSON-decoded into arguments) | Lines printed to stdout are streamed back to this client |
 | `websocket::close` | `wsClose($host, $token, $socket)` | Connection closed | Side effects only |
 
-Authentication happens **at the upgrade**: PhloWS reads the `token` cookie
+Authentication happens **at the upgrade**: phloWS reads the `token` cookie
 (no cookie = immediate 401) and runs `websocket::auth`. Validate the token
 against `%session->token` or your own lookup and call `error()` to reject.
 Note: if the app defines no `wsAuth`, every connection that carries a token
@@ -67,7 +67,7 @@ wsCast('all', host, websocket, channel: 'inbox', type: 'message.new')
 - `token:<token>`: all connections of one token
 - `token:not:<token>`: everyone except one token (e.g. the sender)
 
-**No retry, no dead-letter, no ACK.** If PhloWS is down the POST fails
+**No retry, no dead-letter, no ACK.** If phloWS is down the POST fails
 silently. For guaranteed delivery (financial events, etc) pair it with a
 DB queue.
 
@@ -87,13 +87,13 @@ Payload shape is per app, but the stack convention is:
 ## Client side
 
 The `DOM/websocket` resource provides the browser client: connect, token
-cookie, and exponential-backoff reconnect. PhloWS itself never retries.
+cookie, and exponential-backoff reconnect. phloWS itself never retries.
 
 ## Known limitations
 
 - **One-shot CLI per event**: each message costs a PHP startup (~50-100ms).
   Fine for inbox-style flows; a bottleneck for high-frequency telemetry.
-- **Single process**: one PhloWS per runtime; if it crashes, realtime
+- **Single process**: one phloWS per runtime; if it crashes, realtime
   features are down until restart (run it under systemd/supervisor).
 - **No payload versioning**: shape per app is implicit; migrate all clients
   together when refactoring.

@@ -48,7 +48,7 @@ $html .= $prev === null \
 
 The mental model: never think about semicolons. Only ask "is my statement complete on this line?" If it is not, end the line with one of `( [ { , .` (natural in most multiline code) or an explicit `\`.
 
-**Pitfall (learned the hard way):** the FILE-level node parser tracks multiline node bodies by counting parentheses only, not square brackets. A multiline `prop x => [ ... ]` therefore ends the node at the first line and the rest becomes stray controller code (`Controller must be in one place`). Open multiline node bodies with a parenthesis: `prop x => arr(...)` or `prop x => array_merge(...)`.
+**Lesson:** the FILE-level node parser tracks multiline node bodies by counting parentheses only, not square brackets. A multiline `prop x => [ ... ]` therefore ends the node at the first line and the rest becomes stray controller code (`Controller must be in one place`). Open multiline node bodies with a parenthesis: `prop x => arr(...)` or `prop x => array_merge(...)`.
 
 Without an implicit or explicit continuation, every line becomes its own statement. This is why multiline arguments require a trailing comma on **every** line:
 
@@ -278,7 +278,7 @@ Remember that each `.phlo` file is its own class. `pos.view.phlo` compiles to cl
 %JSON('file')    -> phlo('JSON', 'file')
 ```
 
-**Pitfall (learned the hard way):** the compiler rewrites `%name` EVERYWHERE in a `.phlo` file, including inside string literals. A docs page that tried to print the literal text `%session` in example code shipped `phlo('session')` to visitors instead. Phlo example code that must stay verbatim belongs in external files (`.txt`, `.md`) loaded at runtime, never in `.phlo` string literals.
+**Lesson:** the compiler rewrites `%name` EVERYWHERE in a `.phlo` file, including inside string literals. A docs page that tried to print the literal text `%session` in example code shipped `phlo('session')` to visitors instead. Phlo example code that must stay verbatim belongs in external files (`.txt`, `.md`) loaded at runtime, never in `.phlo` string literals.
 
 ### Metadata annotations
 
@@ -335,7 +335,7 @@ Usage: `$this->repeat(5)`. Results are cached per argument set; the no-argument 
 
 Props and methods **without arguments** are called without `()`. Static methods **always require `()`**.
 
-**Pitfall (learned the hard way):** a concrete prop in a parent class SHADOWS a computed prop in a child. `prop dir = void` in an abstract parent compiles to a real PHP property, so a child's `prop dir => guide` getter is never consulted: `$this->dir` reads the parent's `void`. When children must override a prop with a computed one, declare it computed in the parent too (`prop dir => void`).
+**Lesson:** a concrete prop in a parent class SHADOWS a computed prop in a child. `prop dir = void` in an abstract parent compiles to a real PHP property, so a child's `prop dir => guide` getter is never consulted: `$this->dir` reads the parent's `void`. When children must override a prop with a computed one, declare it computed in the parent too (`prop dir => void`).
 
 ### Methods and statics
 
@@ -516,7 +516,7 @@ route async GET item $id {
 
 Routes may return exact `false` to signal a route miss and continue to the next matching routine. Do not use `return false` after a route has actually handled the request; use `return apply(...)`, `return view(...)`, `return location(...)` or a plain `return` after a final side-effect instead.
 
-**Pitfall (learned the hard way):** any other return value is DISCARDED. `route GET hello => 'Hello'` matches and returns a 200 with an empty body; the dispatcher only inspects the value for `=== false`. A route produces output exclusively through `view()`, `apply()`, `output()`, `location()` or the `%res` API.
+**Lesson:** any other return value is DISCARDED. `route GET hello => 'Hello'` matches and returns a 200 with an empty body; the dispatcher only inspects the value for `=== false`. A route produces output exclusively through `view()`, `apply()`, `output()`, `location()` or the `%res` API.
 
 The `false` fall-through is also a tool: a `route GET guide $slug` catch-all that returns `false` for unknown slugs lets a later literal route (such as `GET guide index.json` in another file) still match.
 
@@ -760,9 +760,9 @@ phlo_app (
 - `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`).
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
 - `dashboard` - URL prefix at which the built-in **Phlo Control Center** is mounted (dev convention: `'phlo'` → `/phlo`; omit to disable). Despite the argument name this is NOT the Phlo Dashboard, which is the separate fleet-management app.
-- `websocket` - App-specific WebSocket port. PhloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
+- `websocket` - App-specific WebSocket port. phloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
 
-WebSocket support is optional and provided by the separate PhloWS server (its own repository). Each runtime picks any free local port via `websocket:`; PhloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
+WebSocket support is optional and provided by the separate phloWS server (its own repository). Each runtime picks any free local port via `websocket:`; phloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
 
 **Worker mode:**
 ```php

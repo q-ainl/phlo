@@ -44,6 +44,29 @@ hiring pool, reach for Laravel or Symfony. If you want a small, legible
 full-stack engine that one person (or one agent) can hold in their head,
 Phlo is for you.
 
+## One platform, four layers
+
+![The four Phlo layers: language, application, server, operations](docs/layers.svg)
+
+The language is the bottom layer of one continuous system; each layer is
+built with the previous one, in the same syntax:
+
+1. **Language**: `.phlo` source compiles to readable PHP, CSS and JS.
+2. **Application**: backend resources (ORM, sessions, security, AI) plus the
+   phlo.js SPA engine and the `apply()` protocol;
+   [Phlo CMS](https://github.com/q-ainl/phlo-cms) adds a schema-driven CRUD
+   and admin layer on top.
+3. **Server**: production on [FrankenPHP](https://frankenphp.dev) in worker
+   mode, realtime through [phloWS](https://github.com/q-ainl/phlo-websocket),
+   WhatsApp messaging through phloWA, mail.
+4. **Operations**: the
+   [Phlo Dashboard](https://github.com/q-ainl/phlo-dashboard) manages apps
+   and servers as a fleet: uptime, domains, databases, notifications.
+
+The full story, guide, tutorial and reference live at
+[phlo.tech](https://phlo.tech); machine-readable docs at
+[phlo.tech/llms.txt](https://phlo.tech/llms.txt).
+
 ## Quick start
 
 Requirements: PHP >= 8.3. Optional extensions per resource (`pdo_mysql`,
@@ -93,7 +116,7 @@ source, build, release and error views.
 - **[docs/apply-protocol.md](docs/apply-protocol.md)** the `apply()` SPA
   protocol.
 - **[docs/websocket-contract.md](docs/websocket-contract.md)** optional
-  WebSocket support (PhloWS).
+  WebSocket support (phloWS).
 - **[docs/tasks.md](docs/tasks.md)** cron tasks.
 - **[docs/model-opt-in.md](docs/model-opt-in.md)** ORM opt-in features.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** how contributions are judged.
