@@ -1,4 +1,4 @@
-@ summary:  Broadcast a message to WebSocket clients via the PhloWS HTTP bridge
+@ summary:  Broadcast a message to WebSocket clients via the phloWS HTTP bridge
 @ package:  realtime
 @ frontend: false
 @ backend:  true

@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Server-side WebSocket handler via PhloWS
+@ summary:  Server-side WebSocket handler via phloWS
 @ advice:   Enable this class only when websockets are configured for the host
 @ package:  realtime
 @ frontend: false

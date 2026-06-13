@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  WhatsApp client for PhloWA using whatsapp-web.js
+@ summary:  WhatsApp client for phloWA using whatsapp-web.js
 @ package:  messaging
 @ frontend: false
 @ backend:  true

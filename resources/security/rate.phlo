@@ -1,6 +1,6 @@
 @ version:  1.2
 @ creator:  q-ai.nl
-@ summary:  Rate-limit (fixed window) op rate_limit-tabel. Schema: resources/security/rate.sql
+@ summary:  Rate-limit (fixed window) on the rate_limit table. Schema: resources/security/rate.sql
 @ package:  security
 @ frontend: false
 @ backend:  true

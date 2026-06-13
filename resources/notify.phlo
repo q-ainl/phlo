@@ -1,11 +1,11 @@
-@ summary:  Melding naar de centrale hub: POST [notify].url (secret-header) via de Phlo HTTP()-functie. No-op zonder [notify]-config.
+@ summary:  Notification to the central hub: POST to [notify].url (secret header) via Phlo's HTTP() function. No-op without [notify] config.
 @ package:  fleet
 @ frontend: false
 @ backend:  true
 @ requires: HTTP
 
-# notify($title): stuur een melding naar het centrale dashboard (message-inbox + subscription-dispatch).
-# Leest [notify] uit creds (url + secret, optioneel app/server). Best-effort: fouten worden genegeerd.
+# notify($title): send a notification to the central dashboard (message-inbox + subscription-dispatch).
+# Reads [notify] from creds (url + secret, optionally app/server). Best-effort: errors are ignored.
 function notify(string $title, string $body = '', string $type = 'info', string $level = 'info', ?string $user = null): void {
 	$cfg = %creds->notify ?? null
 	if (!$cfg) return

@@ -751,7 +751,6 @@ phlo_app (
     auth:      false,
     build:     true,
     debug:     true,
-    dashboard: 'phlo',
     app:       '/path/to/app/',
     websocket: 3001,
 );
@@ -759,7 +758,7 @@ phlo_app (
 
 - `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`).
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
-- `dashboard` - URL prefix at which the built-in **Phlo Control Center** is mounted (dev convention: `'phlo'` → `/phlo`; omit to disable). Despite the argument name this is NOT the Phlo Dashboard, which is the separate fleet-management app.
+- `control` - URL prefix for the built-in **Phlo Control Center**. Auto-defaults to `'phlo'` (so `/phlo`) whenever `build: true` and `debug: true`; set `control: 'admin'` to move it or `control: false` to disable. The legacy `dashboard:` key still works but `control:` is the current name. This is NOT the Phlo Dashboard, which is the separate fleet-management app.
 - `websocket` - App-specific WebSocket port. phloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
 
 WebSocket support is optional and provided by the separate phloWS server (its own repository). Each runtime picks any free local port via `websocket:`; phloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
@@ -787,10 +786,10 @@ Current ORM model helpers assume an `id` column for identity-map and relation tr
 ### Phlo Control Center
 
 **Terminology, keep these apart:**
-- **Phlo Control Center**: the per-app dev panel built into the engine. Mounted at the URL prefix given by the `dashboard:` argument in `www/app.php` (dev convention: `'phlo'`, so it lives at `/phlo`). Requires `build: true`.
+- **Phlo Control Center**: the per-app dev panel built into the engine. Auto-mounts at `/phlo` when `build: true` and `debug: true`; override the path with the `control:` key. Requires build + debug.
 - **Phlo Dashboard**: a separate fleet-management application (its own repository, `phlo-dashboard`) for managing many apps and servers: fleet overview, hosts, domains, databases, notifications, visitors.
 
-The `dashboard:` argument name is historical; what it mounts is the Control Center.
+The `control:` key (formerly `dashboard:`) sets where it mounts; what it mounts is the Control Center, not the Phlo Dashboard.
 
 Current Control Center sections:
 

@@ -103,8 +103,9 @@ php www/app.php reflect::context   # app identity, routes, views, recent errors
 php www/app.php reflect::routes    # full route map
 ```
 
-When `dashboard` is set (dev only), the Phlo Control Center (at `/phlo` by convention) offers home, config,
-source, build, release and error views.
+With `build` and `debug` on (dev only), the Phlo Control Center auto-mounts at `/phlo` and offers home,
+config, source, build, release and error views. Move it with the optional `control:` key or set
+`control: false` to disable.
 
 ![The Phlo Control Center source view: every .phlo file highlighted and searchable, one click from build, release and errors](.github/control-center.webp)
 

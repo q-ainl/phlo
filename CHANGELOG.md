@@ -49,7 +49,7 @@ tagged release onward. The engine version constant lives in `phlo.php`
   block termination is documented as the literal closing tag, matching
   actual parser behaviour.
 - `docs/websocket-contract.md` rewritten in English against the actual
-  PhloWS implementation: cookie-based auth at the upgrade, the
+  phloWS implementation: cookie-based auth at the upgrade, the
   `websocket::<hook>` statics mapping to `wsAuth`/`wsConnect`/`wsReceive`/
   `wsClose` app functions, real cast targets (`all`, `token:`,
   `token:not:`) and the `/health` endpoint. Server-specific port numbers
