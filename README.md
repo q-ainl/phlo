@@ -46,7 +46,7 @@ Phlo is for you.
 
 ## One platform, four layers
 
-![The four Phlo layers: language, application, server, operations](docs/layers.svg)
+![The four Phlo layers: language, application, server, operations](.github/layers.svg)
 
 The language is the bottom layer of one continuous system; each layer is
 built with the previous one, in the same syntax:
