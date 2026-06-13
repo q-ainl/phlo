@@ -535,6 +535,22 @@ method dashboard {
 
 **view() parameter glossary** (all optional, named): `title` (page title, combined via `title()`), `css`/`js`/`defer` (extra assets next to the ns bundles), `options` (body class list), `settings` (body `data-*` attributes), `ns` (bundle namespace, default `app`), `path` (browser URL; `false` keeps current), `inline` (embed local css/js into the HTML instead of linking), `bodyAttrs`/`htmlAttrs` (extra attributes), `lang`, plus any apply command (`scroll: 0`, `trans: 'fade'`) as trailing named args. App-level defaults come from `%app` props with the same names; the `<head>` is further fed by `%app->description`, `%app->viewport`, `%app->themeColor`, `%app->nonce`, `%app->head`, `%app->link` and `%app->version` (asset cache-buster).
 
+**`output()` - files, blobs and JSON with a status.** `output($content, $filename = null, $attachment = null, $file = null, $code = null, $type = null)` sends one response body and renders. Use it for anything that is not an HTML page or an `apply()` batch:
+- File/blob: `output($bytes, 'export.csv', true)` (attachment) or `output(file: $path)` (serve a file, mime by name).
+- JSON with a status: an `array` (or an `object` when `type: 'application/json'` is passed) is JSON-encoded automatically; `code` sets the HTTP status. `return output(['id' => $id], code: 201)`, `return output(['error' => 'not found'], code: 404)`.
+- `type` overrides the content-type for a pre-encoded string body: `output($json, type: 'application/json')`.
+
+Call `output()` directly; do not wrap it in a per-app `jsonOut()`/`respond()` helper.
+
+**`error()` - abort with a status, content-negotiated.** `error('message', $code = 500)` throws and ends the request; the engine renders it to fit the context:
+- async/SPA request -> `apply(error: 'message')` (the SPA shows it).
+- JSON context (the route called `%security->api`, or the client sent `Accept: application/json`) -> a JSON body `{"error": "message"}` with `$code`.
+- otherwise -> the HTML error page (full debug page when `debug`, minimal otherwise).
+
+Client errors (`$code < 500`) keep their message in the JSON/async output; server errors (`>= 500`) stay generic (`"Error"`) unless `debug` is on, so uncaught-exception internals are not exposed by default. `error()` throws, so no `return` is needed (a leading `return` is harmless).
+
+**Which to use.** HTML page route: `view(body, code)` for a custom page, or `error('msg', code)` to abort to the standard error page. Async/SPA route: `apply(error: 'msg')` for an inline message. JSON API / webhook: `output($data, code)` for success and `error('msg', code)` for errors. For a deliberate non-standard JSON error shape (such as an `{ok, error}` webhook contract) use `output(['ok' => false, 'error' => '...'], code: 400)` directly.
+
 ### CSS
 
 One line = one complete declaration. No semicolons. No multi-line values.
