@@ -7,7 +7,7 @@
 @ requires: creds:Claude @AI
 @ tags:     ai claude anthropic chat vision embeddings
 
-const model = 'claude-sonnet-4-5-20250929'
+const model = 'claude-opus-4-8'
 
 static context(...$args){
 	$args['messages'] ??= []

@@ -73,6 +73,7 @@ method parseSSE(string $url, array $headers, array $payload):Generator {
 	yield obj(done: true, finish: $finish, tokens_in: $usage?->prompt_tokens, tokens_out: $usage?->completion_tokens)
 }
 method stream(...$args):Generator {
+	%app->streaming = true
 	$args['model'] ??= static::model
 	$token = $args['token'] ?? null
 	unset($args['token'], $args['cb'])
