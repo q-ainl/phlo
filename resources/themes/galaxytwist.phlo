@@ -1,6 +1,6 @@
 <style ns=theme.galaxytwist>
 :root {
-	$bg: linear-gradient(to bottom, #654EA3, #EAafc8)
+	$bg: linear-gradient(to bottom, #654EA3, #2a1f4a)
 	$surface: #442B76
 	$text: #FFFFFF
 	$muted: #aba0c1

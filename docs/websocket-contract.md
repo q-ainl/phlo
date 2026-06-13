@@ -40,10 +40,17 @@ when they exist (`function_exists`):
 
 | Hook | App function | When | Behaviour |
 |---|---|---|---|
-| `websocket::auth` | `wsAuth($host, $token, $socket)` | During the HTTP upgrade | Reject by throwing (`error()`); a clean exit accepts |
-| `websocket::connect` | `wsConnect($host, $token, $socket)` | After the connection is accepted | Side effects only |
-| `websocket::receive` | `wsReceive($host, $token, $socket, ...$data)` | Every client message (JSON-decoded into arguments) | Lines printed to stdout are streamed back to this client |
-| `websocket::close` | `wsClose($host, $token, $socket)` | Connection closed | Side effects only |
+| `websocket::auth` | `wsAuth($wsHost, $wsToken, $wsSocket)` | During the HTTP upgrade | Reject by throwing (`error()`); a clean exit accepts |
+| `websocket::connect` | `wsConnect($wsHost, $wsToken, $wsSocket)` | After the connection is accepted | Side effects only |
+| `websocket::receive` | `wsReceive($wsHost, $wsToken, $wsSocket, ...$data)` | Every client message (JSON-decoded into arguments) | Lines printed to stdout are streamed back to this client |
+| `websocket::close` | `wsClose($wsHost, $wsToken, $wsSocket)` | Connection closed | Side effects only |
+
+The connection context arguments are **`ws`-prefixed by convention** (`$wsHost`,
+`$wsToken`, `$wsSocket`), matching `wsCast`. This is not cosmetic: `wsReceive`
+spreads the JSON payload into named arguments (`...$data`), so an unprefixed
+`$host`/`$token`/`$socket` parameter would fatally collide with a payload that
+carries a `host`, `token` or `socket` key (PHP: "named parameter overwrites
+previous argument"). Keep the prefix and your payload keys stay free.
 
 Authentication happens **at the upgrade**: phloWS reads the `token` cookie
 (no cookie = immediate 401) and runs `websocket::auth`. Validate the token
@@ -51,7 +58,7 @@ against `%session->token` or your own lookup and call `error()` to reject.
 Note: if the app defines no `wsAuth`, every connection that carries a token
 cookie is accepted.
 
-`$socket` is an opaque per-connection identifier; `$token` groups all
+`$wsSocket` is an opaque per-connection identifier; `$wsToken` groups all
 connections of the same user/session.
 
 ## Server-to-client: wsCast

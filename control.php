@@ -51,12 +51,34 @@ class phlo_dashboard {
 		$sections = array_merge($sections, ['config', 'graph', 'source', 'build']);
 		if (!empty($cfg['release'])) $sections[] = 'release';
 		$sections[] = 'errors';
+		$sections[] = 'theme';
 
 		if (!in_array($section, $sections, true)){
 			phlo('res')->render(404);
 			return;
 		}
 		static::$section($arg);
+	}
+
+	// Theme preview for the control center: cookie-scoped (isolated from the app), swapped via apply() so it
+	// gets the same view transition as the rest of the dashboard. Mirrors the CMS /set/theme route.
+	private static function theme(?string $arg):void {
+		$req   = phlo('req');
+		$clean = $arg ? preg_replace('/[^a-z0-9]/', '', strtolower($arg)) : '';
+		$valid = $clean !== '' && is_file(www.'theme.'.$clean.'.css');
+		$value = $valid ? $clean : '';
+		setcookie('phlo_ctl_theme', $value, ['expires' => time() + 31536000, 'path' => '/', 'samesite' => 'Lax']);
+		$_COOKIE['phlo_ctl_theme'] = $value;
+		if ($req->async){
+			apply(...array_filter([
+				'remove' => 'link[href^="/theme."]',
+				'css'    => $valid ? '/theme.'.$clean.'.css' : null,
+				'class'  => ['.ctl-theme' => '-is-active', '.ctl-theme[data-theme="'.$value.'"]' => 'is-active'],
+				'trans'  => true,
+			]));
+			return;
+		}
+		location('/'.ltrim(control, '/'));
 	}
 
 	private static function home(?string $arg):void {
@@ -874,16 +896,16 @@ class phlo_dashboard {
 		if (!$groups) return '<p class="muted">'.esc($empty).'</p>';
 		$html = void;
 		foreach ($groups as $group => $items){
-			$count      = count($items);
-			$groupName  = esc($group);
-			$itemsLabel = $count === 1 ? '1 item' : "$count items";
-			$html .= "<section class=\"resource-group\">\n"
-				."<header><strong>$groupName</strong><span>$itemsLabel</span></header>\n"
+			$count       = count($items);
+			$loadedCount = count(array_filter($items, fn($i) => !empty($i['loaded'])));
+			$groupName   = esc($group);
+			$html .= "<section class=\"resource-group collapsed\">\n"
+				."<header><span class=\"rg-caret\"></span><strong>$groupName</strong><span class=\"rg-count\">$loadedCount / $count</span></header>\n"
 				."<div class=\"resource-list\">\n";
 			foreach ($items as $item){
 				$id      = $item['id'];
 				$loaded  = !empty($item['loaded']);
-				$rowCls  = $loaded ? ' loaded' : '';
+				$rowCls  = $loaded ? ' loaded' : ' unselected';
 				$btnCls  = $loaded ? ' on' : '';
 				$btnTxt  = $loaded ? 'on' : 'off';
 				$iName   = esc($item['name']);
@@ -1029,6 +1051,26 @@ class phlo_dashboard {
 			$nav .= "<a href=\"".esc($href)."\"$cls>$lbl</a>\n";
 		}
 
+		// Build-site themes: every bundled theme compiles to www/theme.<name>.css. Offer them as a live picker.
+		$themes = [];
+		foreach (glob(www.'theme.*.css') ?: [] as $tf){
+			if (preg_match('/^theme\.(.+)\.css$/', basename($tf), $m)) $themes[] = $m[1];
+		}
+		sort($themes);
+		$themeSel = (string)($_COOKIE['phlo_ctl_theme'] ?? '');
+		if (!in_array($themeSel, $themes, true)) $themeSel = '';
+		if ($themes){
+			$tBase = '/'.ltrim($base.'/theme', '/');
+			$links = '<a href="'.esc($tBase).'" class="async ctl-theme'.($themeSel === '' ? ' is-active' : '').'" data-theme="">Default</a>';
+			foreach ($themes as $t){
+				$links .= '<a href="'.esc($tBase.'/'.$t).'" class="async ctl-theme'.($t === $themeSel ? ' is-active' : '').'" data-theme="'.esc($t).'">'.esc(ucfirst($t)).'</a>';
+			}
+			$nav .= '<div class="ctl-theme-tool">'
+				.'<button type="button" class="ctl-theme-btn" title="Theme" aria-label="Theme"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none"/></svg><span>Theme</span></button>'
+				.'<div class="ctl-theme-pop">'.$links.'</div>'
+				."</div>\n";
+		}
+
 		if ($req->async){
 			$renderPath = ltrim($req->path, slash);
 			$renderQuery = array_filter((array)($req->query ?? []));
@@ -1039,10 +1081,12 @@ class phlo_dashboard {
 
 		$jsBase = '/'.ltrim("$base/", '/');
 		$titleE = esc($title);
+		$themeLink = $themeSel !== '' ? "<link id=\"ctl-theme\" rel=\"stylesheet\" href=\"/theme.".rawurlencode($themeSel).".css\">\n" : '';
 
 		$head = "<meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n"
 			."<title>$titleE</title>\n"
 			."<link rel=\"stylesheet\" href=\"{$jsBase}control.css\">\n"
+			.$themeLink
 			."<script defer src=\"{$jsBase}control.js\"></script>\n";
 
 		$page = "<nav id=\"dash-top-nav\">\n{$nav}</nav>\n"

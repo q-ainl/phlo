@@ -1,6 +1,6 @@
 <style ns=theme.forestdusk>
 :root {
-	$bg: linear-gradient(to bottom, #1C3C3E, #4C9A2A, #A1DE93)
+	$bg: linear-gradient(to bottom, #1C3C3E, #2e6b1e, #0d2e12)
 	$surface: #243A2E
 	$text: #E9FDF0
 	$muted: #90a599

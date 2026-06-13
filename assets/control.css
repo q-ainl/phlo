@@ -1,15 +1,15 @@
 :root {
   --bg: #0d0d0d;
-  --deep: #0b0b0b;
   --surface: #1a1a1a;
-  --panel: #111518;
-  --btn: #2a2a2a;
+  --deep: color-mix(in srgb, var(--surface) 65%, #000);
+  --panel: color-mix(in srgb, var(--surface) 80%, #000);
+  --btn: color-mix(in srgb, var(--surface) 85%, var(--text));
   --border: #333;
   --text: #fff;
   --muted: #888;
   --primary: #bef264;
   --focus: #d9ff8a;
-  --ok: #bef264;
+  --ok: var(--success, #bef264);
   --warn: #f0a05a;
   --error: #e86671;
   --radius: 8px
@@ -248,7 +248,8 @@ code, pre, .code-lines {
   flex-shrink: 0
 }
 .dash-main.dash-file-page {
-  overflow: hidden
+  overflow: hidden;
+  background: var(--surface)
 }
 .dash-file-hero {
   padding: 8px 12px;
@@ -506,7 +507,7 @@ button.close-panel {
   font-family: "IBM Plex Mono", monospace;
   font-size: 12.5px
 }
-.resource-groups {
+#resource-list {
   display: grid;
   gap: 10px
 }
@@ -561,6 +562,81 @@ button.close-panel {
   margin-top: 2px;
   color: var(--muted);
   font-size: 12px
+}
+.resource-group header {
+  cursor: pointer;
+  align-items: center;
+  user-select: none
+}
+.resource-group header strong {
+  margin-right: auto
+}
+.rg-caret {
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--muted);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: transform .12s;
+  flex-shrink: 0
+}
+.resource-group:not(.collapsed) .rg-caret {
+  transform: rotate(90deg)
+}
+.resource-group.collapsed:not(.search-open) .resource-item.unselected {
+  display: none
+}
+.ctl-theme-tool {
+  margin-top: auto;
+  position: relative;
+  padding: 8px 8px 0
+}
+.ctl-theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 9px 8px;
+  font-size: 13px;
+  text-align: left
+}
+.ctl-theme-btn:hover {
+  color: var(--text)
+}
+.ctl-theme-pop {
+  display: none;
+  position: fixed;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  padding: 6px;
+  z-index: 50
+}
+.ctl-theme-tool.open .ctl-theme-pop {
+  display: flex
+}
+.ctl-theme-pop a {
+  display: block;
+  border-radius: 6px;
+  color: var(--text);
+  padding: 5px 11px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none
+}
+.ctl-theme-pop a:hover, .ctl-theme-pop a.is-active {
+  background: var(--primary);
+  color: var(--bg)
 }
 .ok {
   color: var(--ok)
@@ -619,7 +695,7 @@ tr.loaded td {
   flex: 1;
   min-height: 0;
   position: relative;
-  background: var(--panel)
+  background: var(--bg)
 }
 .rg-calls {
   background: rgba(0,0,0,.25);

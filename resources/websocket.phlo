@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     websocket realtime ws server
 
-static connect($host, $token, $socket) => function_exists('wsConnect') && wsConnect($host, $token, $socket)
-static auth($host, $token, $socket) => function_exists('wsAuth') && wsAuth($host, $token, $socket)
-static receive($host, $token, $socket, $data) => function_exists('wsReceive') && wsReceive($host, $token, $socket, ...json_decode($data, true))
-static close($host, $token, $socket) => function_exists('wsClose') && wsClose($host, $token, $socket)
+static connect($wsHost, $wsToken, $wsSocket) => function_exists('wsConnect') && wsConnect($wsHost, $wsToken, $wsSocket)
+static auth($wsHost, $wsToken, $wsSocket) => function_exists('wsAuth') && wsAuth($wsHost, $wsToken, $wsSocket)
+static receive($wsHost, $wsToken, $wsSocket, $data) => function_exists('wsReceive') && wsReceive($wsHost, $wsToken, $wsSocket, ...json_decode($data, true))
+static close($wsHost, $wsToken, $wsSocket) => function_exists('wsClose') && wsClose($wsHost, $wsToken, $wsSocket)
