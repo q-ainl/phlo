@@ -30,7 +30,7 @@ on('submit', 'form.dash-search-form', (form, e) => {
 	params.set('q', q)
 	app.get(base.replace(/^\//, '') + '?' + params.toString())
 })
-on('search', 'form.dash-search-form input[type="search"]', (inp) => {
+on('search', 'form.dash-search-form input[type="search"]', inp => {
 	if (inp.value) return
 	const form = inp.closest('form'), action = form.getAttribute('action') || ''
 	const [base, existing] = (action + '?').split('?')
@@ -38,11 +38,11 @@ on('search', 'form.dash-search-form input[type="search"]', (inp) => {
 	params.delete('q')
 	app.get(base.replace(/^\//, '') + (params.toString() ? '?' + params.toString() : ''))
 })
-on('click', '.close-panel', (btn) => {
+on('click', '.close-panel', btn => {
 	const p = document.getElementById(btn.dataset.panel || '')
 	if (p) p.style.display = 'none'
 })
-on('input', '#config-json', (ta) => {
+on('input', '#config-json', ta => {
 	const btn = document.getElementById('config-save'), msg = document.getElementById('config-msg')
 	if (!btn || !msg) return
 	try {
@@ -55,7 +55,7 @@ on('input', '#config-json', (ta) => {
 		msg.textContent = err.message
 	}
 })
-on('input', '#resource-search', (inp) => {
+on('input', '#resource-search', inp => {
 	const q = inp.value.toLowerCase(), searching = q.length > 0
 	document.querySelectorAll('.resource-group').forEach(group => {
 		let visible = 0
@@ -69,7 +69,7 @@ on('input', '#resource-search', (inp) => {
 		group.style.display = visible ? '' : 'none'
 	})
 })
-on('search', '#resource-search', (inp) => inp.dispatchEvent(new Event('input', {bubbles: true})))
+on('search', '#resource-search', inp => inp.dispatchEvent(new Event('input', {bubbles: true})))
 // Config groups: header toggles between selected-only (collapsed) and all libraries.
 on('click', '.resource-group header', h => h.parentElement.classList.toggle('collapsed'))
 // Theme picker (build-site themes): icon button opens a named popover, like the dashboard's CMS picker.
@@ -88,14 +88,14 @@ on('click', '.ctl-theme-btn', btn => {
 // The theme links swap the stylesheet via the framework (apply + transition); just close the picker on use or outside click.
 on('click', '.ctl-theme-pop a', a => a.closest('.ctl-theme-tool').classList.remove('open'))
 on('click', 'html', (el, e) => { if (!e.target.closest('.ctl-theme-tool')) document.querySelectorAll('.ctl-theme-tool.open').forEach(t => t.classList.remove('open')) })
-on('input', '#error-search', (inp) => {
+on('input', '#error-search', inp => {
 	const q = inp.value.toLowerCase()
 	document.querySelectorAll('.dash-errors-body tbody tr').forEach(row => {
 		const text = (row.querySelector('[data-filter]')?.dataset.filter || row.textContent).toLowerCase()
 		row.style.display = (!q || text.includes(q)) ? '' : 'none'
 	})
 })
-on('search', '#error-search', (inp) => inp.dispatchEvent(new Event('input', {bubbles: true})))
+on('search', '#error-search', inp => inp.dispatchEvent(new Event('input', {bubbles: true})))
 app.updates.push(() => {
 	const p = document.getElementById('config-json-pending'), ta = document.getElementById('config-json')
 	if (p && ta && p.textContent.trim()){

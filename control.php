@@ -793,11 +793,9 @@ class phlo_dashboard {
 		$phpFiles   = [];
 		$assetFiles = [];
 		foreach (($allFiles['php'] ?? []) as $file){
-			$file = $file;
 			$phpFiles[basename($file)] = $file;
 		}
 		foreach (($allFiles['www'] ?? []) as $file){
-			$file = $file;
 			$assetFiles[basename($file)] = $file;
 		}
 		ksort($phpFiles, SORT_NATURAL | SORT_FLAG_CASE);

@@ -828,10 +828,6 @@ tr.loaded td {
 .rg-dot--sel-id {
   background: #9b6dbf
 }
-.rg-dot--sel-cross {
-  background: #e08c42;
-  box-shadow: 0 0 0 2px #e08c4255
-}
 .rg-graph-mode {
   display: flex;
   gap: 4px;
@@ -971,11 +967,6 @@ tr.loaded td {
 }
 .rg-legend-item.inactive {
   opacity: 0.35
-}
-.rg-hint {
-  font-size: .75rem;
-  color: var(--muted);
-  margin-left: auto
 }
 @media (max-width: 900px){
   body {
