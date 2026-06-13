@@ -106,6 +106,8 @@ php www/app.php reflect::routes    # full route map
 When `dashboard` is set (dev only), the Phlo Control Center (at `/phlo` by convention) offers home, config,
 source, build, release and error views.
 
+![The Phlo Control Center source view: every .phlo file highlighted and searchable, one click from build, release and errors](.github/control-center.webp)
+
 ## Documentation
 
 - **[docs/SKILL.md](docs/SKILL.md)** the full language and build reference
