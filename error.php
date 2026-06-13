@@ -28,6 +28,22 @@ function phlo_error_handle(Throwable $e):void {
 		apply(...$cmds);
 		return;
 	}
+	# JSON context (an API route called %security->api, or the client/route asks for JSON): answer with a
+	# JSON error body instead of an HTML page. Client errors (<500) keep their message; server errors stay
+	# generic unless debug is on, so uncaught-exception internals are not exposed by default.
+	if ($res->api || $res->type === 'application/json' || str_contains((string)$req->accept, 'application/json')){
+		$payload = ['error' => (debug || $code < 500) ? $message : 'Error'];
+		if (debug){
+			$payload['type'] = $type;
+			$payload['file'] = shortpath($srcFile).colon.$srcLine;
+		}
+		if ($res->dump)  $payload['dump']  = $res->dump;
+		if ($res->debug) $payload['debug'] = $res->debug;
+		$res->type = 'application/json';
+		$res->body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$res->render($code);
+		return;
+	}
 	$html = debug
 		? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace())
 		: phlo_error_render_minimal($code);
@@ -39,7 +55,8 @@ function phlo_error_handle(Throwable $e):void {
 function phlo_error_log(string $path, string $msg):int|false {
 	$file = data.'errors.json';
 	$now  = date('j-n-Y G:i:s');
-	$id   = md5($path.preg_replace('/\s+/', void, trim(preg_replace('~(?:[A-Za-z]:)?[\\/](?:[^\s:/\\\\]+[\\/])*(?:([^\s:/\\\\]+\.[A-Za-z0-9]{1,8})|[^\s:/\\\\]+)(?::\d+)?~', '$1', $msg))));
+	$host = (string)phlo('req')->host;
+	$id   = md5($host.$path.preg_replace('/\s+/', void, trim(preg_replace('~(?:[A-Za-z]:)?[\\/](?:[^\s:/\\\\]+[\\/])*(?:([^\s:/\\\\]+\.[A-Za-z0-9]{1,8})|[^\s:/\\\\]+)(?::\d+)?~', '$1', $msg))));
 	$fh = fopen($file, 'c+');
 	if ($fh === false) return false;
 	if (!flock($fh, LOCK_EX)){ fclose($fh); return false; }
@@ -47,6 +64,7 @@ function phlo_error_log(string $path, string $msg):int|false {
 	$map = $raw ? (json_decode($raw, true) ?: []) : [];
 	$row = $map[$id] ?? [];
 	$row['file']        = $path;
+	$row['host']        = $host;
 	$row['path']        = phlo('req')->path;
 	$row['msg']         = $msg;
 	$row['count']       = ($map[$id]['count'] ?? 0) + 1;

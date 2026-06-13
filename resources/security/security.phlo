@@ -32,6 +32,7 @@ method marketing {
 	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : '')."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
 method api {
+	%res->api = true
 	%res->header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'")
 	%res->header('X-Content-Type-Options', 'nosniff')
 	%res->header('Referrer-Policy', 'no-referrer')

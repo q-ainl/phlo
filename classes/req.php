@@ -56,6 +56,10 @@ class req extends obj {
 		return $this->cli ? void : ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? void);
 	}
 
+	protected function _accept():string {
+		return $this->cli ? void : ($_SERVER['HTTP_ACCEPT'] ?? void);
+	}
+
 	public function part(int $index):?string {
 		$parts = explode(slash, $this->path);
 		return $parts[$index] ?? null;

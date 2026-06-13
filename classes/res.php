@@ -11,6 +11,7 @@ class res extends obj {
 	public ?string $body = null;
 	public ?array $json = null;
 	public bool $streaming = false;
+	public bool $api = false;
 	public array $titles = [];
 
 	public function debug($msg):void {
