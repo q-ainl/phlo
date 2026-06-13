@@ -102,6 +102,33 @@ For a quick look without any server:
 php -S 127.0.0.1:8000 /path/to/my-app/www/app.php
 ```
 
+## Multiple nodes and load balancing
+
+A Phlo app is a stateless PHP application tier, so it scales horizontally the
+way PHP has for 25+ years: run the identical release on several nodes behind a
+load balancer, with a shared data tier (database, cache) between them.
+
+1. **Same build on every node.** Deploy the same `release/` tree to each node
+   (rsync it, or bake an image and roll it out) and run FrankenPHP in worker
+   mode on each.
+2. **Load balancer in front.** Put Caddy, nginx, HAProxy or a cloud load
+   balancer ahead of the nodes (round-robin or least-connections over their
+   `:80`/`:443`).
+3. **Share session state.** Phlo's `session` resource is plain
+   `session_start()`, so set PHP's `session.save_handler` to a shared backend
+   (Redis, Memcached, or a database) in `php.ini`, or enable sticky sessions on
+   the load balancer so a visitor keeps hitting the same node.
+4. **Keep state shareable.** Follow the worker-safe rules: per-request data in
+   `%req`/`%session`, `objPers` only for connections, never request- or
+   user-state in statics. Note that `apcu` is per-node memory, not shared, so
+   anything that must be visible across nodes belongs in the database.
+5. **The database is the real work.** The application tier is cheap to add to;
+   the data tier is where scaling effort goes (read replicas, connection
+   pooling, partitioning).
+
+Phlo ships no orchestrator: you manage the nodes and the load balancer yourself
+(the Phlo Dashboard gives a fleet overview). There is no autoscaler.
+
 ## Cron tasks (optional)
 
 Apps using the `tasks` resource need one cron entry:
