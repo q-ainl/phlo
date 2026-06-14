@@ -1,0 +1,16 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  xAI Grok API (OpenAI-compatible, extends OpenAI)
+@ extends:  OpenAI
+@ package:  ai
+@ frontend: false
+@ backend:  true
+@ requires: creds:Grok @OpenAI @AI
+@ tags:     ai grok xai chat vision embeddings
+
+const model    = 'grok-4'
+const endpoint = 'https://api.x.ai/v1/'
+const cred     = 'Grok'
+const label    = 'Grok'
+
+method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)

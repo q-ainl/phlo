@@ -4,7 +4,7 @@
 @ package:  i18n
 @ frontend: false
 @ backend:  true
-@ requires: @cookies @OpenAI @INI phlo.async
+@ requires: @cookies @AI @INI phlo.async
 @ advice:   Use %lang in views to show current app lang (for example in links)
 @ tags:     lang translation i18n locale ai
 
@@ -121,7 +121,7 @@ method transContext => ($instr = trim((string)(%app->transInstr ?? void))) !== v
 prop browser => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
 method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
 method detect($text, $fallback = 'en'){
-	$res = %OpenAI->chat (
+	$res = %AI->chat (
 		model: $this->model,
 		system: 'Analyse which language this text is in and return only the ISO 639-1 code of the language, no other data!',
 		user: $text.lf.lf.'The ISO 639-1 code of the language is: ',
@@ -151,7 +151,7 @@ method translation($from, $text, ...$args){
 }
 method translate($from, $to, $text){
 	if ($from === $to) return $text
-	return %OpenAI->chat (
+	return %AI->chat (
 		model: $this->model,
 		system: "You will be provided with a word, sentence or (markdown) text in ISO 639-1 language $from, and your task is to translate this string into ISO 639-1 language $to. Respect markdown, missing interpunction and specific use of capitals. Give only the translation.".$this->transContext(),
 		user: $text,
@@ -162,7 +162,7 @@ method translateBatch($from, $to, $texts){
 	if ($from === $to) return $texts
 	$hashes = array_keys($texts)
 	$numbered = implode(lf, array_map(fn($i, $t) => ($i + 1).'. '.$t, array_keys($values = array_values($texts)), $values))
-	$answer = %OpenAI->chat (
+	$answer = %AI->chat (
 		model: $this->model,
 		system: "You will be provided with numbered lines in ISO 639-1 language $from. Translate each line into ISO 639-1 language $to. Return only the numbered translations in the same format. Respect markdown, missing interpunction and specific use of capitals.".$this->transContext(),
 		user: $numbered,

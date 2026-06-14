@@ -1,90 +1,16 @@
-@ version:  1.1
+@ version:  2.0
 @ creator:  q-ai.nl
-@ summary:  DeepSeek API
+@ summary:  DeepSeek API (OpenAI-compatible, extends OpenAI)
+@ extends:  OpenAI
 @ package:  ai
 @ frontend: false
 @ backend:  true
-@ requires: creds:DeepSeek @AI
+@ requires: creds:DeepSeek @OpenAI @AI
 @ tags:     ai deepseek chat embeddings
 
-const model = 'deepseek-chat'
-
-static context(...$args){
-	$args['messages'] ??= []
-	if (isset($args['system']) && array_unshift($args['messages'], ['role' => 'system', 'content' => $args['system']])) unset($args['system'])
-	if (isset($args['assistant']) && array_push($args['messages'], ['role' => 'assistant', 'content' => $args['assistant']])) unset($args['assistant'])
-	if (isset($args['user']) && array_push($args['messages'], ['role' => 'user', 'content' => $args['user']])) unset($args['user'])
-	return $args
-}
-
-static tool($tool):array => [
-	'type' => 'function',
-	'function' => [
-		'name' => $tool->name,
-		'description' => $tool->desc,
-		'parameters' => [
-			'type' => 'object',
-			'properties' => loop($tool->args, fn($data, $arg) => array_filter($data, fn($key) => in_array($key, ['type', 'enum', 'desc']), ARRAY_FILTER_USE_KEY)),
-			'additionalProperties' => false,
-			'required' => array_keys($tool->args),
-		],
-		'strict' => true,
-	],
-]
+const model    = 'deepseek-chat'
+const endpoint = 'https://api.deepseek.com/v1/'
+const cred     = 'DeepSeek'
+const label    = 'DeepSeek'
 
 method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
-
-method chat(...$args){
-	$args['model'] ??= static::model
-	$args = static::context(...$args)
-	$res = $this->request('chat/completions', POST: $args)
-	$return = new obj(answer: $res->choices[0]->message->content, model: $res->model, finish: $res->choices[0]->finish_reason, tokens: $res->usage->total_tokens, tokens_in: $res->usage->prompt_tokens, tokens_out: $res->usage->completion_tokens)
-	if (isset($res->choices[0]->message->tool_calls)) $return->tools = array_map(fn($tool) => new obj(name: $tool->function->name, args: json_decode($tool->function->arguments, true)), (array)$res->choices[0]->message->tool_calls)
-	return $return
-}
-
-method parseSSE(string $url, array $headers, array $payload):Generator {
-	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-	$ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode("\r\n", [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)]), 'content' => $json, 'timeout' => 300, 'ignore_errors' => true]])
-	$stream = fopen($url, 'r', false, $ctx)
-	$stream || error('SSE connection failed')
-	$status = (int)explode(' ', $http_response_header[0] ?? 'HTTP/1.1 200')[1]
-	if ($status >= 400){
-		$err = json_decode((string)stream_get_contents($stream))
-		fclose($stream)
-		error('DeepSeek error '.$status.': '.($err->error->message ?? 'unknown'))
-	}
-	$finish = null
-	$usage = null
-	while (!feof($stream)){
-		$line = fgets($stream)
-		if ($line === false) break
-		$line = rtrim($line, "\r\n")
-		if (!str_starts_with($line, 'data:')) continue
-		$data = ltrim(substr($line, 5))
-		if ($data === '[DONE]' || $data === void) continue
-		$p = json_decode($data)
-		if (!$p) continue
-		if (isset($p->error)) error('DeepSeek stream error: '.$p->error->message)
-		if (isset($p->usage)) $usage = $p->usage
-		$text = $p->choices[0]->delta->content ?? null
-		if (!is_null($text)) yield obj(text: $text)
-		if ($p->choices[0]->finish_reason ?? null) $finish = $p->choices[0]->finish_reason
-	}
-	fclose($stream)
-	yield obj(done: true, finish: $finish, tokens_in: $usage?->prompt_tokens, tokens_out: $usage?->completion_tokens)
-}
-method stream(...$args):Generator {
-	%app->streaming = true
-	$args['model'] ??= static::model
-	unset($args['cb'])
-	$args = static::context(...$args)
-	$args['stream'] = true
-	return $this->parseSSE('https://api.deepseek.com/v1/chat/completions', ['Authorization: Bearer '.%creds->DeepSeek], $args)
-}
-
-method request($uri, $JSON = true, ...$args){
-	$res = json_decode(AI::http("https://api.deepseek.com/v1/$uri", ['Authorization: Bearer '.%creds->DeepSeek], $JSON, $args['POST'] ?? null))
-	if (isset($res->error)) error('DeepSeek Request error: '.$res->error->message)
-	return $res
-}

@@ -4,7 +4,7 @@
 @ package:  ai
 @ frontend: false
 @ backend:  true
-@ requires: @OpenAI
+@ requires: @AI
 @ tags:     ai answer question llm
 
 function answer($question, ...$options){
@@ -25,6 +25,6 @@ function answer($question, ...$options){
 		$prompt .= 'No introduction, no explanation, no list, and no final period.'.lf.lf
 		$prompt .= 'Question:'.lf.$question
 	}
-	$answer = %OpenAI->chat(user: $prompt, temperature: .1)->answer
+	$answer = %AI->chat(user: $prompt, temperature: .1)->answer
 	return $answer === dash ? null : $answer
 }

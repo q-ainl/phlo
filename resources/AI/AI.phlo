@@ -4,10 +4,10 @@
 @ package:  ai
 @ frontend: false
 @ backend:  true
-@ requires: @OpenAI? @Claude? @Gemini? @DeepSeek?
+@ requires: @OpenAI? @Claude? @Gemini? @DeepSeek? @Grok?
 @ tags:     ai facade llm streaming tools embeddings
 
-const engines = ['claude' => 'Claude', 'gpt' => 'OpenAI', 'chatgpt' => 'OpenAI', 'o1' => 'OpenAI', 'o3' => 'OpenAI', 'o4' => 'OpenAI', 'deepseek' => 'DeepSeek', 'gemini' => 'Gemini']
+const engines = ['claude' => 'Claude', 'gpt' => 'OpenAI', 'chatgpt' => 'OpenAI', 'o1' => 'OpenAI', 'o3' => 'OpenAI', 'o4' => 'OpenAI', 'deepseek' => 'DeepSeek', 'gemini' => 'Gemini', 'grok' => 'Grok']
 static http(string $url, array $headers, bool $json = true, mixed $post = null):string {
 	$curl = curl_init($url)
 	if ($post !== null){

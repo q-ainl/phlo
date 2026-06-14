@@ -8,6 +8,9 @@
 @ tags:     ai openai llm chat embeddings audio vision
 
 const model = 'gpt-4o-mini'
+const endpoint = 'https://api.openai.com/v1/'
+const cred = 'OpenAI'
+const label = 'OpenAI'
 const voices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer']
 static context(...$args):array {
 	$args['messages'] ??= []
@@ -50,7 +53,7 @@ method parseSSE(string $url, array $headers, array $payload):Generator {
 	if ($status >= 400){
 		$err = json_decode((string)stream_get_contents($stream))
 		fclose($stream)
-		error('OpenAI error '.$status.': '.($err->error->message ?? 'unknown'))
+		error(static::label.' error '.$status.': '.($err->error->message ?? 'unknown'))
 	}
 	$finish = null
 	$usage = null
@@ -63,7 +66,7 @@ method parseSSE(string $url, array $headers, array $payload):Generator {
 		if ($data === '[DONE]' || $data === void) continue
 		$p = json_decode($data)
 		if (!$p) continue
-		if (isset($p->error)) error('OpenAI stream error: '.$p->error->message)
+		if (isset($p->error)) error(static::label.' stream error: '.$p->error->message)
 		if (isset($p->usage)) $usage = $p->usage
 		$text = $p->choices[0]->delta->content ?? null
 		if (!is_null($text)) yield obj(text: $text)
@@ -79,8 +82,8 @@ method stream(...$args):Generator {
 	unset($args['token'], $args['cb'])
 	$args = static::context(...$args)
 	$args['stream'] = true
-	$bearer = $token ?? %creds->OpenAI
-	return $this->parseSSE('https://api.openai.com/v1/chat/completions', ['Authorization: Bearer '.$bearer], $args)
+	$bearer = $token ?? %creds->{static::cred};
+	return $this->parseSSE(static::endpoint.'chat/completions', ['Authorization: Bearer '.$bearer], $args)
 }
 method transcribe($file, $model = 'whisper-1', ...$args):obj {
 	if (is_string($file)) $file = new CURLFile($file)
@@ -100,8 +103,8 @@ method vision($text, $image, $stream = false, ...$args):obj {
 	else return $this->chat(...$args, messages: $messages)
 }
 method request($uri, $JSON = true, $token = null, ...$args){
-	$bearer = $token ?? %creds->OpenAI
-	$res = json_decode(AI::http("https://api.openai.com/v1/$uri", ['Authorization: Bearer '.$bearer], $JSON, $args['POST'] ?? null))
-	if (isset($res->error)) error('OpenAI Request error: '.$res->error->message)
+	$bearer = $token ?? %creds->{static::cred};
+	$res = json_decode(AI::http(static::endpoint.$uri, ['Authorization: Bearer '.$bearer], $JSON, $args['POST'] ?? null))
+	if (isset($res->error)) error(static::label.' Request error: '.$res->error->message)
 	return $res
 }
