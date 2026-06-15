@@ -14,7 +14,7 @@ prop create => !in_array($this->name, ['created', 'changed'])
 
 method label($record) => ($value = $record->{$this->name}) ? tag('i', class: 'icon clock-'.$this->labelIconClass(time() - $value), inner: void).tag('span', data_ts: $record->{$this->name}, inner: time_human($record->{$this->name})) : dash
 method labelIconClass($value) => $value > 86400 ? 'red' : ($value > 3600 ? 'yellow' : 'blue')
-method input($record) => input(type: 'datetime-local', name: $this->name, value: date('Y-m-d\TH:i', $record->{$this->name}), class: 'field')
+method input($record) => input(type: 'datetime-local', name: $this->name, value: $record->{$this->name} ? date('Y-m-d\TH:i', $record->{$this->name}) : void, class: 'field')
 method parse($record){
 	if ($this->name === 'created') $record->created ??= time()
 	elseif ($this->name === 'changed') $record->{$this->name} = time()

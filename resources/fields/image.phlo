@@ -14,12 +14,16 @@ prop path = images
 prop thumbPath = thumbs
 prop thumbSize = 64
 prop thumbUri = '/thumbs/'
+prop placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM4ODgiIHN0cm9rZS13aWR0aD0iMS40Ij48cmVjdCB4PSIzIiB5PSIzIiB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHJ4PSIyIi8+PGNpcmNsZSBjeD0iOC41IiBjeT0iOC41IiByPSIxLjYiLz48cGF0aCBkPSJNMjEgMTVsLTUtNUw1IDIxIi8+PC9zdmc+'
+
+prop record = 'preview'
 
 method label($record) => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->thumbUri.$url)) : dash
+method preview($record) => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->uri.$url, class: 'preview')) : dash
 method input($record){
 	$input = void
 	$file = $record->{$this->name} ? $this->read($record, $this->thumbPath) : null
-	$input .= lf.tab.tag('img', src: $file ? $this->thumbUri.$record->{$this->name.'_token'}.slash.rawurlencode($record->{$this->name}) : '/image.select.jpg', class: 'image')
+	$input .= lf.tab.tag('img', src: $file ? $this->thumbUri.$record->{$this->name.'_token'}.slash.rawurlencode($record->{$this->name}) : $this->placeholder, class: 'image')
 	$input .= lf.tab.input(type: 'file', class: 'image-input',  name: $this->name, accept: 'image/*', data_size: $this->thumbSize)
 	$file && $this->canDelete && $input .= lf.tab.tag('div', inner: tag('label', inner: input(type: 'checkbox', name: $this->name.'Delete')." $this->delete"))
 	return $input.lf

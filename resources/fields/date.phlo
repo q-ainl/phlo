@@ -9,5 +9,21 @@
 @ tags:     field date
 
 prop handle = true
+prop format = null
+prop months => [
+	'nl' => [1 => 'januari', 2 => 'februari', 3 => 'maart', 4 => 'april', 5 => 'mei', 6 => 'juni', 7 => 'juli', 8 => 'augustus', 9 => 'september', 10 => 'oktober', 11 => 'november', 12 => 'december'],
+	'en' => [1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August', 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'],
+]
+
+method label($record){
+	$v = $record->{$this->name};
+	if ($v === null || $v === void || $v === '') return dash
+	$ts = is_numeric($v) ? (int)$v : strtotime($v)
+	if (!$ts) return esc($v)
+	if ($this->format) return date($this->format, $ts)
+	$lang = substr((string)(%app->lang ?? 'en'), 0, 2)
+	if (class_exists('IntlDateFormatter')) return (new \IntlDateFormatter($lang, \IntlDateFormatter::LONG, \IntlDateFormatter::NONE))->format($ts)
+	return date('j', $ts).space.(($this->months[$lang] ?? $this->months['en'])[(int)date('n', $ts)]).space.date('Y', $ts)
+}
 
 prop objColumns => [$this->name]
