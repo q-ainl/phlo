@@ -7,7 +7,7 @@
 @ requires: creds:OpenAI @AI
 @ tags:     ai openai llm chat embeddings audio vision
 
-const model = 'gpt-4o-mini'
+const model = 'gpt-5.4-mini'
 const endpoint = 'https://api.openai.com/v1/'
 const cred = 'OpenAI'
 const label = 'OpenAI'

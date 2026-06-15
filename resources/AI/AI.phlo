@@ -7,6 +7,7 @@
 @ requires: @OpenAI? @Claude? @Gemini? @DeepSeek? @Grok?
 @ tags:     ai facade llm streaming tools embeddings
 
+const model = 'gpt-5.4-mini'
 const engines = ['claude' => 'Claude', 'gpt' => 'OpenAI', 'chatgpt' => 'OpenAI', 'o1' => 'OpenAI', 'o3' => 'OpenAI', 'o4' => 'OpenAI', 'deepseek' => 'DeepSeek', 'gemini' => 'Gemini', 'grok' => 'Grok']
 static http(string $url, array $headers, bool $json = true, mixed $post = null):string {
 	$curl = curl_init($url)
@@ -24,7 +25,7 @@ static http(string $url, array $headers, bool $json = true, mixed $post = null):
 static resolve(...$args):array {
 	$via = $args['via'] ?? void
 	unset($args['via'])
-	$args['model'] ??= %app->model ?? void
+	$args['model'] ??= %app->model ?? static::model
 	if ($via) $via = static::engines[strtolower($via)] ?? $via
 	elseif (isset($args['model'])) $via = static::engines[strtolower(explode('-', $args['model'])[0])] ?? void
 	return [$via ?: 'OpenAI', $args]
