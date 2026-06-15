@@ -102,6 +102,50 @@ For a quick look without any server:
 php -S 127.0.0.1:8000 /path/to/my-app/www/app.php
 ```
 
+## Releasing updates to production
+
+A release is a deliberate, content-aware act, not a single push-button script.
+What moves differs per app, so decide each release on its merits rather than
+forcing every app through one generic tool (and never shrink an app's config
+just to fit such a tool). Automate the repetitive, safe mechanics; keep the
+judgment with a person.
+
+A complete release has more parts than the compiled code:
+
+- **The build** (`release/`): run `build::lint` (expect `[]`) then
+  `build::release` as the user the app runs as, and ship that tree. It is the
+  compiled code plus the `www/` assets.
+- **Runtime content** the app reads from disk: markdown, translations and data
+  files that `phlo_app()` points at with path constants. These live *outside*
+  `release/`, so they are a separate copy step, not part of the build.
+- **The entrypoint** (`phlo_app()` constants): environment-specific (host,
+  `build: false` in production, production paths). Keep a per-environment
+  entrypoint and *reconcile* it when you add new path constants; never copy a
+  dev or stage entrypoint over production. A new feature whose constant is
+  missing on prod silently has nowhere to read from.
+
+Equally important is what must *not* move:
+
+- **Prod-owned files**: a production `robots.txt`, the secrets and runtime
+  state under `data/`, and static assets the node owns (favicons, fonts,
+  uploads). Do not `rsync --delete` over those trees or you wipe what only
+  exists on the node.
+- **Never ship** `.git/` directories, databases or dev caches. Exclude them
+  explicitly.
+
+Mechanics worth standardizing:
+
+- **Dry-run first** (`rsync -ni`): review both the additions and the deletions
+  before any write.
+- **Ownership**: if you deploy as a different user than the app runs as (for
+  example rsync over SSH as `root` while the app runs as a dedicated user), set
+  ownership back to the app user on the target after the transfer.
+- **Restart** the worker so it reloads the new code and entrypoint.
+- **Smoke-test**: the home page and every new or changed route should return
+  `200` with no error page.
+- **Rollback**: keep the previous entrypoint and rely on the regenerable build;
+  a version tag makes code rollback trivial.
+
 ## Multiple nodes and load balancing
 
 A Phlo app is a stateless PHP application tier, so it scales horizontally the
