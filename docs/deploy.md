@@ -116,8 +116,11 @@ A complete release has more parts than the compiled code:
   `build::release` as the user the app runs as, and ship that tree. It is the
   compiled code plus the `www/` assets.
 - **Runtime content** the app reads from disk: markdown, translations and data
-  files that `phlo_app()` points at with path constants. These live *outside*
-  `release/`, so they are a separate copy step, not part of the build.
+  files. These live *outside* `release/`, so they are a separate copy step, not
+  part of the build. Find every content directory by grepping the source for
+  *all* runtime reads (`file_get_contents`, `glob`, a `*Dir` prop, a hardcoded
+  `/path`), not only the `phlo_app()` path constants: content is sometimes read
+  through a hardcoded path in code, which an entrypoint-only inventory misses.
 - **The entrypoint** (`phlo_app()` constants): environment-specific (host,
   `build: false` in production, production paths). Keep a per-environment
   entrypoint and *reconcile* it when you add new path constants; never copy a
