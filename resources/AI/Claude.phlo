@@ -88,7 +88,7 @@ method parseSSE(string $url, array $headers, array $payload):Generator {
 	yield obj(done: true, finish: $finish, tokens_in: $usage?->input_tokens, tokens_out: $usage?->output_tokens)
 }
 method stream(...$args):Generator {
-	%app->streaming = true
+	%res->streaming = true
 	$args['model'] ??= static::model
 	$args['max_tokens'] ??= 4096
 	$token = $args['token'] ?? null
