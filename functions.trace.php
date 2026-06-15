@@ -290,16 +290,22 @@ function apply(...$cmds):string {
 	return $body;
 }
 
-function output(?string $content = null, ?string $filename = null, ?bool $attachment = null, ?string $file = null):void {
-	trace('output', compact('content', 'filename', 'attachment', 'file'));
+function output(mixed $content = null, ?string $filename = null, ?bool $attachment = null, ?string $file = null, ?int $code = null, ?string $type = null):void {
+	trace('output', compact('content', 'filename', 'attachment', 'file', 'code', 'type'));
 	$req  = phlo('req');
 	$res  = phlo('res');
+	# Arrays are unambiguously JSON; objects only when application/json is explicitly requested (obj is both Stringable and JsonSerializable, so the type cannot be inferred safely).
+	if (is_array($content) || ($type === 'application/json' && !is_string($content) && !is_null($content))){
+		$content = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$type ??= 'application/json';
+	}
 	$name = $filename ?? basename($file ?? $req->path);
-	$res->type = mime($name);
-	$res->header('Content-Length', (string)($file ? filesize($file) : strlen((string)$content)));
+	$body = $file ? (string)file_get_contents($file) : (string)$content;
+	$res->type = $type ?? mime($name);
+	$res->header('Content-Length', (string)($file ? filesize($file) : strlen($body)));
 	if (is_bool($attachment) || $filename) $res->header('Content-Disposition', ($attachment ? 'attachment' : 'inline').';filename='.rawurlencode($name));
-	$res->body = $file ? (string)file_get_contents($file) : (string)$content;
-	$res->render();
+	$res->body = $body;
+	$res->render($code);
 }
 
 function location(?string $url = null):string|bool {
