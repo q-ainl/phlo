@@ -964,6 +964,10 @@ The CSS transpiler is available at runtime and in builds through native lazy-loa
 
 Use these functions instead of calling the internal `build_css` class directly. The implementation is loaded only when one of these functions is used, so production apps do not pay a boot cost.
 
+### Translations (optional)
+
+The `lang` resource adds multilingual text: the `{nl: ...}` / `{en: ...}` view shorthand for static text (compiles to `{{ nl('...') }}`, so it has no argument syntax), the `nl()` / `en()` functions for text with `sprintf` arguments, an AI-backed per-language cache in `langs/<lang>.ini`, and a `%lang.instructions` prop to steer terminology and avoid forced translations. See [translations.md](translations.md).
+
 ---
 
 ## Diagnosing parse errors
