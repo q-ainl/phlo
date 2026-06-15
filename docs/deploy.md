@@ -123,6 +123,13 @@ A complete release has more parts than the compiled code:
   entrypoint and *reconcile* it when you add new path constants; never copy a
   dev or stage entrypoint over production. A new feature whose constant is
   missing on prod silently has nowhere to read from.
+- **The database**: new or changed tables, the grants the app's DB user needs
+  on them, and any data the app reads at runtime (seeded or generated content).
+  Production runs `build: false`, so tables are *not* auto-created on first use
+  the way they are in a `build: true` dev environment; create and grant them as
+  an explicit migration step, and copy or regenerate their content (copying from
+  a working environment avoids re-running expensive generation). A table the app
+  `SELECT`s from is a 500 until it exists and the app's user is granted on it.
 
 Equally important is what must *not* move:
 
