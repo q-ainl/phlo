@@ -21,6 +21,7 @@ static asyncBatch($from, $to, $json){
 view => %app->lang
 
 prop model = 'gpt-4o-mini'
+prop instructions = void
 static fileCache = []
 
 method file($lang) => langs.$lang.'.ini'
@@ -116,7 +117,7 @@ method save($lang, $pairs){
 	unset(static::$fileCache[$file])
 }
 
-method transContext => ($instr = trim((string)(%app->transInstr ?? void))) !== void ? lf.'Context from the app author about purpose and domain: '.$instr : void
+method transContext => ($instr = trim((string)($this->instructions ?? void))) !== void ? lf.'Context from the app author about purpose and domain: '.$instr : void
 
 prop browser => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
 method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
