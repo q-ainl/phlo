@@ -142,6 +142,13 @@ Equally important is what must *not* move:
   exists on the node.
 - **Never ship** `.git/` directories, databases or dev caches. Exclude them
   explicitly.
+- **`robots.txt` — never copy the dev/stage one to production.** The repo's
+  `www/robots.txt` is `Disallow: /` so `dev.*` and `stage.*` stay out of search;
+  the build does *not* copy it into `release/`, so it never reaches prod on its
+  own. Production serves its *own* public `robots.txt` (an `Allow` file the node
+  owns, or a `route GET robots.txt`). Always rsync the `www/` tree with
+  `--exclude='robots.txt'` and remove any stale `release/www/robots.txt`, or you
+  deindex the live site by overwriting its robots with the dev `Disallow`.
 
 Mechanics worth standardizing:
 
