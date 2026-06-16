@@ -533,7 +533,7 @@ method dashboard {
 }
 ```
 
-**view() parameter glossary** (all optional, named): `title` (page title, combined via `title()`), `css`/`js`/`defer` (extra assets next to the ns bundles), `options` (body class list), `settings` (body `data-*` attributes), `ns` (bundle namespace, default `app`), `path` (browser URL; `false` keeps current), `inline` (embed local css/js into the HTML instead of linking), `bodyAttrs`/`htmlAttrs` (extra attributes), `lang`, plus any apply command (`scroll: 0`, `trans: 'fade'`) as trailing named args. App-level defaults come from `%app` props with the same names; the `<head>` is further fed by `%app->description`, `%app->viewport`, `%app->themeColor`, `%app->nonce`, `%app->head`, `%app->link` and `%app->version` (asset cache-buster).
+**view() parameter glossary** (all optional, named): `title` (page title, combined via `title()`), `css`/`js`/`defer` (extra assets next to the ns bundles), `options` (body class list), `settings` (body `data-*` attributes), `ns` (bundle namespace, default `app`), `path` (browser URL; `false` keeps current), `inline` (embed local css/js into the HTML instead of linking), `bodyAttrs`/`htmlAttrs` (extra attributes), `lang`, `code` (HTTP status for a sync page, for example `view(body, code: 404)`; dropped on async since the apply transport must stay 200), plus any apply command (`scroll: 0`, `trans: 'fade'`) as trailing named args. App-level defaults come from `%app` props with the same names; the `<head>` is further fed by `%app->description`, `%app->viewport`, `%app->themeColor`, `%app->nonce`, `%app->head`, `%app->link` and `%app->version` (asset cache-buster).
 
 **`output()` - files, blobs and JSON with a status.** `output($content, $filename = null, $attachment = null, $file = null, $code = null, $type = null)` sends one response body and renders. Use it for anything that is not an HTML page or an `apply()` batch:
 - File/blob: `output($bytes, 'export.csv', true)` (attachment) or `output(file: $path)` (serve a file, mime by name).
@@ -549,7 +549,7 @@ Call `output()` directly; do not wrap it in a per-app `jsonOut()`/`respond()` he
 
 Client errors (`$code < 500`) keep their message in the JSON/async output; server errors (`>= 500`) stay generic (`"Error"`) unless `debug` is on, so uncaught-exception internals are not exposed by default. `error()` throws, so no `return` is needed (a leading `return` is harmless).
 
-**Which to use.** HTML page route: `view(body, code)` for a custom page, or `error('msg', code)` to abort to the standard error page. Async/SPA route: `apply(error: 'msg')` for an inline message. JSON API / webhook: `output($data, code)` for success and `error('msg', code)` for errors. For a deliberate non-standard JSON error shape (such as an `{ok, error}` webhook contract) use `output(['ok' => false, 'error' => '...'], code: 400)` directly.
+**Which to use.** HTML page route: `view(body, code)` for a custom page, or `error('msg', code)` to abort to the standard error page. Async/SPA route: `apply(error: 'msg')` for an inline message. JSON API / webhook: `output($data, code)` for success and `error('msg', code)` for errors. For a deliberate non-standard JSON error shape (such as an `{ok, error}` webhook contract) use `output(['ok' => false, 'error' => '...'], code: 400)` directly. A redirect is `location($url)`, which defaults to 302; pass a code for a permanent redirect, `location($url, 301)`.
 
 ### CSS
 
