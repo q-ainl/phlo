@@ -309,11 +309,11 @@ function output(mixed $content = null, ?string $filename = null, ?bool $attachme
 	$res->render($code);
 }
 
-function location(?string $url = null):string|bool {
-	trace('location', compact('url'));
+function location(?string $url = null, ?int $code = null):string|bool {
+	trace('location', compact('url', 'code'));
 	if (phlo('req')->async) return apply(location: $url ?? true);
 	$res = phlo('res');
 	$res->header('Location', $url ?? (phlo('req')->referer ?: slash));
-	$res->render(302);
+	$res->render($code ?? 302);
 	return true;
 }
