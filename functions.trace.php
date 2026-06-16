@@ -178,8 +178,8 @@ function css_phlo(string $input):string {
 	return build_css::encode($input);
 }
 
-function view(?string $body = null, ?string $title = null, array|string $css = [], array|string $js = [], array|string $defer = [], array|string $options = [], array $settings = [], ?string $ns = null, bool|string|null $path = null, bool $inline = false, string $bodyAttrs = void, string $htmlAttrs = void, ...$cmds):string {
-	trace('view', compact('body', 'title', 'css', 'js', 'defer', 'options', 'settings', 'ns', 'path', 'inline', 'bodyAttrs', 'htmlAttrs', 'cmds'));
+function view(?string $body = null, ?string $title = null, array|string $css = [], array|string $js = [], array|string $defer = [], array|string $options = [], array $settings = [], ?string $ns = null, bool|string|null $path = null, bool $inline = false, string $bodyAttrs = void, string $htmlAttrs = void, ?int $code = null, ...$cmds):string {
+	trace('view', compact('body', 'title', 'css', 'js', 'defer', 'options', 'settings', 'ns', 'path', 'inline', 'bodyAttrs', 'htmlAttrs', 'code', 'cmds'));
 	$req = phlo('req');
 	$res = phlo('res');
 	$prefix = trim($req->extra ?? void, slash);
@@ -249,6 +249,7 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$options && $bodyAttrs .= " class=\"$options\"";
 	$settings && $bodyAttrs .= loop($settings, fn($value, $key) => ' data-'.$key.'="'.esc($value).'"', void);
 	$dom = DOM($body, $head, $cmds['lang'] ?? $app->lang ?? 'en', $bodyAttrs, $htmlAttrs);
+	$code && $res->status = $code;
 	$res->type = 'text/html';
 	$res->body = $dom;
 	return $dom;
