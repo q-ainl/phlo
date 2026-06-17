@@ -13,7 +13,6 @@ static objRecords = []
 static objLoaded = []
 static objCache = false
 static objRecordLimit = 10000
-static objSoftDelete = false
 static objAudit = false
 static objValidate = false
 static objLastErrors = []
@@ -84,15 +83,13 @@ static delete($where, ...$args){
 	if (method_exists(static::class, 'beforeDelete') || method_exists(static::class, 'afterDelete') || static::objAudit()){
 		$records = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$args)->fetchAll(\PDO::FETCH_CLASS, static::class)
 		foreach ($records AS $record) method_exists(static::class, 'beforeDelete') && $record->beforeDelete()
-		if (static::objSoftDelete()) $result = static::DB()->change(static::$table, $where, ...array_values($args), deleted_at: time())
-		else $result = static::DB()->delete(static::$table, $where, ...$args)
+		$result = static::DB()->delete(static::$table, $where, ...$args)
 		foreach ($records AS $record){
 			method_exists(static::class, 'afterDelete') && $record->afterDelete()
 			static::objAudit() && %audit->log($record, 'delete', (array)$record, [])
 		}
 		return $result
 	}
-	if (static::objSoftDelete()) return static::DB()->change(static::$table, $where, ...array_values($args), deleted_at: time())
 	return static::DB()->delete(static::$table, $where, ...$args)
 }
 
@@ -134,19 +131,6 @@ method objSave {
 static transaction($callback) => static::DB()->transaction($callback)
 static query => phlo('query', class: static::class)
 
-static objIncludeDeleted => static::state()->includeDeleted[static::class] ?? false
-static objWithDeleted($callback){
-	$state = static::state()
-	$state->includeDeleted[static::class] = true
-	try {
-		$result = $callback()
-	} finally {
-		unset($state->includeDeleted[static::class])
-	}
-	return $result
-}
-static objRestore($id) => static::DB()->change(static::$table, static::idColumn().'=?', $id, deleted_at: null)
-
 static column(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_COLUMN])
 static item(...$args) => static::recordsLoad($args, 'fetch', [\PDO::FETCH_COLUMN])
 static pair(...$args) => static::recordsLoad($args, 'fetchAll', [\PDO::FETCH_KEY_PAIR])
@@ -161,7 +145,6 @@ static recordsLoad($args, $fetch, $fetchMode, $saveRelations = false){
 	isset(static::$joins) && debug && error('DEPRECATED: static $joins in '.static::class.'. Use getParent/getChildren/getMany instead.')
 	isset(static::$joins) && $args['joins'] = static::$joins.(isset($args['joins']) ? " $args[joins]" : void)
 	method_exists(static::class, 'where') && $args['where'] = static::where().(isset($args['where']) ? " AND $args[where]" : void)
-	static::objSoftDelete() && !static::objIncludeDeleted() && $args['where'] = 'deleted_at IS NULL'.(isset($args['where']) ? " AND $args[where]" : void)
 	isset(static::$group) && $args['group'] ??= static::$group
 	isset(static::$order) && $args['order'] ??= static::$order
 	if ($cacheKey = $args['cacheKey'] ?? null) unset($args['cacheKey'])

@@ -15,7 +15,7 @@ prop insertOnConflict = void
 
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	$table = strpos($table, space) || strpos($table, dot) ? $table : "$this->fieldQuotes$table$this->fieldQuotes"
-	!$where && $args && $where = loop(array_keys($args), fn($column) => "$table.$column=?", ' AND ')
+	$args && $where = ($where ? "$where AND " : void).loop(array_keys($args), fn($column) => "$table.$column=?", ' AND ')
 	$joins && $joins = " $joins"
 	$where && $where = " WHERE $where"
 	$group && $group = " GROUP BY $group"
