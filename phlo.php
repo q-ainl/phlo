@@ -187,6 +187,60 @@ function phlo_cli(array $args):void {
 	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 }
 
+// Persistent websocket worker for phloWS: boots the app once (via the normal CLI path), then
+// loops over newline-JSON requests on STDIN, dispatching to the active `websocket` class. Lives
+// here in always-loaded engine core (not in the websocket resource) because apps define their own
+// `websocket` class that shadows the resource, and resources are only built when referenced.
+// Protocol: in  {"id","hook","args"}; out {"t":"ready"} once, then per request 0..N
+// {"id","t":"line","data"} followed by exactly one {"id","t":"done"} or {"id","t":"error","message"}.
+function phlo_ws_serve():void {
+	if (!class_exists('websocket')){
+		fwrite(STDOUT, json_encode(['t' => 'fatal', 'message' => 'No websocket class for '.(defined('host') ? host : '?')]).lf);
+		return;
+	}
+	ini_set('display_errors', 'stderr');
+	stream_set_blocking(STDIN, true);
+	fwrite(STDOUT, json_encode(['t' => 'ready']).lf);
+	while (($line = fgets(STDIN)) !== false){
+		$line = trim($line);
+		if ($line === void) continue;
+		$msg  = json_decode($line, true) ?: [];
+		$id   = $msg['id']   ?? null;
+		$hook = $msg['hook'] ?? null;
+		$args = $msg['args'] ?? [];
+		$lineBuf = void;
+		$emit = static function(string $chunk) use (&$lineBuf, $id):string {
+			$lineBuf .= $chunk;
+			while (($pos = strpos($lineBuf, lf)) !== false){
+				$out = substr($lineBuf, 0, $pos);
+				$lineBuf = substr($lineBuf, $pos + 1);
+				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			}
+			return void;
+		};
+		try {
+			ob_start($emit, 1);
+			match ($hook){
+				'auth'    => websocket::auth(...$args),
+				'connect' => websocket::connect(...$args),
+				'receive' => websocket::receive(...$args),
+				'close'   => websocket::close(...$args),
+				default   => error('Unknown ws hook: '.$hook),
+			};
+			while (ob_get_level()) ob_end_flush();
+			if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done']).lf);
+		}
+		catch (Throwable $e){
+			while (ob_get_level()) ob_end_clean();
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+		}
+		phlo('tech/reset');
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+		gc_collect_cycles();
+	}
+}
+
 function phlo(?string $phloName = null, ...$args):mixed {
 	static $list = [];
 	if ($phloName === 'tech/reset') return array_keys($list = array_filter($list, static fn($obj) => $obj->objPers));

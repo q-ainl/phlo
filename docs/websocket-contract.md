@@ -25,13 +25,39 @@ three endpoints:
 | `/message` | POST | Server-to-client casts (used by the `wsCast` resource) |
 | `/health` | GET | Status: configured hosts, connected tokens/sockets |
 
-Per incoming event phloWS spawns a **one-shot PHP CLI call**
-(`<php> <app>/www/app.php websocket::<hook> <args>`). Every message is one
-full Phlo request lifecycle with all resources available (DB, session, etc),
-but without persistent worker state between messages.
+phloWS dispatches each event to the app one of two ways, chosen per host in the
+host map:
+
+- **Persistent worker (recommended for production).** Configure a host as
+  `{ app: '…/app.php', workers: N }`. phloWS keeps a pool of `N` long-lived
+  `php <app>/www/app.php phlo_ws_serve` processes per host. Each boots the app
+  **once** and then answers events over a private stdin/stdout pipe, running
+  `phlo('tech/reset')` + `gc_collect_cycles()` between events (the same
+  isolation the FrankenPHP worker loop uses). No PHP startup per message;
+  throughput grows with `N`, bounded by CPU cores. A worker handles one event
+  at a time, so a host's per-message concurrency is its worker count.
+- **One-shot CLI (default / development).** Configure a host as a plain string
+  `'…/app.php'` and phloWS spawns a fresh `<php> <app>/www/app.php
+  websocket::<hook> <args>` per event. Simple and isolated, but pays a PHP
+  startup each message. Use this for `build: true` dev (hot-reload just works)
+  or low-traffic hosts.
+
+Either way each message is a full Phlo lifecycle with all resources available
+(DB, session, etc); the persistent worker simply keeps the boot and the
+`objPers` connections (DB, etc) alive between messages. The worker loop lives in
+engine core (`phlo_ws_serve()` in `phlo.php`) and dispatches to whichever
+`websocket` class the app provides, so app handlers are unchanged.
 
 The app side picks its port with the `websocket:` argument of `phlo_app()`;
 there are no fixed port numbers, any free local port works.
+
+**Worker-safe handlers.** In persistent mode the process is reused, so the four
+hooks must follow the same discipline as FrankenPHP worker mode (see
+`deploy.md`): no request/user state in `static`s, always commit/rollback DB
+work, no dangling global ini/locale changes. `phlo('tech/reset')` drops the
+transient object registry between events but cannot undo those. Handlers that
+were safe under one-shot CLI but rely on the process dying to clean up need a
+look before switching a host to `workers`.
 
 ## App hooks
 
@@ -98,8 +124,17 @@ cookie, and exponential-backoff reconnect. phloWS itself never retries.
 
 ## Known limitations
 
-- **One-shot CLI per event**: each message costs a PHP startup (~50-100ms).
-  Fine for inbox-style flows; a bottleneck for high-frequency telemetry.
+- **One-shot CLI mode costs a PHP startup per event** (~50-100ms). Fine for
+  inbox-style flows; for high-frequency telemetry switch the host to a
+  persistent `workers` pool, which removes that cost entirely.
+- **Persistent workers serialize per worker**: a worker handles one event at a
+  time, so a slow handler (e.g. a long LLM stream) blocks that worker until it
+  finishes. Size `workers` for the expected concurrency and rely on the
+  per-request timeout; keep genuinely long jobs off the receive path (trigger
+  them in the background and stream results via `wsCast`).
+- **Persistent workers hold old code until restarted**: after deploying new
+  handler code, restart phloWS (or the workers) so they reload — exactly like
+  FrankenPHP worker mode.
 - **Single process**: one phloWS per runtime; if it crashes, realtime
   features are down until restart (run it under systemd/supervisor).
 - **No payload versioning**: shape per app is implicit; migrate all clients
