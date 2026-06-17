@@ -1,0 +1,108 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  UBL 2.1 invoice XML (PEPPOL BIS Billing 3.0) from a normalized invoice structure. Use UBL::invoice($data).
+@ package:  files
+@ frontend: false
+@ backend:  true
+@ tags:     ubl peppol invoice xml e-invoicing export
+
+# $data shape:
+#   number, issue_date, due_date, credit_note (bool), currency (default EUR),
+#   supplier / customer: [name, vat, address, postal_code, city, country],
+#   lines: [[description, quantity, unit_price, tax_rate], ...],
+#   tax_amount, total_amount
+static invoice(array $data){
+	$currency = strtoupper((string)($data['currency'] ?? 'EUR'))
+	$issue = (string)($data['issue_date'] ?? '')
+	$due = (string)($data['due_date'] ?? '') ?: $issue
+	$lines = []
+	$linesSum = 0
+	$taxSubtotals = []
+	foreach ((array)($data['lines'] ?? []) AS $i => $line){
+		$qty = (float)($line['quantity'] ?? 0)
+		$net = round($qty * (float)($line['unit_price'] ?? 0), 2)
+		$rate = (float)($line['tax_rate'] ?? 0)
+		$lines[] = static::xmlLine($i + 1, $line, $qty, $net, $rate, $currency)
+		$linesSum += $net
+		$key = number_format($rate, 2, '.', '')
+		$taxSubtotals[$key] = ($taxSubtotals[$key] ?? 0) + $net
+	}
+	$tax = (float)($data['tax_amount'] ?? 0)
+	$total = (float)($data['total_amount'] ?? 0)
+	$taxXml = ''
+	foreach ($taxSubtotals AS $rate => $taxable){
+		$amount = round($taxable * (float)$rate / 100, 2)
+		$category = (float)$rate === 0.0 ? 'Z' : 'S'
+		$taxXml .= implode('', [
+			'<cac:TaxSubtotal>',
+			'<cbc:TaxableAmount currencyID="'.$currency.'">'.static::n($taxable).'</cbc:TaxableAmount>',
+			'<cbc:TaxAmount currencyID="'.$currency.'">'.static::n($amount).'</cbc:TaxAmount>',
+			'<cac:TaxCategory><cbc:ID>'.$category.'</cbc:ID><cbc:Percent>'.static::n((float)$rate).'</cbc:Percent>',
+			'<cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:TaxCategory>',
+			'</cac:TaxSubtotal>',
+		])
+	}
+	$supplier = (array)($data['supplier'] ?? [])
+	$customer = (array)($data['customer'] ?? [])
+	return implode('', [
+		'<?xml version="1.0" encoding="UTF-8"?>',
+		'<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">',
+		'<cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>',
+		'<cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>',
+		'<cbc:ID>'.static::esc((string)($data['number'] ?? '')).'</cbc:ID>',
+		'<cbc:IssueDate>'.static::esc($issue).'</cbc:IssueDate>',
+		'<cbc:DueDate>'.static::esc($due).'</cbc:DueDate>',
+		'<cbc:InvoiceTypeCode>'.(!empty($data['credit_note']) ? '381' : '380').'</cbc:InvoiceTypeCode>',
+		'<cbc:DocumentCurrencyCode>'.$currency.'</cbc:DocumentCurrencyCode>',
+		static::partyXml('AccountingSupplierParty', (string)($supplier['name'] ?? ''), $supplier, (string)($supplier['vat'] ?? '')),
+		static::partyXml('AccountingCustomerParty', (string)($customer['name'] ?? ''), $customer, (string)($customer['vat'] ?? '')),
+		'<cac:TaxTotal><cbc:TaxAmount currencyID="'.$currency.'">'.static::n($tax).'</cbc:TaxAmount>'.$taxXml.'</cac:TaxTotal>',
+		'<cac:LegalMonetaryTotal>',
+		'<cbc:LineExtensionAmount currencyID="'.$currency.'">'.static::n($linesSum).'</cbc:LineExtensionAmount>',
+		'<cbc:TaxExclusiveAmount currencyID="'.$currency.'">'.static::n($linesSum).'</cbc:TaxExclusiveAmount>',
+		'<cbc:TaxInclusiveAmount currencyID="'.$currency.'">'.static::n($total).'</cbc:TaxInclusiveAmount>',
+		'<cbc:PayableAmount currencyID="'.$currency.'">'.static::n($total).'</cbc:PayableAmount>',
+		'</cac:LegalMonetaryTotal>',
+		implode('', $lines),
+		'</Invoice>',
+	])
+}
+
+static xmlLine($idx, $line, $qty, $net, $rate, $currency = 'EUR'){
+	$category = (float)$rate === 0.0 ? 'Z' : 'S'
+	return implode('', [
+		'<cac:InvoiceLine>',
+		'<cbc:ID>'.$idx.'</cbc:ID>',
+		'<cbc:InvoicedQuantity unitCode="EA">'.static::n($qty).'</cbc:InvoicedQuantity>',
+		'<cbc:LineExtensionAmount currencyID="'.$currency.'">'.static::n($net).'</cbc:LineExtensionAmount>',
+		'<cac:Item><cbc:Name>'.static::esc((string)($line['description'] ?? '')).'</cbc:Name>',
+		'<cac:ClassifiedTaxCategory><cbc:ID>'.$category.'</cbc:ID><cbc:Percent>'.static::n((float)$rate).'</cbc:Percent>',
+		'<cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory></cac:Item>',
+		'<cac:Price><cbc:PriceAmount currencyID="'.$currency.'">'.static::n((float)($line['unit_price'] ?? 0)).'</cbc:PriceAmount></cac:Price>',
+		'</cac:InvoiceLine>',
+	])
+}
+
+static partyXml($wrapper, $name, $info, $vatNumber){
+	$address = (string)($info['address'] ?? '')
+	$postal = (string)($info['postal_code'] ?? '')
+	$city = (string)($info['city'] ?? '')
+	$country = (string)($info['country'] ?? '') ?: 'NL'
+	$tax = $vatNumber ? '<cac:PartyTaxScheme><cbc:CompanyID>'.static::esc($vatNumber).'</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>' : ''
+	return implode('', [
+		'<cac:'.$wrapper.'><cac:Party>',
+		'<cac:PartyName><cbc:Name>'.static::esc($name).'</cbc:Name></cac:PartyName>',
+		'<cac:PostalAddress>',
+		'<cbc:StreetName>'.static::esc($address).'</cbc:StreetName>',
+		'<cbc:CityName>'.static::esc($city).'</cbc:CityName>',
+		'<cbc:PostalZone>'.static::esc($postal).'</cbc:PostalZone>',
+		'<cac:Country><cbc:IdentificationCode>'.static::esc(strtoupper($country)).'</cbc:IdentificationCode></cac:Country>',
+		'</cac:PostalAddress>',
+		$tax,
+		'<cac:PartyLegalEntity><cbc:RegistrationName>'.static::esc($name).'</cbc:RegistrationName></cac:PartyLegalEntity>',
+		'</cac:Party></cac:'.$wrapper.'>',
+	])
+}
+
+static n($v) => number_format((float)$v, 2, '.', '')
+static esc($v) => htmlspecialchars((string)$v, ENT_XML1 | ENT_QUOTES, 'UTF-8')

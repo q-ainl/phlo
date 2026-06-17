@@ -1,0 +1,47 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Thin Stripe wrappers: Checkout, Billing Portal, prices, customers, subscriptions and webhook verification. Call Stripe::boot($secret) first. Requires the Stripe PHP SDK (composer: stripe/stripe-php).
+@ package:  payments
+@ frontend: false
+@ backend:  true
+@ tags:     stripe payments checkout subscription billing webhook
+
+static boot($secret, $version = '2025-09-30.clover'){
+	$secret = trim((string)$secret)
+	if (!$secret) error('Stripe secret key not configured', 500)
+	\Stripe\Stripe::setApiKey($secret)
+	$version && \Stripe\Stripe::setApiVersion($version)
+}
+
+static price($lookupKey){
+	$prices = \Stripe\Price::all(['lookup_keys' => [$lookupKey], 'limit' => 1, 'active' => true])
+	return $prices->data[0] ?? null
+}
+
+static customer($id){
+	try {
+		$c = \Stripe\Customer::retrieve((string)$id)
+		return ($c->deleted ?? false) ? null : $c
+	}
+	catch (\Stripe\Exception\ApiErrorException $e){
+		return null
+	}
+}
+
+static createCustomer(array $data) => \Stripe\Customer::create($data)
+
+static checkout(array $params) => \Stripe\Checkout\Session::create($params)
+
+static portal($customerId, $returnUrl) => \Stripe\BillingPortal\Session::create(['customer' => (string)$customerId, 'return_url' => (string)$returnUrl])
+
+static verifyWebhook($payload, $sigHeader, $secret){
+	$secret = trim((string)$secret)
+	if (!$secret) error('Stripe webhook secret not configured', 500)
+	return \Stripe\Webhook::constructEvent((string)$payload, (string)$sigHeader, $secret)
+}
+
+static subscriptions($customerId, $status = 'all', $limit = 10) => \Stripe\Subscription::all(['customer' => (string)$customerId, 'status' => $status, 'limit' => $limit])
+
+static subscription($id) => \Stripe\Subscription::retrieve((string)$id)
+
+static product($id) => \Stripe\Product::retrieve((string)$id)
