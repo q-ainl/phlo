@@ -140,7 +140,7 @@ function phlo_thread():void {
 		phlo('res')->render();
 	}
 	catch (RuntimeException $e){
-		if ($e->getMessage() === 'PhloDump' || $e->getMessage() === 'PhloStop') return;
+		if ($e->getMessage() === 'PhloDump') return;
 		phlo_exception($e);
 	}
 	catch (Throwable $e){
