@@ -1,0 +1,7 @@
+{
+    "resources": [
+        "DB/DB",
+        "DB/model",
+        "DB/SQLite"
+    ]
+}

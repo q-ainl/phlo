@@ -10,6 +10,8 @@
 
 prop PDO => error('No PDO connector defined')
 prop fieldQuotes = bt
+prop insertIgnore = ' IGNORE'
+prop insertOnConflict = void
 
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	$table = strpos($table, space) || strpos($table, dot) ? $table : "$this->fieldQuotes$table$this->fieldQuotes"
@@ -54,7 +56,7 @@ method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
 	$columns = $this->fieldQuotes.implode($this->fieldQuotes.comma.$this->fieldQuotes, array_keys($data)).$this->fieldQuotes
 	$values = implode(comma, array_fill(0, count($data), qm))
-	$query = "INSERT".($ignore ? ' IGNORE' : void)." INTO $table ($columns) VALUES ($values)"
+	$query = "INSERT".($ignore ? $this->insertIgnore : void)." INTO $table ($columns) VALUES ($values)".($ignore ? $this->insertOnConflict : void)
 	$this->query($query, ...array_values(loop($data, fn($value) => is_a($value, obj::class) ? $value->id : $value)))
 	return $this->PDO->lastInsertId() ?: ($data['id'] ?? null)
 }

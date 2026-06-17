@@ -5,10 +5,10 @@
 @ package:  database
 @ frontend: false
 @ backend:  true
-@ requires: @DB @MySQL apcu? audit?
+@ requires: @DB apcu? audit?
 @ tags:     orm model database records schema
 
-static DB => %app->DB ?? %MySQL
+static DB => error('No database engine configured: set static %model.DB => %MySQL in app.phlo, or static DB => on the model')
 static objRecords = []
 static objLoaded = []
 static objCache = false

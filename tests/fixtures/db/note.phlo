@@ -1,0 +1,33 @@
+@ summary: ORM test model, backed by whatever engine the app injects (SQLite here).
+@ extends: model
+
+static table = 'notes'
+static columns = 'id,title,done,created'
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done INTEGER DEFAULT 0, created INTEGER)')
+	static::DB()->query('DELETE FROM notes')
+}
+
+static runTests {
+	static::prepareTable()
+	$out = []
+	$a = static::create(title: 'first', done: 0, created: 100)
+	$b = static::create(title: 'second', done: 1, created: 200)
+	$out['create'] = (bool)($a && $b)
+	$out['ids'] = [(int)$a->id, (int)$b->id]
+	$one = static::record(id: (int)$a->id)
+	$out['fetch'] = (bool)($one && $one->title === 'first' && (int)$one->done === 0)
+	$out['count'] = (int)static::recordCount()
+	$out['list'] = count(static::records())
+	static::DB()->create('notes', id: (int)$a->id, title: 'dup', ignore: true)
+	$out['ignoreNoNewRow'] = (int)static::recordCount() === 2
+	$out['ignoreNoOverwrite'] = static::record(id: (int)$a->id)->title === 'first'
+	static::change('id=?', (int)$a->id, done: 1, title: 'first-edited')
+	$edited = static::record(id: (int)$a->id)
+	$out['update'] = (bool)($edited && (int)$edited->done === 1 && $edited->title === 'first-edited')
+	static::delete('id=?', (int)$b->id)
+	$out['deleteGone'] = static::record(id: (int)$b->id) === null
+	$out['countAfterDelete'] = (int)static::recordCount()
+	return $out
+}

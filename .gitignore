@@ -22,3 +22,10 @@ tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css
 tests/fixtures/e2e/www/app.js
 tests/fixtures/e2e/data/errors.json
+
+# DB fixture build output + runtime SQLite file
+tests/fixtures/db/php/
+tests/fixtures/db/www/app.css
+tests/fixtures/db/www/app.js
+tests/fixtures/db/data/errors.json
+tests/fixtures/db/data/test.db

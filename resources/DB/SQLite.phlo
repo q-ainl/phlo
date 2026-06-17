@@ -11,3 +11,4 @@
 static __handle => "SQLite/$file"
 method __construct(private string $file)
 prop PDO => new PDO('sqlite:'.$this->file)
+prop insertIgnore = ' OR IGNORE'
