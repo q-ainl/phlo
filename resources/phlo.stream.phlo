@@ -7,4 +7,10 @@
 @ requires: exec_stream cli
 @ tags:     stream phlo cli process yield
 
-function phlo_stream(string $cb, ...$args) => yield from exec_stream(cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void))
+function phlo_stream(string $cb, ...$args){
+	if (function_exists('phlo_daemon') && phlo_daemon()){
+		yield from phlo_serve_stream($cb, $args)
+		return
+	}
+	yield from exec_stream(cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void))
+}

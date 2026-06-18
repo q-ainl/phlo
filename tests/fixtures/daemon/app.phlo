@@ -4,3 +4,19 @@ prop lang = 'en'
 prop version = '.1'
 
 method ping($v = 'pong') => obj(pong: $v, host: host)
+
+method spit($n = 3) {
+	$n = (int)$n
+	for ($i = 1; $i <= $n; $i++){
+		echo 'line '.$i.lf
+	}
+	return obj(spat: $n)
+}
+
+method streamTest($n = 3) {
+	$out = []
+	foreach (phlo_stream('app.spit', (string)$n) AS $chunk){
+		$out[] = $chunk->data
+	}
+	return obj(streamed: $out)
+}

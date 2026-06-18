@@ -36,3 +36,58 @@ function phlo_serve_fire(string $target, array $args = []):bool {
 	phlo_serve_post('/dispatch', ['host' => host, 'target' => $target, 'args' => $args, 'async' => true])
 	return true
 }
+
+// Dispatch many targets concurrently on the pool and collect their results (drives await()).
+function phlo_serve_await(array $jobs):array {
+	$base = phlo_daemon() ?? error('No daemon configured')
+	$mh = curl_multi_init()
+	$handles = []
+	foreach ($jobs AS $i => $job){
+		[$cb, $args] = is_array($job) ? [$job[0], array_slice($job, 1)] : [$job, []]
+		$ch = curl_init($base.'/dispatch')
+		curl_setopt_array($ch, [
+			CURLOPT_POST => true,
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
+			CURLOPT_POSTFIELDS => json_encode(['host' => host, 'target' => $cb, 'args' => array_values($args)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		])
+		curl_multi_add_handle($mh, $ch)
+		$handles[$i] = $ch
+	}
+	$running = null
+	do {
+		curl_multi_exec($mh, $running)
+		if ($running) curl_multi_select($mh, 1)
+	} while ($running > 0)
+	$results = []
+	foreach ($handles AS $i => $ch){
+		$res = json_decode((string)curl_multi_getcontent($ch), true)
+		curl_multi_remove_handle($mh, $ch)
+		$results[$i] = is_array($res) && ($res['status'] ?? void) === 'ok' ? ($res['result'] ?? null) : obj(error: $res['message'] ?? 'await dispatch failed')
+	}
+	curl_multi_close($mh)
+	return $results
+}
+
+// Stream a target's output line by line from the pool (drives phlo_stream).
+function phlo_serve_stream(string $target, array $args = []){
+	$base = phlo_daemon() ?? error('No daemon configured')
+	$ctx = stream_context_create(['http' => [
+		'method'        => 'POST',
+		'header'        => 'Content-Type: application/json',
+		'content'       => json_encode(['host' => host, 'target' => $target, 'args' => $args, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		'timeout'       => 300,
+		'ignore_errors' => true,
+	]])
+	$fp = @fopen($base.'/dispatch', 'r', false, $ctx)
+	if (!$fp) error('Phlo daemon unreachable at '.$base)
+	while (($line = fgets($fp)) !== false){
+		$line = trim($line)
+		if ($line === void) continue
+		$frame = json_decode($line, true)
+		if (!is_array($frame)) continue
+		if (($frame['t'] ?? void) === 'line') yield obj(data: (string)($frame['data'] ?? void))
+		elseif (($frame['t'] ?? void) === 'error') yield obj(data: (string)($frame['message'] ?? 'error'), error: true)
+	}
+	fclose($fp)
+}

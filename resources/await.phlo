@@ -8,6 +8,7 @@
 @ tags:     await parallel cli process
 
 function await(...$jobs){
+	if (function_exists('phlo_daemon') && phlo_daemon()) return phlo_serve_await($jobs)
 	$children = []
 	foreach ($jobs AS $i => $job){
 		[$cb, $args] = is_array($job) ? [$job[0], array_slice($job, 1)] : [$job, []]
