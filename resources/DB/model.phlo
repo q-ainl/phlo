@@ -8,7 +8,7 @@
 @ requires: @DB apcu? audit?
 @ tags:     orm model database records schema
 
-static DB => error('No database engine configured: set static %model.DB => %MySQL in app.phlo, or static DB => on the model')
+static DB => error('No database engine configured for '.static::class)
 static objRecords = []
 static objLoaded = []
 static objCache = false
