@@ -1,0 +1,6 @@
+@ summary: resourceNS test fixture. Lists the cobalt theme (own ns theme.cobalt)
+@          and forces it into the app namespace via app.json resourceNS.
+
+app::route()
+
+route GET => view('ok', 'NS')

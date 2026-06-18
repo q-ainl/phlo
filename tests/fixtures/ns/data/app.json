@@ -1,0 +1,4 @@
+{
+    "resources": ["themes/cobalt"],
+    "resourceNS": { "themes/cobalt": "app" }
+}

@@ -136,6 +136,7 @@ class build_base {
 			'phloJS'    => false,
 			'phloNS'    => 'app',
 			'defaultNS' => 'app',
+			'resourceNS' => [],
 			'iconNS'    => 'app',
 			'comments'  => true,
 			'extends'   => 'obj',

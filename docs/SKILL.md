@@ -872,6 +872,7 @@ Build-only settings. Do **not** put `debug`, `host`, `cli`, or `websocket` here.
 | `phloNS` | `["app"]` | Namespaces whose JS bundle embeds the phlo.js runtime |
 | `phloJS` | `false` | Inverts `phloNS`: embed the runtime in every namespace NOT listed there |
 | `iconNS` | `"app"` | Namespace that receives the generated icon-sprite CSS |
+| `resourceNS` | `{}` | Per-resource namespace override, keyed by resource path (e.g. `{"DOM/markdown": "app", "themes/cobalt": "app"}`); forces that resource's `<style>`/`<script>` into the given ns, overriding the block's own `ns=` |
 | `exclude` | `[]` | Source files to skip |
 
 ### Namespaces and bundles

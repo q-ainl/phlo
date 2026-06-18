@@ -29,3 +29,9 @@ tests/fixtures/db/www/app.css
 tests/fixtures/db/www/app.js
 tests/fixtures/db/data/errors.json
 tests/fixtures/db/data/test.db
+
+# NS fixture build output
+tests/fixtures/ns/php/
+tests/fixtures/ns/www/app.css
+tests/fixtures/ns/www/app.js
+tests/fixtures/ns/data/errors.json
