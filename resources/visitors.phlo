@@ -9,7 +9,7 @@
 @ tags:     visitors analytics heartbeat tracking
 
 static table = 'visitors'
-static columns = 'id,token,host,page,lang,IP,browser,os,device,requests,state,width,height,referrer,created,changed'
+static columns = 'id,token,host,page,lang,IP,browser,os,device,active_seconds,state,width,height,referrer,created,changed'
 
 static history => static::records(columns: 'FROM_UNIXTIME(changed, "%Y-%m-%d") AS date,COUNT(DISTINCT token) AS visitors,COUNT(id) AS visits', group: 'date', order: 'date DESC')
 static online => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 9)')
@@ -27,37 +27,53 @@ static parseReferrer(string $url):string {
 	return $host ?: substr($url, 0, 100)
 }
 
-route PUT heartbeat @n,v,l,u,w,h,a,p,r,c {
+route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s {
 	if (static::isBot(%useragent->source)) return
 	$consent = (bool)%payload->c
 	$n = strlen(%payload->n) === 8 ? %payload->n : date('Ymd')
 	$id = $consent ? token(20, $n.space.%app->token.space.%useragent->source) : token(20, $n.space.date('Ymd').space.%app->token.space.%req->ip)
+	$delta = max(0, min(120, (int)%payload->s))
+	$lang = strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en'
+	$record = static::record(id: $id, columns: 'id,page,referrer,active_seconds')
 	$data = arr (
 		token: token(20, (string)(%app->token ?? error('No app token available'))),
 		host: host,
 		page: %payload->u,
-		lang: strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en',
+		lang: $lang,
 		IP: $consent ? %req->ip : void,
 		browser: $consent ? %useragent->full.(%payload->a ? ' App' : void) : substr(md5((string)%useragent->source), 0, 8),
 		os: $consent ? %useragent->osFull : void,
 		device: $consent ? %useragent->device : void,
-		requests: %payload->p,
+		active_seconds: ($record->active_seconds ?? 0) + $delta,
 		state: %payload->v,
 		width: %payload->w,
 		height: %payload->h,
 		changed: time(),
 	)
-	$record = static::record(id: $id, columns: 'id,page,referrer')
 	if (($referrer = %payload->r) && !$record?->referrer && !str_contains($referrer, host)) $data['referrer'] = static::parseReferrer($referrer)
 	if ($record) static::change('id=?', $id, ...$data)
 	else static::create(...$data, id: $id, created: time())
+	if (strlen((string)%payload->p) >= 8){
+		$pages = preg_replace('/visitors$/', 'visitor_pages', (string)static::$table)
+		$pv = token(20, $id.space.%payload->p)
+		$visit = static::DB()->record(table: $pages, columns: 'active_seconds,beats', where: "id='$pv'")
+		if ($visit) static::DB()->change(table: $pages, where: "id='$pv'", active_seconds: $visit->active_seconds + $delta, beats: $visit->beats + 1, changed: time())
+		else static::DB()->create(table: $pages, id: $pv, visitor: $id, host: host, page: %payload->u, lang: $lang, active_seconds: $delta, beats: 1, created: time(), changed: time())
+	}
 }
 
 <script>
 let curpath = app.path
-let heartbeatTimeout
-const heartbeat = () => delay('heartbeat', 333, () => {
-	clearTimeout(heartbeatTimeout)
+let pv = phlo.token(12)
+let hbTimer, activeMs = 0, activeAt = null
+const visible = () => document.visibilityState === 'visible'
+const accrue = () => {
+	if (activeAt === null) return
+	activeMs += performance.now() - activeAt
+	activeAt = visible() ? performance.now() : null
+}
+const flush = beacon => {
+	accrue()
 	const consent = document.cookie.includes('cookieChoice=all')
 	if (consent){
 		const m = document.cookie.match(/phlo_visitor=([a-z0-9]{8})/)
@@ -68,11 +84,32 @@ const heartbeat = () => delay('heartbeat', 333, () => {
 		}
 	}
 	else window.name ||= phlo.token(8)
-	fetch('/heartbeat', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: phlo.state.index, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0})})
-	heartbeatTimeout = setTimeout(heartbeat, 20000)
+	const s = Math.floor(activeMs / 1000)
+	activeMs -= s * 1000
+	const body = JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: pv, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0, s})
+	if (beacon) navigator.sendBeacon('/heartbeat', new Blob([body], {type: 'application/json'}))
+	else fetch('/heartbeat', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body})
+}
+const heartbeat = () => delay('heartbeat', 333, () => {
+	clearTimeout(hbTimer)
+	flush()
+	if (visible()) hbTimer = setTimeout(heartbeat, 20000)
 })
-document.addEventListener('visibilitychange', heartbeat)
-;['focus', 'blur', 'resize'].forEach(e => addEventListener(e, heartbeat))
-app.updates.push(() => curpath !== app.path && (heartbeat(), curpath = app.path))
+document.addEventListener('visibilitychange', () => {
+	if (!visible()) return flush(true)
+	activeAt = performance.now()
+	heartbeat()
+})
+addEventListener('resize', heartbeat)
+addEventListener('pagehide', () => flush(true))
+app.updates.push(() => {
+	if (curpath === app.path) return
+	flush()
+	pv = phlo.token(12)
+	activeMs = 0
+	curpath = app.path
+	heartbeat()
+})
+if (visible()) activeAt = performance.now()
 heartbeat()
 </script>
