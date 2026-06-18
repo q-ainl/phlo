@@ -37,6 +37,7 @@ prop osV {
 
 prop osFull {
 	if (!$this->OS) return 'Unknown'
+	if ($this->OS === 'Windows') return 'Windows'
 	$v = $this->osV
 	if (!$v) return $this->OS
 	$short = preg_replace('/^(\d+\.\d+).*/','$1',$v)
