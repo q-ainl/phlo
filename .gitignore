@@ -35,3 +35,9 @@ tests/fixtures/ns/php/
 tests/fixtures/ns/www/app.css
 tests/fixtures/ns/www/app.js
 tests/fixtures/ns/data/errors.json
+
+# SEO fixture build output
+tests/fixtures/seo/php/
+tests/fixtures/seo/www/app.css
+tests/fixtures/seo/www/app.js
+tests/fixtures/seo/data/errors.json

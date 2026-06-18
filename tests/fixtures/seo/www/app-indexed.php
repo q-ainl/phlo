@@ -1,0 +1,11 @@
+<?php
+require dirname(__DIR__, 4).'/phlo.php';
+
+phlo_app(
+	id:        'SEO',
+	host:      'localhost',
+	build:     true,
+	debug:     false,
+	indexable: true,
+	app:       dirname(__DIR__).'/',
+);

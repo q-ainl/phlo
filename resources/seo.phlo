@@ -1,0 +1,65 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Multilingual SEO: sitemap.xml, robots.txt, hreflang + head meta (OG/Twitter/canonical)
+@ package:  seo
+@ frontend: false
+@ backend:  true
+@ requires: output
+@ tags:     seo sitemap robots hreflang opengraph multilingual
+
+route GET sitemap.xml => output($this)
+
+route GET robots.txt => output($this->robots(), type: 'text/plain; charset=utf-8')
+
+method robots {
+	if (!(defined('indexable') && indexable)) return 'User-agent: *'.lf.'Disallow: /'.lf
+	$lines = ['User-agent: *', 'Allow: /']
+	foreach ((array)(%app->robotsDisallow ?? []) AS $path) $lines[] = 'Disallow: '.$path
+	$lines[] = 'Sitemap: '.%req->base.slash.'sitemap.xml'
+	return implode(lf, $lines).lf
+}
+
+method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
+
+prop ogTitle  => (string)(%app->title ?? id)
+prop ogDescr  => (string)(%app->description ?? void)
+prop ogImage  => %req->base.slash.ltrim((string)(%app->image ?? 'icon.webp'), slash)
+prop ogType   => (string)(%app->ogType ?? 'website')
+prop ogSite   => (string)(%app->siteName ?? id)
+prop noindex  => !(defined('indexable') && indexable) || (%app->noindex ?? false)
+
+view:
+<?xml version=1.0 encoding="UTF-8"?>
+<urlset xmlns=http://www.sitemaps.org/schemas/sitemap/0.9 xmlns:xhtml=http://www.w3.org/1999/xhtml xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance xsi:schemaLocation=http://www.sitemaps.org/schemas/sitemap/0.9+http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd>
+	<foreach %app->pages AS $uri>
+		{{ $this->page($uri) }}
+	</foreach>
+</urlset>
+
+view page($uri):
+<url>
+	<loc>%req->base{( $uri ?: slash )}</loc>
+	<foreach array_keys(%app->langs) AS $lang>
+		<if $lang === %app->lang>
+			{{ $this->xlink('x-default', $uri ?: slash) }}
+		</if>
+		{{ $this->xlink($lang, $lang === %app->lang ? ($uri ?: slash) : "/$lang".($this->intl($uri) ?: void)) }}
+	</foreach>
+</url>
+
+view xlink($lang, $uri): <xhtml:link rel=alternate hreflang="$lang" href="%req->base$uri"{{ slash }}>
+view link($lang, $uri): <link rel=alternate hreflang="$lang" href="%req->base$uri">
+
+view head:
+<if $this->noindex>
+	<meta name=robots content=noindex,follow>
+</if>
+<meta name=description content="$this->ogDescr">
+<link rel=canonical href="%req->url">
+<meta property=og:title content="$this->ogTitle">
+<meta property=og:description content="$this->ogDescr">
+<meta property=og:url content="%req->url">
+<meta property=og:image content="$this->ogImage">
+<meta property=og:type content="$this->ogType">
+<meta property=og:site_name content="$this->ogSite">
+<meta name=twitter:card content=summary_large_image>

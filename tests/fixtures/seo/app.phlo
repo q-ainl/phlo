@@ -1,0 +1,12 @@
+@ summary: seo resource test fixture
+
+prop title = 'SEO Fixture'
+prop description = 'A test description'
+prop langs = ['en' => 'English', 'nl' => 'Nederlands']
+prop pages = ['', 'about']
+prop lang = 'en'
+prop image = 'icon.webp'
+
+app::route()
+
+route GET => view('ok', 'SEO')
