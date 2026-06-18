@@ -29,11 +29,11 @@ function phlo_serve_post(string $path, array $body):array {
 }
 
 // Dispatch a target and wait for its return value.
-function phlo_serve_run(string $target, array $args = []) => phlo_serve_post('/dispatch', ['host' => host, 'target' => $target, 'args' => $args])['result'] ?? null
+function phlo_serve_run(string $target, array $args = []) => phlo_serve_post('/dispatch', ['app' => realpath((string)$_SERVER['SCRIPT_FILENAME']), 'target' => $target, 'args' => $args])['result'] ?? null
 
 // Queue a target fire-and-forget on the pool; returns once accepted, not once run.
 function phlo_serve_fire(string $target, array $args = []):bool {
-	phlo_serve_post('/dispatch', ['host' => host, 'target' => $target, 'args' => $args, 'async' => true])
+	phlo_serve_post('/dispatch', ['app' => realpath((string)$_SERVER['SCRIPT_FILENAME']), 'target' => $target, 'args' => $args, 'async' => true])
 	return true
 }
 
@@ -49,7 +49,7 @@ function phlo_serve_await(array $jobs):array {
 			CURLOPT_POST => true,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-			CURLOPT_POSTFIELDS => json_encode(['host' => host, 'target' => $cb, 'args' => array_values($args)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			CURLOPT_POSTFIELDS => json_encode(['app' => realpath((string)$_SERVER['SCRIPT_FILENAME']), 'target' => $cb, 'args' => array_values($args)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 		])
 		curl_multi_add_handle($mh, $ch)
 		$handles[$i] = $ch
@@ -75,7 +75,7 @@ function phlo_serve_stream(string $target, array $args = []){
 	$ctx = stream_context_create(['http' => [
 		'method'        => 'POST',
 		'header'        => 'Content-Type: application/json',
-		'content'       => json_encode(['host' => host, 'target' => $target, 'args' => $args, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		'content'       => json_encode(['app' => realpath((string)$_SERVER['SCRIPT_FILENAME']), 'target' => $target, 'args' => $args, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 		'timeout'       => 300,
 		'ignore_errors' => true,
 	]])
