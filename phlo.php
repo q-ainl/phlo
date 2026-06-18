@@ -171,19 +171,26 @@ function phlo_load(bool $http):void {
 	if ($http && !phlo('res')->type) phlo('res')->type = 'text/html; charset=UTF-8';
 }
 
-function phlo_cli(array $args):void {
-	if (!$args) return;
-	$target = array_shift($args);
+// Resolves a CLI/serve target to its result. Three forms: `object.method` (resource instance via
+// phlo(), bare property read when no args and not a method), `Class::method` (static), `function`.
+// Args may be a positional list or a string-keyed map (spread as named arguments).
+function phlo_dispatch(string $target, array $args = []):mixed {
 	if (str_contains($target, dot)){
 		[$object, $method] = explode(dot, $target, 2);
 		$handle = phlo($object);
-		$result = $args ? $handle->$method(...$args) : ($handle->hasMethod($method) ? $handle->$method() : $handle->$method);
+		return $args ? $handle->$method(...$args) : ($handle->hasMethod($method) ? $handle->$method() : $handle->$method);
 	}
-	elseif (str_contains($target, '::')){
+	if (str_contains($target, '::')){
 		[$class, $method] = explode('::', $target, 2);
-		$result = $class::$method(...$args);
+		return $class::$method(...$args);
 	}
-	else $result = $target(...$args);
+	return $target(...$args);
+}
+
+function phlo_cli(array $args):void {
+	if (!$args) return;
+	$target = array_shift($args);
+	$result = phlo_dispatch($target, $args);
 	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 }
 
@@ -230,6 +237,54 @@ function phlo_ws_serve():void {
 			while (ob_get_level()) ob_end_flush();
 			if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done']).lf);
+		}
+		catch (Throwable $e){
+			while (ob_get_level()) ob_end_clean();
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+		}
+		phlo('tech/reset');
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+		gc_collect_cycles();
+	}
+}
+
+// Generalized persistent worker (superset of phlo_ws_serve): boots the app once, then loops over
+// newline-JSON requests on STDIN, dispatching ANY target via phlo_dispatch(). Protocol: in
+// {"id","target","args"?,"stream"?}; out {"t":"ready"} once, then per request, when stream: 0..N
+// {"id","t":"line","data"} chunks, and always exactly one {"id","t":"done","result"} or
+// {"id","t":"error","message"}. Per-request state isolation mirrors the HTTP worker loop.
+function phlo_serve():void {
+	ini_set('display_errors', 'stderr');
+	stream_set_blocking(STDIN, true);
+	fwrite(STDOUT, json_encode(['t' => 'ready']).lf);
+	while (($line = fgets(STDIN)) !== false){
+		$line = trim($line);
+		if ($line === void) continue;
+		$msg    = json_decode($line, true) ?: [];
+		$id     = $msg['id']     ?? null;
+		$target = (string)($msg['target'] ?? void);
+		$args   = (array)($msg['args'] ?? []);
+		$stream = (bool)($msg['stream'] ?? false);
+		$lineBuf = void;
+		$emit = static function(string $chunk) use (&$lineBuf, $id):string {
+			$lineBuf .= $chunk;
+			while (($pos = strpos($lineBuf, lf)) !== false){
+				$out = substr($lineBuf, 0, $pos);
+				$lineBuf = substr($lineBuf, $pos + 1);
+				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			}
+			return void;
+		};
+		try {
+			if ($target === void) error('No target');
+			if ($stream){
+				ob_start($emit, 1);
+				$result = phlo_dispatch($target, $args);
+				while (ob_get_level()) ob_end_flush();
+				if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			}
+			else $result = phlo_dispatch($target, $args);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done', 'result' => $result], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 		}
 		catch (Throwable $e){
 			while (ob_get_level()) ob_end_clean();
