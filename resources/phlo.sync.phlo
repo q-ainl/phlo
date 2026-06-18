@@ -6,6 +6,11 @@
 @ tags:     sync cli process app
 
 function phlo_sync(string $cb, ...$args){
+	if (function_exists('phlo_daemon') && phlo_daemon()){
+		$j = phlo_serve_run($cb, $args)
+		if (is_array($j) && isset($j['error'])) error((string)$j['error'])
+		return $j
+	}
 	$cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void)
 	exec($cmd.' 2>&1', $r, $code)
 	$out = implode(lf, $r)

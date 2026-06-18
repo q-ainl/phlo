@@ -5,4 +5,9 @@
 @ requires: cli
 @ tags:     async cli process background app
 
-function phlo_async(string $cb, ...$args) => last($cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void).' > /dev/null 2>&1 & echo $!', exec($cmd, $r), isset($r[0]) && ctype_digit($r[0]) && (int)$r[0] > 0)
+function phlo_async(string $cb, ...$args){
+	if (function_exists('phlo_daemon') && phlo_daemon()) return phlo_serve_fire($cb, $args)
+	$cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void).' > /dev/null 2>&1 & echo $!'
+	exec($cmd, $r)
+	return isset($r[0]) && ctype_digit($r[0]) && (int)$r[0] > 0
+}

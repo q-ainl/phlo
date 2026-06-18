@@ -1,0 +1,6 @@
+@ summary: daemon dispatch test fixture
+
+prop lang = 'en'
+prop version = '.1'
+
+method ping($v = 'pong') => obj(pong: $v, host: host)

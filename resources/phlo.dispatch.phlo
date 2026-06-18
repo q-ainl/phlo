@@ -1,0 +1,38 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Client for the optional node phlo-daemon: POST a target to its dispatch pool
+@ package:  runtime
+@ frontend: false
+@ backend:  true
+@ tags:     daemon dispatch runtime
+
+// The daemon base URL, set per host via the optional `daemon` constant (phlo_app daemon: '...').
+// Absent -> the runtime helpers keep their one-shot subprocess behaviour.
+function phlo_daemon():?string {
+	return defined('daemon') && daemon ? rtrim((string)daemon, slash) : null
+}
+
+function phlo_serve_post(string $path, array $body):array {
+	$base = phlo_daemon() ?? error('No daemon configured')
+	$ctx = stream_context_create(['http' => [
+		'method'        => 'POST',
+		'header'        => 'Content-Type: application/json',
+		'content'       => json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		'timeout'       => 30,
+		'ignore_errors' => true,
+	]])
+	$raw = @file_get_contents($base.$path, false, $ctx)
+	if ($raw === false) error('Phlo daemon unreachable at '.$base)
+	$res = json_decode($raw, true)
+	if (!is_array($res) || ($res['status'] ?? void) !== 'ok') error('Daemon dispatch failed: '.($res['message'] ?? 'unknown'))
+	return $res
+}
+
+// Dispatch a target and wait for its return value.
+function phlo_serve_run(string $target, array $args = []) => phlo_serve_post('/dispatch', ['host' => host, 'target' => $target, 'args' => $args])['result'] ?? null
+
+// Queue a target fire-and-forget on the pool; returns once accepted, not once run.
+function phlo_serve_fire(string $target, array $args = []):bool {
+	phlo_serve_post('/dispatch', ['host' => host, 'target' => $target, 'args' => $args, 'async' => true])
+	return true
+}

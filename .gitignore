@@ -47,3 +47,9 @@ tests/fixtures/seorich/php/
 tests/fixtures/seorich/www/app.css
 tests/fixtures/seorich/www/app.js
 tests/fixtures/seorich/data/errors.json
+
+# Daemon fixture build output
+tests/fixtures/daemon/php/
+tests/fixtures/daemon/www/app.css
+tests/fixtures/daemon/www/app.js
+tests/fixtures/daemon/data/errors.json
