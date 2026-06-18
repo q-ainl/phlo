@@ -217,7 +217,6 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$nonce = $app->nonce ? ' nonce="'.$app->nonce.'"' : void;
 	$head = '<title>'.esc(title()).'</title>'.lf;
 	$head .= '<meta name="viewport" content="'.($cmds['viewport'] ?? $app->viewport ?? 'width=device-width').'">'.lf;
-	$app->description && $head .= "<meta name=\"description\" content=\"$app->description\">\n";
 	$app->themeColor && $head .= "<meta name=\"theme-color\" content=\"$app->themeColor\">\n";
 	$app->nonce && $head .= "<meta name=\"nonce\" content=\"$app->nonce\">\n";
 	is_file(www.($filename = 'icons.png')) && $link[] = "</$filename?$version>; rel=preload; as=image";

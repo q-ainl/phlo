@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Multilingual SEO: sitemap.xml, robots.txt, hreflang + head meta (OG/Twitter/canonical)
+@ summary:  Multilingual SEO: sitemap.xml, robots.txt, hreflang + head meta (description/OG/Twitter/canonical)
 @ package:  seo
 @ frontend: false
 @ backend:  true
@@ -21,13 +21,19 @@ method robots {
 
 method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
 
+method locale {
+	$lang = (string)(%app->lang ?? 'en')
+	$map = ['nl' => 'nl_NL', 'en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES', 'it' => 'it_IT', 'pt' => 'pt_PT', 'pl' => 'pl_PL', 'ru' => 'ru_RU', 'el' => 'el_GR', 'tr' => 'tr_TR', 'zh' => 'zh_CN']
+	return $map[$lang] ?? $lang
+}
+
 prop ogTitle => title()
 prop ogDescr => (string)(%app->description ?? void)
 prop ogImage => %req->base.slash.ltrim((string)(%app->image ?? 'icon.webp'), slash)
 prop canonical => %req->url
-prop ogType = void
-prop siteName = void
-prop ogLocale = void
+prop ogType = 'website'
+prop siteName => id
+prop ogLocale => $this->locale()
 prop twitterCard = false
 prop noindex => (%app->noLink ?? %app->noindex ?? false)
 
@@ -57,19 +63,16 @@ view head:
 <if $this->noindex>
 	<meta name=robots content=noindex,follow>
 </if>
-<if $this->siteName>
-	<meta property=og:site_name content="$this->siteName">
+<if $this->ogDescr>
+	<meta name=description content="$this->ogDescr">
 </if>
+<meta property=og:site_name content="$this->siteName">
 <meta property=og:title content="$this->ogTitle">
 <meta property=og:description content="$this->ogDescr">
-<if $this->ogType>
-	<meta property=og:type content="$this->ogType">
-</if>
+<meta property=og:type content="$this->ogType">
 <meta property=og:url content="$this->canonical">
 <meta property=og:image content="$this->ogImage">
-<if $this->ogLocale>
-	<meta property=og:locale content="$this->ogLocale">
-</if>
+<meta property=og:locale content="$this->ogLocale">
 <if $this->twitterCard>
 	<meta name=twitter:card content=summary_large_image>
 	<meta name=twitter:title content="$this->ogTitle">
