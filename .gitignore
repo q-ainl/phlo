@@ -41,3 +41,9 @@ tests/fixtures/seo/php/
 tests/fixtures/seo/www/app.css
 tests/fixtures/seo/www/app.js
 tests/fixtures/seo/data/errors.json
+
+# SEO opt-in (rich) fixture build output
+tests/fixtures/seorich/php/
+tests/fixtures/seorich/www/app.css
+tests/fixtures/seorich/www/app.js
+tests/fixtures/seorich/data/errors.json

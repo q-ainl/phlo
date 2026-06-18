@@ -1,0 +1,17 @@
+@ summary: seo resource opt-in tags test fixture (injected %seo.* config)
+
+prop title = 'SEO Rich Fixture'
+prop description = 'A test description'
+prop langs = ['en' => 'English', 'nl' => 'Nederlands']
+prop pages = ['', 'about']
+prop lang = 'en'
+prop image = 'icon.webp'
+
+prop %seo.siteName = 'Rich Site'
+prop %seo.ogType = 'website'
+prop %seo.ogLocale = 'en_US'
+prop %seo.twitterCard = true
+
+app::route()
+
+route GET => view('ok', 'SEO')

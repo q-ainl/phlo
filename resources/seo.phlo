@@ -21,8 +21,14 @@ method robots {
 
 method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
 
+prop ogTitle => title()
 prop ogDescr => (string)(%app->description ?? void)
 prop ogImage => %req->base.slash.ltrim((string)(%app->image ?? 'icon.webp'), slash)
+prop canonical => %req->url
+prop ogType = void
+prop siteName = void
+prop ogLocale = void
+prop twitterCard = false
 prop noindex => (%app->noLink ?? %app->noindex ?? false)
 
 view:
@@ -51,10 +57,25 @@ view head:
 <if $this->noindex>
 	<meta name=robots content=noindex,follow>
 </if>
-<meta property=og:title content="{{ title() }}">
+<if $this->siteName>
+	<meta property=og:site_name content="$this->siteName">
+</if>
+<meta property=og:title content="$this->ogTitle">
 <meta property=og:description content="$this->ogDescr">
-<meta property=og:url content="%req->url">
+<if $this->ogType>
+	<meta property=og:type content="$this->ogType">
+</if>
+<meta property=og:url content="$this->canonical">
 <meta property=og:image content="$this->ogImage">
+<if $this->ogLocale>
+	<meta property=og:locale content="$this->ogLocale">
+</if>
+<if $this->twitterCard>
+	<meta name=twitter:card content=summary_large_image>
+	<meta name=twitter:title content="$this->ogTitle">
+	<meta name=twitter:description content="$this->ogDescr">
+	<meta name=twitter:image content="$this->ogImage">
+</if>
 <if !$this->noindex>
-	<link rel=canonical href="%req->url">
+	<link rel=canonical href="$this->canonical">
 </if>
