@@ -1,10 +1,10 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// Verifies the seo resource's robots.txt + head() logic gated on the optional `indexable`
-// constant. Two entries point at the same app: app.php (no indexable) must yield a
-// Disallow robots + a noindex head; app-indexed.php (indexable: true) must yield an
-// Allow+Sitemap robots + an indexable head. Run via the CLI dispatcher.
+// seo resource: the robots.txt route is gated on the optional site-wide `indexable`
+// constant (Disallow without it, Allow+Sitemap with it). The head() view is gated on a
+// per-page noindex/noLink flag (decoupled from indexable) and emits only the conventional
+// OG + canonical block (no <meta name=description> - view() owns that - and no twitter card).
 final class SeoTest extends TestCase {
 
 	private static function cli(string $entry, string ...$args):array {
@@ -36,22 +36,21 @@ final class SeoTest extends TestCase {
 		$this->assertStringContainsString('Sitemap:', $r);
 	}
 
-	public function testHeadNoindexWithoutIndexable():void {
+	public function testHeadShape():void {
 		[$code, $out, $err] = self::cli('app.php', 'seo.head');
 		$this->assertSame(0, $code, $err);
 		$h = json_decode(trim($out), true);
 		$this->assertIsString($h, 'head output not a string: '.$out);
-		$this->assertStringContainsString('noindex', $h);
 		$this->assertStringContainsString('og:title', $h);
-		$this->assertStringContainsString('SEO Fixture', $h);
-		$this->assertStringContainsString('twitter:card', $h);
-	}
-
-	public function testHeadIndexedHasNoNoindex():void {
-		[$code, $out, $err] = self::cli('app-indexed.php', 'seo.head');
-		$this->assertSame(0, $code, $err);
-		$h = (string)json_decode(trim($out), true);
+		$this->assertStringContainsString('og:description', $h);
+		$this->assertStringContainsString('A test description', $h);
+		$this->assertStringContainsString('og:url', $h);
+		$this->assertStringContainsString('og:image', $h);
+		$this->assertStringContainsString('canonical', $h);
+		// no twitter card (owner does not use it) and no <meta name=description> (view() owns it)
+		$this->assertStringNotContainsString('twitter', $h);
+		$this->assertStringNotContainsString('name=description', $h);
+		// fixture has no noLink/noindex, so no robots meta
 		$this->assertStringNotContainsString('noindex', $h);
-		$this->assertStringContainsString('og:title', $h);
 	}
 }
