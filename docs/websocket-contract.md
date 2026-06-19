@@ -1,6 +1,6 @@
 # Phlo WebSocket contract
 
-WebSocket support is **optional**. It is provided by phloWS, the WebSocket layer
+WebSocket support is **optional**. It is provided by Phlo Realtime, the WebSocket layer
 built into the [Phlo Daemon](https://github.com/q-ainl/phlo-daemon) (one extra
 dependency: `ws`). Nothing else in the framework depends on it.
 
