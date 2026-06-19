@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.darknova>
 :root {
 	$bg: linear-gradient(to bottom, #00010a, #050521, #0d0b3a)

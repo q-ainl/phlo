@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Cache callback results in APCu
 @ package:  cache
 @ frontend: false

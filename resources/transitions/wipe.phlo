@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.wipe>
 ::view-transition-group(root): background: black
 html.wipe {

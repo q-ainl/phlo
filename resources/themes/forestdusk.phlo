@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.forestdusk>
 :root {
 	$bg: linear-gradient(to bottom, #1C3C3E, #2e6b1e, #0d2e12)

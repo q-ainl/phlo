@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Generate HTML tag string with attributes
 @ package:  view
 @ frontend: false

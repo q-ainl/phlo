@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.glitch>
 html.glitch {
 	main: view-transition-name: main

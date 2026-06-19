@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Check if compiled Phlo class exists
 @ package:  build
 @ frontend: false

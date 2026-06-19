@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.aurasteel>
 :root {
 	$bg: linear-gradient(to bottom, #0e1526, #1c2e4a, #2b496a)

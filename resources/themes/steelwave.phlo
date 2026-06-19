@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.steelwave>
 :root {
 	$bg: linear-gradient(to bottom, #E1E6F0 0%, #C0CADB 50%, #94A3B8 100%)

@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.galaxytwist>
 :root {
 	$bg: linear-gradient(to bottom, #654EA3, #2a1f4a)

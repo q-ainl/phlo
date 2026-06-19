@@ -1,4 +1,4 @@
-@ version:  2.0
+@ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  DeepSeek API (OpenAI-compatible, extends OpenAI)
 @ extends:  OpenAI

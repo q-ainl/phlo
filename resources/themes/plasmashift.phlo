@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.plasmashift>
 :root {
 	$bg: linear-gradient(to bottom, #050018, #10104a, #3b0f70)

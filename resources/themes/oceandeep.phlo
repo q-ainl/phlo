@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.oceandeep>
 :root {
 	$bg: linear-gradient(to bottom, #001C30, #0A6EBD, #0a4d5c)

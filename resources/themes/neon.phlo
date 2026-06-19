@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.neon>
 :root {
 	$bg: #000000

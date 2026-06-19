@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=loader.matrixprint>
 html.loading body::before {
 	content: ''

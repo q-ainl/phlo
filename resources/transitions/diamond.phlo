@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.diamond>
 ::view-transition-group(root): background: black
 html.diamond {

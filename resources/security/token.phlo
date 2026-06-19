@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:     Generate deterministic or random lowercase token
 @ package:     security
 @ frontend:    false

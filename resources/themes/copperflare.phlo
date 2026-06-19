@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.copperflare>
 :root {
 	$bg: linear-gradient(to bottom, #2b0d00, #4d1c0a, #663015)

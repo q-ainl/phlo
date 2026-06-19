@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.spotlight>
 ::view-transition-group(root): background: black
 html.spotlight {

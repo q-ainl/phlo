@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.flip>
 html.flip {
 	main: view-transition-name: main

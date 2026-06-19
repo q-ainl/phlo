@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.zen>
 :root {
 	$bg: #f1f8e9

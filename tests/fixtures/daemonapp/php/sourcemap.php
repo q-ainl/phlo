@@ -4,7 +4,7 @@
 		'map' => [
 			[
 				'php' => 4,
-				'phlo' => 9,
+				'phlo' => 10,
 				'name' => 'phlo_sync',
 				'source' => '/srv/control/phlo/resources/phlo.sync.phlo',
 			],
@@ -16,13 +16,13 @@
 			],
 			[
 				'php' => 50,
-				'phlo' => 9,
+				'phlo' => 10,
 				'name' => 'wsCast',
 				'source' => '/srv/control/phlo/resources/wsCast.phlo',
 			],
 			[
 				'php' => 62,
-				'phlo' => 9,
+				'phlo' => 10,
 				'name' => 'HTTP',
 				'source' => '/srv/control/phlo/resources/HTTP.phlo',
 			],

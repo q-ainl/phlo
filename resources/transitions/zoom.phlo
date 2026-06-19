@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.zoom>
 html.zoom {
 	main: view-transition-name: main

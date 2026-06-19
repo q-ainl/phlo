@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.diaphragm>
 ::view-transition-group(root): background: black
 html.diaphragm {

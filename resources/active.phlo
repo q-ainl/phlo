@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Build active class attribute for UI state
 @ package:  view
 @ frontend: false

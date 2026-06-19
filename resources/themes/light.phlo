@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.light>
 :root {
 	$bg: linear-gradient(to bottom, #f6faf8, #edf4f1)

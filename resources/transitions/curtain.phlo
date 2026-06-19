@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.curtain>
 html.curtain {
 	main: view-transition-name: main

@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.slide>
 html.slide {
 	main: view-transition-name: main

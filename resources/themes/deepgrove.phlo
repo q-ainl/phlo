@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.deepgrove>
 :root {
 	$bg: linear-gradient(to bottom, #03110a, #062518, #0b3a25)

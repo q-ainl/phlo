@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Call n8n test webhook endpoint
 @ package:  network
 @ frontend: false

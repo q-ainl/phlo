@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Broadcast a message to WebSocket clients via the daemon's cast bridge
 @ package:  realtime
 @ frontend: false

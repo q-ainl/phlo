@@ -1,4 +1,4 @@
-@ version:  1.2
+@ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  JSON file database driver. One JSONDB instance = one JSON file = one model table. No joins, no transactions, no schema introspection.
 @ extends:  DB

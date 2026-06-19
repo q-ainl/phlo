@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Convert age in seconds to human readable text
 @ package:  time
 @ frontend: false

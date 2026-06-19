@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.diagonal>
 html.diagonal {
 	main: view-transition-name: main

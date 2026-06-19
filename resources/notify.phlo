@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Notification to the central hub: POST to [notify].url (secret header) via Phlo's HTTP() function. No-op without [notify] config.
 @ package:  fleet
 @ frontend: false

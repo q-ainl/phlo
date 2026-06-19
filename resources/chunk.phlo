@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Stream JSON chunks over CLI or Server-Sent Events
 @ package:  runtime
 @ frontend: false

@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.biolux>
 :root {
 	$bg: linear-gradient(to bottom, #001307, #013319, #03693a)

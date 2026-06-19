@@ -1,6 +1,6 @@
 @ extends:  cookiewall
 @ class:    cookiewall_translated
-@ version:  1.1
+@ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Multilingual cookiewall variant. {en: ...} tags resolve via Phlo's lang system. For English-only: DOM/cookiewall.
 @ package:  privacy

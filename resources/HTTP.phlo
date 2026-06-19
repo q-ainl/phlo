@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  HTTP request helper via cURL
 @ package:  network
 @ frontend: false

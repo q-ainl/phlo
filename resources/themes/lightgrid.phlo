@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.lightgrid>
 :root {
 	$bg: #fafafa

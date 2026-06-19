@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Run an app target synchronously, via the daemon pool or a one-shot CLI process
 @ package:  runtime
 @ frontend: false

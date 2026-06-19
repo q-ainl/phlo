@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Create associative array from iterable using callbacks
 @ package:  array
 @ frontend: false

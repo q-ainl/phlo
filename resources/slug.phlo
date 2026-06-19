@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Convert text to URL slug
 @ package:  string
 @ frontend: false

@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.crimson>
 :root {
 	$bg: #0b0b0b

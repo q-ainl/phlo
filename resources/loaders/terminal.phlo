@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=loader.terminal>
 html.loading body::before {
 	content: ''

@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.ironspectrum>
 :root {
 	$bg: linear-gradient(to bottom, #1a1c21, #2b2e36, #3d414b)

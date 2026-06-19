@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.jadeember>
 :root {
 	$bg: linear-gradient(to bottom, #021310, #03251e, #05352a)

@@ -1,6 +1,6 @@
 @ extends:     field
 @ class:       field_bool
-@ version:     1.0
+@ version:  1.0
 @ creator:     q-ai.nl
 @ summary:     Boolean field
 @ package:     fields

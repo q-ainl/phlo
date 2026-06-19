@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.cube>
 html.cube {
 	main: view-transition-name: main

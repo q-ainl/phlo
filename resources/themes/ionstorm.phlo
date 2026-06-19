@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.ionstorm>
 :root {
 	$bg: linear-gradient(to bottom, #020d1f, #081f3b, #093d6e)

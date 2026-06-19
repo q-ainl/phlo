@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:     Encrypt and decrypt secretbox payloads using a key
 @ package:     security
 @ frontend:    false

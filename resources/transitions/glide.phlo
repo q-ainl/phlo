@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=trans.glide>
 html.glide {
 	main: view-transition-name: main

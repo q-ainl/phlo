@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.elegant>
 :root {
 	$bg: #f5f5f5

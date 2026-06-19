@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=theme.quantumrift>
 :root {
 	$bg: linear-gradient(to bottom, #00040f, #000e2b, #001946)

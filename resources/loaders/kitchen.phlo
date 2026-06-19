@@ -1,3 +1,5 @@
+@ version:  1.0
+
 <style ns=loader.kitchen>
 html.loading body::before {
 	content: ''

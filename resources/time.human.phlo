@@ -1,3 +1,4 @@
+@ version:  1.0
 @ summary:  Convert timestamp age to human label
 @ package:  time
 @ frontend: false
