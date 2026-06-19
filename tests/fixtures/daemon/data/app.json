@@ -1,3 +1,3 @@
 {
-    "resources": ["phlo.dispatch", "phlo.sync", "phlo.async", "await", "phlo.stream", "exec.stream"]
+    "resources": ["phlo.sync", "phlo.async", "await", "phlo.stream", "exec.stream"]
 }

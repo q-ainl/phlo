@@ -1,22 +1,18 @@
-@ summary:  Run app callback synchronously via CLI
+@ summary:  Run an app target synchronously, via the daemon pool or a one-shot CLI process
 @ package:  runtime
 @ frontend: false
 @ backend:  true
 @ requires: cli
-@ tags:     sync cli process app
+@ tags:     sync cli process app daemon
 
 function phlo_sync(string $cb, ...$args){
-	if (function_exists('phlo_daemon') && phlo_daemon()){
-		$j = phlo_serve_run($cb, $args)
-		if (is_array($j) && isset($j['error'])) error((string)$j['error'])
-		return $j
-	}
-	$cmd = cli.space.escapeshellarg((string)$_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void)
+	if (daemon) return daemon::run($cb, $args)
+	$cmd = cli.space.escapeshellarg($_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void)
 	exec($cmd.' 2>&1', $r, $code)
 	$out = implode(lf, $r)
-	$j = json_decode($out, true)
 	if ($code !== 0) error('Could not execute "'.esc($cb).'" via CLI')
+	$j = json_decode($out, true)
 	if (json_last_error() !== JSON_ERROR_NONE) return $out
-	if (is_array($j) && isset($j['error'])) error((string)$j['error'])
+	if (is_array($j) && isset($j['error'])) error($j['error'])
 	return $j
 }
