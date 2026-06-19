@@ -195,56 +195,6 @@ function phlo_cli(array $args):void {
 	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 }
 
-// Lives in always-loaded engine core (not the websocket resource) because apps define their own
-// `websocket` class that shadows the resource, and resources are only built when referenced.
-function phlo_ws_serve():void {
-	if (!class_exists('websocket')){
-		fwrite(STDOUT, json_encode(['t' => 'fatal', 'message' => 'No websocket class for '.(defined('host') ? host : '?')]).lf);
-		return;
-	}
-	ini_set('display_errors', 'stderr');
-	stream_set_blocking(STDIN, true);
-	fwrite(STDOUT, json_encode(['t' => 'ready']).lf);
-	while (($line = fgets(STDIN)) !== false){
-		$line = trim($line);
-		if ($line === void) continue;
-		$msg  = json_decode($line, true) ?: [];
-		$id   = $msg['id']   ?? null;
-		$hook = $msg['hook'] ?? null;
-		$args = $msg['args'] ?? [];
-		$lineBuf = void;
-		$emit = static function(string $chunk) use (&$lineBuf, $id):string {
-			$lineBuf .= $chunk;
-			while (($pos = strpos($lineBuf, lf)) !== false){
-				$out = substr($lineBuf, 0, $pos);
-				$lineBuf = substr($lineBuf, $pos + 1);
-				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
-			}
-			return void;
-		};
-		try {
-			ob_start($emit, 1);
-			match ($hook){
-				'auth'    => websocket::auth(...$args),
-				'connect' => websocket::connect(...$args),
-				'receive' => websocket::receive(...$args),
-				'close'   => websocket::close(...$args),
-				default   => error('Unknown ws hook: '.$hook),
-			};
-			while (ob_get_level()) ob_end_flush();
-			if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done']).lf);
-		}
-		catch (Throwable $e){
-			while (ob_get_level()) ob_end_clean();
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
-		}
-		phlo('tech/reset');
-		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
-		gc_collect_cycles();
-	}
-}
-
 function phlo_serve():void {
 	ini_set('display_errors', 'stderr');
 	stream_set_blocking(STDIN, true);
