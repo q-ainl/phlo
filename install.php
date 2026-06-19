@@ -1,9 +1,4 @@
 <?php
-// Phlo app installer. Two ways to run it:
-//   php /path/to/phlo/install.php /path/to/new-app/     (original stays in place)
-//   cp /path/to/phlo/install.php /path/to/new-app/ && cd /path/to/new-app && php install.php
-// The copied form deletes itself after a successful installation.
-
 if (PHP_SAPI !== 'cli') exit("Run install.php from the command line.\n");
 
 function ask(string $question, string $default = ''):string {

@@ -17,7 +17,7 @@ static http(string $url, array $headers, bool $json = true, mixed $post = null):
 		if ($json) $headers[] = 'Content-Type: application/json'
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $post)
 	}
-	curl_setopt_array($curl, [CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 300, CURLOPT_ENCODING => ''])
+	curl_setopt_array($curl, [CURLOPT_HTTPHEADER => $headers, CURLOPT_RETURNTRANSFER => true, CURLOPT_CONNECTTIMEOUT => 5, CURLOPT_TIMEOUT => 300, CURLOPT_ENCODING => void])
 	$res = curl_exec($curl)
 	if ($res === false) throw new \RuntimeException('HTTP error: '.curl_error($curl))
 	return $res
@@ -27,7 +27,7 @@ method resolve(...$args):array {
 	unset($args['via'])
 	$args['model'] ??= $this->model
 	if ($via) $via = static::engines[strtolower($via)] ?? $via
-	elseif (isset($args['model'])) $via = static::engines[strtolower(explode('-', $args['model'])[0])] ?? void
+	elseif (isset($args['model'])) $via = static::engines[strtolower(explode(dash, $args['model'])[0])] ?? void
 	return [$via ?: 'OpenAI', $args]
 }
 method chat(...$args){

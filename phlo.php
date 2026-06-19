@@ -174,9 +174,7 @@ function phlo_load(bool $http):void {
 	if ($http && !phlo('res')->type) phlo('res')->type = 'text/html; charset=UTF-8';
 }
 
-// Resolves a CLI/serve target to its result. Three forms: `object.method` (resource instance via
-// phlo(), bare property read when no args and not a method), `Class::method` (static), `function`.
-// Args may be a positional list or a string-keyed map (spread as named arguments).
+// `object.method` with no args and no such method is a bare property read, not a call.
 function phlo_dispatch(string $target, array $args = []):mixed {
 	if (str_contains($target, dot)){
 		[$object, $method] = explode(dot, $target, 2);
@@ -197,12 +195,8 @@ function phlo_cli(array $args):void {
 	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
 }
 
-// Persistent websocket worker for phloWS: boots the app once (via the normal CLI path), then
-// loops over newline-JSON requests on STDIN, dispatching to the active `websocket` class. Lives
-// here in always-loaded engine core (not in the websocket resource) because apps define their own
+// Lives in always-loaded engine core (not the websocket resource) because apps define their own
 // `websocket` class that shadows the resource, and resources are only built when referenced.
-// Protocol: in  {"id","hook","args"}; out {"t":"ready"} once, then per request 0..N
-// {"id","t":"line","data"} followed by exactly one {"id","t":"done"} or {"id","t":"error","message"}.
 function phlo_ws_serve():void {
 	if (!class_exists('websocket')){
 		fwrite(STDOUT, json_encode(['t' => 'fatal', 'message' => 'No websocket class for '.(defined('host') ? host : '?')]).lf);
@@ -251,11 +245,6 @@ function phlo_ws_serve():void {
 	}
 }
 
-// Generalized persistent worker (superset of phlo_ws_serve): boots the app once, then loops over
-// newline-JSON requests on STDIN, dispatching ANY target via phlo_dispatch(). Protocol: in
-// {"id","target","args"?,"stream"?}; out {"t":"ready"} once, then per request, when stream: 0..N
-// {"id","t":"line","data"} chunks, and always exactly one {"id","t":"done","result"} or
-// {"id","t":"error","message"}. Per-request state isolation mirrors the HTTP worker loop.
 function phlo_serve():void {
 	ini_set('display_errors', 'stderr');
 	stream_set_blocking(STDIN, true);

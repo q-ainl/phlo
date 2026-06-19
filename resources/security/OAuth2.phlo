@@ -7,15 +7,12 @@
 @ requires: HTTP
 @ tags:     oauth oauth2 token authorization refresh authentication
 
-# Build an authorize-endpoint URL. The caller supplies the params (client_id, redirect_uri,
-# response_type, scope, state, ...).
 static authorizeUrl($endpoint, array $params) => $endpoint.(str_contains($endpoint, '?') ? '&' : '?').http_build_query($params)
 
-# Low-level token request. Returns the decoded token response (array), or ['error' => ...] on failure.
 static token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = []){
 	$body = ['grant_type' => $grantType, 'client_id' => (string)$clientId, 'client_secret' => (string)$clientSecret]
 	foreach ($extra AS $key => $value){
-		if ($value !== null && $value !== '') $body[$key] = $value
+		if ($value !== null && $value !== void) $body[$key] = $value
 	}
 	try {
 		$res = HTTP($tokenUrl, ['Content-Type: application/x-www-form-urlencoded', 'Accept: application/json'], POST: http_build_query($body))

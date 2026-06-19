@@ -244,16 +244,15 @@ function phlo_error_highlight(string $code, string $file):string {
 	return $out;
 }
 
-// True when a path is inside the engine itself (bootstrap/helpers), as opposed to
-// compiled app/resource code under php/. Used to skip engine frames in traces.
+// Used to skip engine frames in traces, keeping only compiled app/resource code under php/.
 function phlo_error_is_engine(string $file):bool {
 	static $eng = null;
 	if ($eng === null) $eng = defined('engine') ? rtrim(str_replace(bs, slash, engine), slash).slash : false;
 	return $eng !== false && str_starts_with(str_replace(bs, slash, $file), $eng);
 }
 
-// Real origin of an error: error() throws inside the engine (functions.php), so the
-// exception's own file/line points at the helper. Walk to the first non-engine frame.
+// error() throws inside the engine, so the exception's own file/line points at the helper;
+// walk to the first non-engine frame for the real origin.
 function phlo_error_origin(Throwable $e):array {
 	if (!phlo_error_is_engine($e->getFile())) return [$e->getFile(), $e->getLine()];
 	foreach ($e->getTrace() as $frame){
@@ -276,7 +275,6 @@ function phlo_error_format_trace(array $trace, string $file, int $line):array {
 			'call' => $call,
 		];
 	}
-	// Ensure the real origin heads the trace (prepend only if not already first).
 	if (!$frames || $frames[0]['file'] !== $file || $frames[0]['line'] !== $line)
 		array_unshift($frames, ['file' => $file, 'line' => $line, 'call' => null]);
 	return $frames;

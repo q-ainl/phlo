@@ -7,9 +7,7 @@
 @ requires: php-ext:hash
 @ tags:     jwt jws hs256 token auth security
 
-method __construct(public string $secret, public string $issuer = void, public int $leeway = 30){
-	strlen($this->secret) >= 32 || error('JWT secret must be at least 32 bytes', 500)
-}
+method __construct(public string $secret, public string $issuer = void, public int $leeway = 30) => strlen($this->secret) >= 32 || error('JWT secret must be at least 32 bytes', 500)
 
 method sign(array $claims, int $ttl = 3600):string {
 	$now = time()

@@ -13,7 +13,6 @@ function phlo_build_config(string $file, ?string $appPath = null):array {
 
 class build_base {
 
-	/** Checks which source files have changed since the last build. Returns changed file paths or empty array. */
 	public static function changed():array {
 		static $nextCheckAt = 0.0, $last = ['init'];
 		$now = microtime(true);
@@ -41,7 +40,6 @@ class build_base {
 		return [];
 	}
 
-	/** Returns the current build configuration from data/app.json. */
 	public static function config():array {
 		$config = static::sources()['build'];
 		unset($config['_minifyExplicit']);

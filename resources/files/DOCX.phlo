@@ -13,11 +13,11 @@ method __construct(string $file){
 	$xml = $zip->getFromName('word/document.xml')
 	$zip->close()
 	if (!$xml) dx('error reading document.xml')
-	$text = preg_replace('/<\/w:p>/', "\n", $xml)
+	$text = preg_replace('/<\/w:p>/', lf, $xml)
 	$text = strip_tags($text)
 	$text = html_entity_decode($text, ENT_QUOTES | ENT_XML1, 'UTF-8')
-	$this->text = trim(preg_replace('/[ \t]+/', ' ', $text))
-	$this->paragraphs = array_values(array_filter(explode("\n", $this->text), fn($p) => trim($p) !== void))
+	$this->text = trim(preg_replace('/[ \t]+/', space, $text))
+	$this->paragraphs = array_values(array_filter(explode(lf, $this->text), fn($p) => trim($p) !== void))
 }
 
 static toText(string $file):string => (new static($file))->text

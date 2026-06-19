@@ -34,6 +34,6 @@ method write($file) => %img($file->file)->scale($this->thumbSize, $this->thumbSi
 prop objColumns => [$this->name, $this->name.'_token']
 
 <script>
-on('click', '.input.image .image', (img) => img.nextElementSibling.click())
-on('change', '.input.image .image-input', (input) => imageResizer(input.files[0], input.dataset.size, input.dataset.size, (image) => input.previousElementSibling.src = image))
+on('click', '.input.image .image', img => img.nextElementSibling.click())
+on('change', '.input.image .image-input', input => imageResizer(input.files[0], input.dataset.size, input.dataset.size, image => input.previousElementSibling.src = image))
 </script>

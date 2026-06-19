@@ -1,9 +1,6 @@
 <?php
-// Optional daemon client. Loaded by phlo_app() only when the `daemon` constant (the daemon port) is
-// set, so apps that do not use the daemon never load this. The runtime helpers (phlo_sync /
-// phlo_async / await / phlo_stream) route through here when `daemon` is set, and fall back to a
-// one-shot subprocess otherwise. Targets are dispatched by the app's own path, so no host map.
-
+// Loaded by phlo_app() only when the `daemon` constant (the daemon port) is set. Targets are
+// dispatched by the app's own path, so there is no host map.
 class daemon {
 	static function url(){
 		return 'http://127.0.0.1:'.daemon;
@@ -13,8 +10,6 @@ class daemon {
 		return realpath($_SERVER['SCRIPT_FILENAME']);
 	}
 
-	// Best-effort: tell the daemon which app serves this host, so websockets for the host route here.
-	// Persisted by the daemon, so it survives a reboot; throttled so it fires about once a minute.
 	static function register(){
 		if (!host) return;
 		$key = 'daemon:registered:'.host;
@@ -30,7 +25,6 @@ class daemon {
 		if ($res !== false && function_exists('apcu_store')) apcu_store($key, 1, 60);
 	}
 
-	// POST a target to the pool and return the decoded {status, result} body.
 	static function post(string $path, array $body):array {
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',
@@ -46,18 +40,15 @@ class daemon {
 		return $res;
 	}
 
-	// Run a target and return its result.
 	static function run(string $target, array $args = []){
 		return self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args])['result'] ?? null;
 	}
 
-	// Queue a target fire-and-forget; returns once accepted, not once run.
 	static function fire(string $target, array $args = []):bool {
 		self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args, 'async' => true]);
 		return true;
 	}
 
-	// Run many jobs concurrently on the pool and collect their results (drives await()).
 	static function await(array $jobs):array {
 		$mh = curl_multi_init();
 		$handles = [];
@@ -88,7 +79,6 @@ class daemon {
 		return $results;
 	}
 
-	// Stream a target's output line by line from the pool (drives phlo_stream).
 	static function stream(string $target, array $args = []){
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',
@@ -101,7 +91,7 @@ class daemon {
 		if (!$fp) error('Phlo daemon unreachable at '.self::url());
 		while (($line = fgets($fp)) !== false){
 			$line = trim($line);
-			if ($line === '') continue;
+			if ($line === void) continue;
 			$frame = json_decode($line, true);
 			if (!is_array($frame)) continue;
 			if (($frame['t'] ?? null) === 'line') yield obj(data: $frame['data'] ?? '');

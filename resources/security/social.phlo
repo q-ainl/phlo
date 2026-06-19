@@ -6,6 +6,7 @@
 @ backend:  true
 @ requires: OAuth2 creds payload
 @ tags:     oauth oidc social login google microsoft apple authentication
+@ advice:   id_token is trusted without JWKS verification because it is fetched server-to-server over TLS. Microsoft sends no email_verified, so a present email counts as verified. Apple's client_secret is an ES256 JWT signed with the .p8 key (team_id/key_id/client_id + key from creds).
 
 static providers => arr(
 	google: arr(
@@ -33,15 +34,15 @@ static config($provider){
 	if (!$p) return null
 	$creds = (array)(%creds->{$provider} ?? [])
 	return $p + arr(
-		client_id: (string)($creds['client_id'] ?? ''),
-		client_secret: (string)($creds['client_secret'] ?? ''),
+		client_id: (string)($creds['client_id'] ?? void),
+		client_secret: (string)($creds['client_secret'] ?? void),
 		redirect_uri: (string)($creds['redirect_uri'] ?? ('https://'.%req->host.'/auth/'.$provider.'/callback')),
 	)
 }
 
 static configured($provider){
 	$c = static::config($provider)
-	return $c && $c['client_id'] !== ''
+	return $c && $c['client_id'] !== void
 }
 
 static authUrl($provider, $state){
@@ -57,25 +58,23 @@ static authUrl($provider, $state){
 	return OAuth2::authorizeUrl($c['authorize'], $params)
 }
 
-# Wisselt de callback-code in voor een geverifieerd profiel. Retourneert {provider,uid,email,verified,name} of null.
 static profile($provider, $code){
 	$cfg = static::config($provider)
-	if (!$cfg || $cfg['client_id'] === '') return null
+	if (!$cfg || $cfg['client_id'] === void) return null
 	$secret = $provider === 'apple' ? static::appleSecret() : $cfg['client_secret']
 	$token = OAuth2::exchangeCode($cfg['token'], $cfg['client_id'], $secret, $code, $cfg['redirect_uri'])
 	$claims = static::decodeIdToken($token['id_token'] ?? void)
 	if (!$claims) return null
 	$profile = static::normalize($provider, $claims)
 	if ($provider === 'apple' && !$profile['name']){
-		$u = json_decode((string)(%payload->user ?? ''), true)
-		if (is_array($u) && !empty($u['name'])) $profile['name'] = trim(((string)($u['name']['firstName'] ?? '')).' '.((string)($u['name']['lastName'] ?? '')))
+		$u = json_decode((string)(%payload->user ?? void), true)
+		if (is_array($u) && !empty($u['name'])) $profile['name'] = trim(((string)($u['name']['firstName'] ?? void)).space.((string)($u['name']['lastName'] ?? void)))
 	}
 	return $profile
 }
 
-# Payload van een OIDC id_token. Server-to-server opgehaald van het token-endpoint over TLS, dus betrouwbaar zonder JWKS-handtekeningverificatie.
 static decodeIdToken($jwt){
-	$parts = explode('.', (string)$jwt)
+	$parts = explode(dot, (string)$jwt)
 	if (count($parts) < 2) return null
 	$claims = json_decode((string)base64_decode(strtr($parts[1], '-_', '+/')), true)
 	return is_array($claims) ? $claims : null
@@ -84,40 +83,37 @@ static decodeIdToken($jwt){
 static normalize($provider, array $claims){
 	$ev = $claims['email_verified'] ?? null
 	$verified = $ev === true || $ev === 'true'
-	# Microsoft levert geen email_verified, maar verifieert de account-mail zelf.
 	if ($provider === 'microsoft' && !empty($claims['email'])) $verified = true
-	$name = (string)($claims['name'] ?? '')
-	if (!$name) $name = trim(((string)($claims['given_name'] ?? '')).' '.((string)($claims['family_name'] ?? '')))
+	$name = (string)($claims['name'] ?? void)
+	if (!$name) $name = trim(((string)($claims['given_name'] ?? void)).space.((string)($claims['family_name'] ?? void)))
 	return arr(
 		provider: $provider,
-		uid: (string)($claims['sub'] ?? ''),
-		email: strtolower(trim((string)($claims['email'] ?? ''))),
+		uid: (string)($claims['sub'] ?? void),
+		email: strtolower(trim((string)($claims['email'] ?? void))),
 		verified: $verified,
 		name: trim($name),
 	)
 }
 
-static b64url($data) => rtrim(strtr(base64_encode((string)$data), '+/', '-_'), '=')
+static b64url($data) => rtrim(strtr(base64_encode((string)$data), '+/', '-_'), eq)
 
-# Apple verlangt een client_secret die een ES256-JWT is, getekend met de .p8-sleutel (team_id/key_id/client_id + key uit creds).
-static appleSecret(){
+static appleSecret {
 	$creds = (array)(%creds->apple ?? [])
-	$teamId = (string)($creds['team_id'] ?? '')
-	$keyId = (string)($creds['key_id'] ?? '')
-	$clientId = (string)($creds['client_id'] ?? '')
-	$keyData = (string)($creds['private_key'] ?? '')
+	$teamId = (string)($creds['team_id'] ?? void)
+	$keyId = (string)($creds['key_id'] ?? void)
+	$clientId = (string)($creds['client_id'] ?? void)
+	$keyData = (string)($creds['private_key'] ?? void)
 	if (!$keyData && !empty($creds['key_file']) && is_file((string)$creds['key_file'])) $keyData = (string)file_get_contents((string)$creds['key_file'])
-	if (!$teamId || !$keyId || !$clientId || !$keyData) return ''
+	if (!$teamId || !$keyId || !$clientId || !$keyData) return void
 	$key = openssl_pkey_get_private($keyData)
-	if (!$key) return ''
+	if (!$key) return void
 	$now = time()
-	$input = static::b64url(json_encode(arr(alg: 'ES256', kid: $keyId))).'.'.static::b64url(json_encode(arr(iss: $teamId, iat: $now, exp: $now + 15552000, aud: 'https://appleid.apple.com', sub: $clientId)))
-	$der = ''
-	if (!openssl_sign($input, $der, $key, OPENSSL_ALGO_SHA256)) return ''
-	return $input.'.'.static::b64url(static::derToJose($der))
+	$input = static::b64url(json_encode(arr(alg: 'ES256', kid: $keyId))).dot.static::b64url(json_encode(arr(iss: $teamId, iat: $now, exp: $now + 15552000, aud: 'https://appleid.apple.com', sub: $clientId)))
+	$der = void
+	if (!openssl_sign($input, $der, $key, OPENSSL_ALGO_SHA256)) return void
+	return $input.dot.static::b64url(static::derToJose($der))
 }
 
-# DER-gecodeerde ECDSA-handtekening -> JOSE raw r||s (64 bytes). Korte-vorm lengte (P-256-sig is ~70 bytes).
 static derToJose($der){
 	$rlen = ord($der[3])
 	$r = substr((string)$der, 4, $rlen)

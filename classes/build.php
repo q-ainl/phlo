@@ -64,7 +64,7 @@ class build extends build_base {
 	public static function lint():array {
 		$files = static::buildFiles()['php'];
 		if (!$files) return [];
-		exec(cli.' -l '.implode(' ', array_map('escapeshellarg', $files)).' 2>&1', $out, $code);
+		exec(cli.' -l '.implode(space, array_map('escapeshellarg', $files)).' 2>&1', $out, $code);
 		if ($code === 0) return [];
 		$errors = [];
 		foreach ($out as $line){
@@ -81,7 +81,7 @@ class build extends build_base {
 		if (!is_file($sourceFile)) error('functions.php not found at '.$sourceFile);
 		$tokens = token_get_all((string)file_get_contents($sourceFile));
 		$n      = count($tokens);
-		$out    = '';
+		$out    = void;
 		$i      = 0;
 		$count  = 0;
 		while ($i < $n){
@@ -108,7 +108,7 @@ class build extends build_base {
 						$i++;
 						if ($t === '{') break;
 					}
-					$argsStr = $params ? ', compact('.implode(', ', array_map(fn($p) => "'$p'", $params)).')' : '';
+					$argsStr = $params ? ', compact('.implode(', ', array_map(fn($p) => "'$p'", $params)).')' : void;
 					$out .= "\n\ttrace('$fnName'$argsStr);";
 					while ($i < $n && is_array($tokens[$i]) && $tokens[$i][0] === T_WHITESPACE) $i++;
 					if ($i < $n && $tokens[$i] !== '}') $out .= "\n\t";
@@ -120,7 +120,7 @@ class build extends build_base {
 							$depth--;
 							if ($depth === 0){
 								$out  = rtrim($out, " \t");
-								$out .= (str_ends_with($out, "\n") ? '' : "\n").'}';
+								$out .= (str_ends_with($out, lf) ? void : lf).'}';
 								$i++;
 								break;
 							}

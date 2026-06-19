@@ -12,7 +12,7 @@ window.alert = app.mod.alert = msg => phlo.dialog('alert', msg)
 window.confirm = msg => phlo.dialog('confirm', msg)
 window.prompt = (msg, defaultValue) => phlo.dialog('prompt', msg, defaultValue)
 
-phlo.dialog = async (type, message, defaultValue = '') => new Promise((resolve) => {
+phlo.dialog = async (type, message, defaultValue = '') => new Promise(resolve => {
 	app.mod.append('body', '<dialog id="phloDialog" class="phlo-dialog" role="dialog" aria-modal="true">\n<form method="dialog">\n<p class="phlo-dialog__message"></p>\n' + (type === 'prompt' ? '<input class="phlo-dialog__input" name="value">' : '') + '\n<menu class="phlo-dialog__actions">\n<button value="1" autofocus>OK</button>\n' + (type !== 'alert' ? '<button value="0">Cancel</button>' : '') + '\n</menu>\n</form>\n</dialog>')
 	const dialog = obj('#phloDialog')
 	const messageEl = dialog.querySelector('.phlo-dialog__message')

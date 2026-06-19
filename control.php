@@ -60,8 +60,6 @@ class phlo_dashboard {
 		static::$section($arg);
 	}
 
-	// Theme preview for the control center: cookie-scoped (isolated from the app), swapped via apply() so it
-	// gets the same view transition as the rest of the dashboard. Mirrors the CMS /set/theme route.
 	private static function theme(?string $arg):void {
 		$req   = phlo('req');
 		$clean = $arg ? preg_replace('/[^a-z0-9]/', '', strtolower($arg)) : '';
@@ -1049,7 +1047,6 @@ class phlo_dashboard {
 			$nav .= "<a href=\"".esc($href)."\"$cls>$lbl</a>\n";
 		}
 
-		// Build-site themes: every bundled theme compiles to www/theme.<name>.css. Offer them as a live picker.
 		$themes = [];
 		foreach (glob(www.'theme.*.css') ?: [] as $tf){
 			if (preg_match('/^theme\.(.+)\.css$/', basename($tf), $m)) $themes[] = $m[1];

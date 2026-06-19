@@ -71,9 +71,9 @@ class req extends obj {
 
 	protected function _secure():bool {
 		if ($this->cli) return true;
-		$https = strtolower($_SERVER['HTTPS'] ?? '');
+		$https = strtolower($_SERVER['HTTPS'] ?? void);
 		if ($https && $https !== 'off') return true;
-		if (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https') return true;
+		if (strtolower($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? void) === 'https') return true;
 		if (($_SERVER['SERVER_PORT'] ?? null) === '443') return true;
 		return false;
 	}

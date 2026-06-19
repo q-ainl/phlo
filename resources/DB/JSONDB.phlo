@@ -14,7 +14,7 @@ method __construct(private string $file){
 	is_dir($dir) || mkdir($dir, 0755, true) || error("JSONDB: cannot create dir $dir")
 }
 prop PDO => error('JSONDB driver does not use PDO')
-prop fieldQuotes = ''
+prop fieldQuotes = void
 prop lastInsertedId = null
 
 method objRead => file_exists($this->file) ? json_decode(file_get_contents($this->file), true) ?: [] : []
@@ -36,7 +36,7 @@ method objFilter(array $data, string $where = void, ...$args){
 			}
 			elseif (preg_match('/^[`"]?(\w+)[`"]?\s+IN\s*\((.+)\)$/i', trim($part), $m)){
 				$column = $m[1]
-				$ids = array_map(fn($v) => trim($v, "\"' "), explode(',', $m[2]))
+				$ids = array_map(fn($v) => trim($v, "\"' "), explode(comma, $m[2]))
 				if (!in_array($row[$column] ?? null, $ids)) $match = false
 			}
 		}
@@ -49,7 +49,7 @@ method objSelect(string $where = void, string $limit = void, string $order = voi
 	$data = $this->objFilter($this->objRead(), $where, ...array_values($args))
 	if ($order){
 		$desc = str_contains($order, 'DESC')
-		$col = trim(preg_replace('/\s+(ASC|DESC)/i', '', $order), '` ')
+		$col = trim(preg_replace('/\s+(ASC|DESC)/i', void, $order), '` ')
 		usort($data, fn($a, $b) => $desc ? ($b[$col] ?? 0) <=> ($a[$col] ?? 0) : ($a[$col] ?? 0) <=> ($b[$col] ?? 0))
 	}
 	$limit && $data = array_slice($data, 0, (int)$limit)
@@ -72,7 +72,7 @@ method create(string $table, ...$data){
 
 method change(string $table, string $where, ...$data){
 	$all = $this->objRead()
-	$whereCount = substr_count($where, '?')
+	$whereCount = substr_count($where, qm)
 	$whereArgs = array_slice(array_values($data), 0, $whereCount)
 	$updates = array_slice($data, $whereCount, null, true)
 	$changed = 0

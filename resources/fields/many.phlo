@@ -7,6 +7,7 @@
 @ frontend: true
 @ backend:  true
 @ tags:     field relation many
+@ advice:   Editing is opt-in: a model that sets create/change on a many field gets the checkbox picker from input(); CMS.API::syncMany() then rewrites the pivot table on save.
 
 prop list = 'label'
 prop record = 'label'
@@ -17,8 +18,6 @@ method count($record) => $record->getCount($this->name)
 method label($record) => loop($record->{$this->name}, fn($relation) => $this->link($relation), lf) ?: dash
 method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
 
-// Opt-in editing: a model that sets create/change on a many field gets this
-// checkbox picker; CMS.API::syncMany() then rewrites the pivot table on save.
 method input($record){
 	$current = array_keys($record->{$this->name} ?: [])
 	$boxes = loop($this->obj::records(), fn($o) => tag('label', tag('input', type: 'checkbox', name: $this->name.'[]', value: $o->id, checked: in_array($o->id, $current) ? true : null).esc((string)$o), class: 'ms-opt'), void)

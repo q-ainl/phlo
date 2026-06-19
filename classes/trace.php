@@ -7,15 +7,15 @@ function trace(string $node, array $args = []):void {
 class trace {
 	public static bool $on = false;
 	public static array $events = [];
-	public static string $id = '';
+	public static string $id = void;
 	public static float $t0 = 0.0;
-	public static string $route = '';
+	public static string $route = void;
 
 	public static function boot(string $appPath):void {
 		self::$on = true;
 		self::$t0 = microtime(true);
 		self::$id = date('Ymd-His').'-'.substr(uniqid(), -4);
-		self::$route = ($_SERVER['REQUEST_METHOD'] ?? '?').space.($_SERVER['REQUEST_URI'] ?? '?');
+		self::$route = ($_SERVER['REQUEST_METHOD'] ?? qm).space.($_SERVER['REQUEST_URI'] ?? qm);
 		register_shutdown_function([self::class, 'flush']);
 	}
 
@@ -70,8 +70,8 @@ class trace {
 		}
 		return [
 			'id'       => self::$id,
-			'path'     => $_SERVER['REQUEST_URI']    ?? '?',
-			'method'   => $_SERVER['REQUEST_METHOD'] ?? '?',
+			'path'     => $_SERVER['REQUEST_URI']    ?? qm,
+			'method'   => $_SERVER['REQUEST_METHOD'] ?? qm,
 			'route'    => self::$route,
 			'ts'       => round(self::$t0, 4),
 			'ms'       => round((microtime(true) - self::$t0) * 1000, 2),
@@ -90,7 +90,7 @@ class trace {
 			if (str_ends_with($n, ' (set)')) return ['set', $c, substr($n, 0, -6)];
 			return ['call', $c, $n];
 		}
-		return ['function', '', $node];
+		return ['function', void, $node];
 	}
 
 	private static function sourceMap():array {

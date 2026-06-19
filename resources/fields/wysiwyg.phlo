@@ -25,10 +25,10 @@ on('click', '.wysiwyg-container .toolbar button', (button, e) => {
 	document.execCommand(command, false, null)
 })
 
-on('input', '.wysiwyg-container .editor', (editor) => {
+on('input', '.wysiwyg-container .editor', editor => {
 	const container = editor.closest('.wysiwyg-container')
 	const hiddenInput = container.querySelector('textarea.hidden-value')
 	hiddenInput.value = editor.innerHTML
 })
-on('click', '.wysiwyg-container .editor a', (a) => window.open(a.href))
+on('click', '.wysiwyg-container .editor a', a => window.open(a.href))
 </script>

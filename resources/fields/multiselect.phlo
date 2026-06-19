@@ -9,15 +9,15 @@
 @ tags:     field select multi
 
 method label($record){
-	$values = array_filter(array_map('trim', explode(',', (string)($record->{$this->name} ?? ''))))
+	$values = array_filter(array_map('trim', explode(comma, (string)($record->{$this->name} ?? void))))
 	return $values ? loop($values, fn($v) => tag('span', esc($v), class: 'ms-tag'), space) : dash
 }
 
 method input($record) {
-	$current = array_filter(array_map('trim', explode(',', (string)($record->{$this->name} ?? ''))))
+	$current = array_filter(array_map('trim', explode(comma, (string)($record->{$this->name} ?? void))))
 	$js = "var f=this.closest('.field');f.querySelector('input.msv').value=[...f.querySelectorAll('input.msc:checked')].map(c=>c.value).join(',')"
 	$boxes = loop((array)$this->options, fn($o) => tag('label', tag('input', type: 'checkbox', value: (string)$o, class: 'msc', checked: in_array((string)$o, $current) ? true : null, onchange: $js).esc((string)$o), class: 'ms-opt'), void)
-	return tag('input', type: 'hidden', name: $this->name, value: implode(',', $current), class: 'msv').tag('div', $boxes ?: tag('span', 'no options', class: 'muted'), class: 'ms-grid')
+	return tag('input', type: 'hidden', name: $this->name, value: implode(comma, $current), class: 'msv').tag('div', $boxes ?: tag('span', 'no options', class: 'muted'), class: 'ms-grid')
 }
 
 prop objColumns => [$this->name]

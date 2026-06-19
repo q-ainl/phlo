@@ -54,6 +54,6 @@ method writePath($file, $path = null){
 prop objColumns => [$this->name, $this->name.'_token']
 
 <script>
-on('click', '.input.file .file', (file) => file.nextElementSibling.click())
-on('change', '.input.file .file-input', (input) => input.previousElementSibling.innerText = input.files[0].name)
+on('click', '.input.file .file', file => file.nextElementSibling.click())
+on('change', '.input.file .file-input', input => input.previousElementSibling.innerText = input.files[0].name)
 </script>

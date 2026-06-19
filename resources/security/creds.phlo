@@ -48,8 +48,8 @@ method envValues(bool $hostScoped = false):array {
 
 method hostKey {
 	$host = strtoupper(%req->host)
-	$host = preg_replace('/[^A-Z0-9]+/', '_', $host)
-	return trim($host, '_')
+	$host = preg_replace('/[^A-Z0-9]+/', us, $host)
+	return trim($host, us)
 }
 
 method envAssign(array &$target, array $parts, string $value):void {

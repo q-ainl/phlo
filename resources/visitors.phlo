@@ -22,7 +22,7 @@ static isBot(?string $ua):bool {
 
 static parseReferrer(string $url):string {
 	static $engines = ['google' => 'Google', 'bing' => 'Bing', 'duckduckgo' => 'DuckDuckGo', 'yahoo' => 'Yahoo', 'baidu' => 'Baidu', 'yandex' => 'Yandex', 'ecosia' => 'Ecosia', 'startpage' => 'Startpage', 'brave' => 'Brave', 'kagi' => 'Kagi']
-	$host = strtolower(preg_replace('/^www\./', '', (string)(parse_url($url, PHP_URL_HOST) ?? '')))
+	$host = strtolower(preg_replace('/^www\./', void, (string)(parse_url($url, PHP_URL_HOST) ?? void)))
 	foreach ($engines AS $key => $name) if (str_contains($host, $key)) return 'search:'.$name
 	return $host ?: substr($url, 0, 100)
 }

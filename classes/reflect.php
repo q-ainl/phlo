@@ -227,7 +227,6 @@ class reflect {
 			}
 		}
 
-		// Directe bestandsafhankelijkheden via klasse-aanroepen (phlo() instances + static calls)
 		foreach ($sourceData as $path => $data){
 			$fileKey = static::displayPath($path);
 			$fileId  = 'file:'.$fileKey;
@@ -248,10 +247,9 @@ class reflect {
 			}
 		}
 
-		// Inferred file to file edges via shared resource dependencies (max 8 callers per resource)
 		$resCallers = [];
 		foreach ($edges as $e){
-			if (str_starts_with((string)($e['from'] ?? ''), 'file:') && str_starts_with((string)($e['to'] ?? ''), 'res:')){
+			if (str_starts_with((string)($e['from'] ?? void), 'file:') && str_starts_with((string)($e['to'] ?? void), 'res:')){
 				$resCallers[$e['to']][$e['from']] = true;
 			}
 		}
@@ -262,7 +260,6 @@ class reflect {
 				for ($j = $i + 1; $j < count($callers); $j++) static::graphEdge($edges, $callers[$i], $callers[$j], 'shared', 'inferred');
 			}
 		}
-		// Remove disconnected file and resource nodes
 		$connected = [];
 		foreach ($edges as $e){
 			$connected[$e['from']] = true;
@@ -308,7 +305,7 @@ class reflect {
 				}
 			}
 			foreach ($file->nodes as $node){
-				if ((string)($node->node ?? '') !== 'view') continue;
+				if ((string)($node->node ?? void) !== 'view') continue;
 				$body = trim(($node->body ?? void));
 				if ($body === void) continue;
 				$hasCss = true;
@@ -372,7 +369,7 @@ class reflect {
 		foreach ($selEdges as [$from, $sel, $kind]){
 			if (count($selSources[$sel] ?? []) < 2) continue;
 			$sid = 'sel:'.$sel;
-			static::graphNode($nodes, $sid, ['label' => $sel, 'type' => 'selector', 'categories' => ['selector', ($sel[0] ?? '') === '#' ? 'id' : 'class']]);
+			static::graphNode($nodes, $sid, ['label' => $sel, 'type' => 'selector', 'categories' => ['selector', ($sel[0] ?? void) === '#' ? 'id' : 'class']]);
 			static::graphEdge($edges, $from, $sid, $kind, 'exact');
 		}
 		return ['mode' => 'frontend', 'nodes' => array_values($nodes), 'edges' => array_values($edges)];
@@ -407,17 +404,15 @@ class reflect {
 				foreach ($tokens[0] as $t) $out[] = $t;
 			}
 		}
-		// classList manipulation passes class names without dot prefix
 		preg_match_all('/\.classList\.(?:add|remove|toggle|contains|replace)\s*\(\s*[\'"]([^\'"]+)[\'"]/', $js, $m1);
-		foreach ($m1[1] as $name){ $name = trim($name); if ($name !== '') $out[] = '.'.$name; }
+		foreach ($m1[1] as $name){ $name = trim($name); if ($name !== void) $out[] = '.'.$name; }
 		preg_match_all('/\.classList\.replace\s*\(\s*[\'"][^\'"]+[\'"],\s*[\'"]([^\'"]+)[\'"]/', $js, $m2);
-		foreach ($m2[1] as $name){ $name = trim($name); if ($name !== '') $out[] = '.'.$name; }
+		foreach ($m2[1] as $name){ $name = trim($name); if ($name !== void) $out[] = '.'.$name; }
 		return array_values(array_unique($out));
 	}
 
 	private static function extractViewSelectors(string $body):array {
 		$out = [];
-		// Phlo view syntax: <div.class1.class2>: extract .classname tokens after tag names
 		preg_match_all('/<[a-zA-Z][a-zA-Z0-9]*(?:\.[a-zA-Z_][a-zA-Z0-9._-]*)/', $body, $m);
 		foreach ($m[0] as $match){
 			preg_match_all('/\.[a-zA-Z_][a-zA-Z0-9_-]*/', $match, $tokens);
@@ -493,7 +488,7 @@ class reflect {
 			$name = ($item['name'] ?? void);
 			if ($name === void) continue;
 			$resName = ($item['resource'] ?? void);
-			$mode = ($item['source'] ?? '') === 'native' ? 'native' : ($resIndex['items'][$resName]['mode'] ?? 'available');
+			$mode = ($item['source'] ?? void) === 'native' ? 'native' : ($resIndex['items'][$resName]['mode'] ?? 'available');
 			$out[strtolower($name)] = [
 				'name' => $name,
 				'id'   => 'fn:'.$name,
@@ -1172,7 +1167,7 @@ class reflect {
 
 	private static function resourceHasClass(array $node):bool {
 		foreach (($node['nodes'] ?? []) as $item){
-			if (str_starts_with((string)($item['name'] ?? ''), '%')) continue;
+			if (str_starts_with((string)($item['name'] ?? void), '%')) continue;
 			if (in_array(($item['node'] ?? null), ['script', 'style'], true)) continue;
 			return true;
 		}

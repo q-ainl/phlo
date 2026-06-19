@@ -15,7 +15,7 @@ phlo.store = {
 	calcDeps: {},
 	calcVals: {},
 	calcTick: false,
-	split: (path) => path.replace(/\]/g, '').split(/\.|\[/),
+	split: path => path.replace(/\]/g, '').split(/\.|\[/),
 	get(path){
 		if (!path) return undefined
 		let ctx = phlo.store.signals
@@ -58,7 +58,7 @@ phlo.store = {
 	},
 	signal(path, initial){
 		if (phlo.store.get(path) === undefined) phlo.store.set(path, initial)
-		return { subscribe: (cb) => phlo.store.on(path, cb), unsubscribe: (cb) => phlo.store.off(path, cb) }
+		return { subscribe: cb => phlo.store.on(path, cb), unsubscribe: cb => phlo.store.off(path, cb) }
 	},
 	notify(path, val){
 		const set = phlo.store.listeners[path]
@@ -182,7 +182,7 @@ app.calc = new Proxy({}, {
 	getOwnPropertyDescriptor(){ return { enumerable: true, configurable: true } }
 })
 
-onExist('[data-bind]', (el) => {
+onExist('[data-bind]', el => {
 	const key = el.dataset.bind
 	const isCalc = key.startsWith('calc.')
 	const isInput = el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'
@@ -191,8 +191,8 @@ onExist('[data-bind]', (el) => {
 	const domNonEmpty = (fromDom ?? '').trim() !== ''
 	const storeEmpty = fromStore === undefined || (typeof fromStore === 'string' && fromStore.trim() === '')
 	const domLeads = !isCalc && domNonEmpty && storeEmpty
-	const S = (v) => v == null ? '' : (typeof v === 'object' ? '' : String(v))
-	const apply = (v) => {
+	const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
+	const apply = v => {
 		const s = S(v)
 		if (isInput) el.value = s
 		else el.textContent = s
@@ -201,10 +201,10 @@ onExist('[data-bind]', (el) => {
 	if (domLeads) phlo.store.set(key, fromDom)
 	const initial = domLeads ? fromDom : fromStore
 	apply(initial)
-	if (!isCalc && isInput) el.oninput = (e) => phlo.store.set(key, e.target.value)
+	if (!isCalc && isInput) el.oninput = e => phlo.store.set(key, e.target.value)
 })
 
-onExist('[data-bind-attr]', (el) => {
+onExist('[data-bind-attr]', el => {
 	const spec = el.getAttribute('data-bind-attr')
 	if (!spec) return
 	const BOOL = new Set(['disabled','checked','hidden','required','readonly','selected','autofocus','multiple'])
@@ -231,8 +231,8 @@ onExist('[data-bind-attr]', (el) => {
 		const domNonEmpty = (domVal ?? '').trim() !== ''
 		const storeEmpty = fromStore === undefined || (typeof fromStore === 'string' && fromStore.trim() === '')
 		const domLeads = !isCalc && name !== 'class' && domNonEmpty && storeEmpty
-		const S = (v) => v == null ? '' : (typeof v === 'object' ? '' : String(v))
-		const apply = (v) => {
+		const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
+		const apply = v => {
 			if (name === 'text') el.textContent = S(v)
 			else if (name === 'html') app.mod.inner(el, S(v))
 			else if (name === 'value') app.mod.value(el, S(v))
@@ -255,7 +255,7 @@ onExist('[data-bind-attr]', (el) => {
 		if (domLeads) phlo.store.set(path, domVal)
 		const initial = domLeads ? domVal : fromStore
 		apply(initial)
-		if (!isCalc && isInputVal) el.oninput = (e) => phlo.store.set(path, e.target.value)
+		if (!isCalc && isInputVal) el.oninput = e => phlo.store.set(path, e.target.value)
 	})
 })
 </script>

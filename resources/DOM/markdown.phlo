@@ -21,7 +21,7 @@ function parse_markdown(md, opts = {}){
   const trimEndNL = s => s.replace(/\s+$/,'')
   const isBlank = s => /^\s*$/.test(s)
   const slugmap = new Map()
-  const slug = (t) => {
+  const slug = t => {
     let s = t.toLowerCase().replace(/<\/?[^>]+>/g, '').replace(/[^\p{L}\p{N}\- _]+/gu, '').trim().replace(/[\s_]+/g, '-')
     const base = o.headerPrefix + s
     let k = base, i = 1
@@ -59,7 +59,11 @@ function parse_markdown(md, opts = {}){
     let l = start
     while (l < end){
       const line = lines[l]
-      if (isBlank(line)){ pushParagraph(para); l++; continue; }
+      if (isBlank(line)){
+        pushParagraph(para)
+        l++
+        continue
+      }
       let m = line.match(/^ {0,3}(`{3,}|~{3,})([^\n]*)$/)
       if (m){
         pushParagraph(para)
@@ -70,7 +74,10 @@ function parse_markdown(md, opts = {}){
         while (l < end){
           const s = lines[l]
           const close = s.match(new RegExp(`^ {0,3}${m[1][0]}{${fenceLen},}\\s*$`))
-          if (close){ l++; break; }
+          if (close){
+            l++
+            break
+          }
           body.push(s)
           l++
         }
@@ -82,31 +89,36 @@ function parse_markdown(md, opts = {}){
         const { end: j } = takeWhile(l, s => /^(?: {4}|\t)/.test(s) || isBlank(s))
         const block = lines.slice(l, j).map(s => s.replace(/^(?: {4}|\t)/, '')).join("\n")
         tokens.push({ type: "code", lang: '', text: trimEndNL(block) })
-        l = j; continue
+        l = j
+        continue
       }
       if (/^ {0,3}<(?:!--|\/?(?:html|head|body|pre|script|style|table|thead|tbody|tfoot|tr|td|th|div|p|h[1-6]|blockquote|ul|ol|li|section|article|aside|details|summary|figure|figcaption)\b)/i.test(line)){
         pushParagraph(para)
         const { end: j } = takeWhile(l, (s, idx) => !(idx > l && isBlank(lines[idx-1]) && isBlank(s)))
         const html = lines.slice(l, j).join("\n")
         tokens.push({ type: "html", text: html })
-        l = j; continue
+        l = j
+        continue
       }
       if (/^ {0,3}(?:-+\s*|-{3,}|_{3,}|\*{3,})\s*$/.test(line)){
         pushParagraph(para)
         tokens.push({ type: "hr" })
-        l++; continue
+        l++
+        continue
       }
       m = line.match(/^ {0,3}(#{1,6})[ \t]*([^#\n]*?)[ \t#]*$/)
       if (m){
         pushParagraph(para)
         tokens.push({ type: "heading", depth: m[1].length, text: m[2].trim() })
-        l++; continue
+        l++
+        continue
       }
       if (l + 1 < end && /^[^\s].*$/.test(line) && /^ {0,3}(=+|-+)\s*$/.test(lines[l + 1])){
         pushParagraph(para)
         const depth = lines[l + 1].trim().startsWith("=") ? 1 : 2
         tokens.push({ type: "heading", depth, text: line.trim() })
-        l += 2; continue
+        l += 2
+        continue
       }
       if (/^ {0,3}>\s?/.test(line)){
         pushParagraph(para)
@@ -114,7 +126,8 @@ function parse_markdown(md, opts = {}){
         const inner = lines.slice(l, j).map(s => s.replace(/^ {0,3}>\s?/, '')).join("\n")
         const sub = parse_markdown(inner, { ...o })
         tokens.push({ type: "blockquote", html: sub })
-        l = j; continue
+        l = j
+        continue
       }
       m = line.match(/^ {0,3}((?:[*+-])|\d{1,9}[.)])\s+/)
       if (m){
@@ -145,13 +158,17 @@ function parse_markdown(md, opts = {}){
           let checked = null
           if (o.gfm){
             const t = raw.match(/^\[([ xX])\][ \t]+/)
-            if (t){ checked = t[1].toLowerCase() === 'x'; raw = raw.replace(/^\[[ xX]\][ \t]+/, ''); }
+            if (t){
+              checked = t[1].toLowerCase() === 'x'
+              raw = raw.replace(/^\[[ xX]\][ \t]+/, '')
+            }
           }
           const html = parse_markdown(raw, o)
           return { html, checked }
         })
         tokens.push({ type: "list", ordered, items: parsedItems })
-        l = j; continue
+        l = j
+        continue
       }
       if (o.gfm){
         const hdr = line

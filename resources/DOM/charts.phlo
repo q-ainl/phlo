@@ -8,7 +8,7 @@
 
 static spark($values, $color = '#888', $w = 240, $h = 48, $label = null){
 	$values = array_values(array_map('floatval', (array)$values))
-	if (!$values) return ''
+	if (!$values) return void
 	$max = max($values) ?: 1
 	$min = min($values)
 	$range = max(0.0001, $max - $min)
@@ -20,15 +20,15 @@ static spark($values, $color = '#888', $w = 240, $h = 48, $label = null){
 		$y = round($h - (($v - $min) / $range) * ($h - 6) - 3, 1)
 		$points[] = "$x,$y"
 	}
-	$area = array_merge($points, [round($w, 1).','.$h, '0,'.$h])
-	$id = 'g'.substr(md5(implode(',', $points)), 0, 6)
+	$area = array_merge($points, [round($w, 1).comma.$h, '0,'.$h])
+	$id = 'g'.substr(md5(implode(comma, $points)), 0, 6)
 	$aria = $label !== null ? ' role="img" aria-label="'.esc($label).'"' : void
-	return '<svg viewBox="0 0 '.$w.' '.$h.'"'.$aria.' xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:'.$h.'px"><defs><linearGradient id="'.$id.'" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="'.$color.'" stop-opacity=".4"/><stop offset="100%" stop-color="'.$color.'" stop-opacity="0"/></linearGradient></defs><polygon points="'.implode(' ', $area).'" fill="url(#'.$id.')"/><polyline points="'.implode(' ', $points).'" fill="none" stroke="'.$color.'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+	return '<svg viewBox="0 0 '.$w.' '.$h.'"'.$aria.' xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:'.$h.'px"><defs><linearGradient id="'.$id.'" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="'.$color.'" stop-opacity=".4"/><stop offset="100%" stop-color="'.$color.'" stop-opacity="0"/></linearGradient></defs><polygon points="'.implode(space, $area).'" fill="url(#'.$id.')"/><polyline points="'.implode(space, $points).'" fill="none" stroke="'.$color.'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>'
 }
 
 static bars($values, $color = '#888', $w = 240, $h = 48, $label = null){
 	$values = array_values(array_map('floatval', (array)$values))
-	if (!$values) return ''
+	if (!$values) return void
 	$max = max($values) ?: 1
 	$count = count($values)
 	$gap = 2
@@ -47,7 +47,7 @@ static bars($values, $color = '#888', $w = 240, $h = 48, $label = null){
 static donut($parts, $colors = null, $size = 120){
 	$parts = array_filter(array_map('floatval', (array)$parts))
 	$total = array_sum($parts)
-	if (!$total) return ''
+	if (!$total) return void
 	$colors ??= ['#FFC76B', '#6CC0FF', '#9D7BFF', '#6BE39E', '#FF8A5C', '#FF6B6B']
 	$cx = $size / 2
 	$cy = $size / 2
@@ -59,7 +59,7 @@ static donut($parts, $colors = null, $size = 120){
 	foreach ($parts AS $value){
 		$len = ($value / $total) * $circumference
 		$color = $colors[$i % count($colors)]
-		$out .= '<circle cx="'.$cx.'" cy="'.$cy.'" r="'.$r.'" fill="none" stroke="'.$color.'" stroke-width="'.($size * 0.18).'" stroke-dasharray="'.$len.' '.$circumference.'" transform="rotate('.$rotate.' '.$cx.' '.$cy.')"/>'
+		$out .= '<circle cx="'.$cx.'" cy="'.$cy.'" r="'.$r.'" fill="none" stroke="'.$color.'" stroke-width="'.($size * 0.18).'" stroke-dasharray="'.$len.space.$circumference.'" transform="rotate('.$rotate.space.$cx.space.$cy.')"/>'
 		$rotate += ($value / $total) * 360
 		$i++
 	}

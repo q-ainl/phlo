@@ -75,7 +75,7 @@ static objRunValidation($data){
 	return empty($errors)
 }
 
-static objErrors() => static::$objLastErrors ?? []
+static objErrors => static::$objLastErrors ?? []
 static createRecord(...$args) => static::DB()->create(static::$table, ...$args)
 static change($where, ...$args) => static::DB()->change(static::$table, $where, ...$args)
 
@@ -150,7 +150,8 @@ static recordsLoad($args, $fetch, $fetchMode, $saveRelations = false){
 	if ($cacheKey = $args['cacheKey'] ?? null) unset($args['cacheKey'])
 	if ($duration = $args['cache'] ?? static::objCache()){
 		unset($args['cache'])
-		$cacheArgs = $args; ksort($cacheArgs)
+		$cacheArgs = $args
+		ksort($cacheArgs)
 		$records = apcu($cacheKey ?? static::class.slash.md5(json_encode($cacheArgs)), fn() => static::DB()->load(...$args)->$fetch(...$fetchMode), $duration === true ? 86400 : $duration)
 	}
 	else $records = static::DB()->load(...$args)->$fetch(...$fetchMode)
@@ -223,7 +224,8 @@ method getMany($key){
 		$parentIds = array_keys($state->records[static::class] ?? [])
 		if ($parentIds){
 			$fq = static::DB()->fieldQuotes
-			$lk = $relation['localKey']; $fk = $relation['foreignKey']
+			$lk = $relation['localKey']
+			$fk = $relation['foreignKey']
 			$pivotRows = static::DB()->rows(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn($parentIds).')')
 			$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
 			$targetRecords = $targetIds ? $class::records(where: $class::idColumn().' IN ('.$this->objIn($targetIds).')') : []

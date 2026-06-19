@@ -42,7 +42,7 @@ prop osFull {
 	if (!$v) return $this->OS
 	$short = preg_replace('/^(\d+\.\d+).*/','$1',$v)
 	if (preg_match('/\.0$/',$short)) $short = preg_replace('/\.0$/', void, $short)
-	return trim($this->OS.' '.$short)
+	return trim($this->OS.space.$short)
 }
 
 prop name {
@@ -79,7 +79,7 @@ prop full {
 	if (!$v) return $this->name
 	$short = preg_replace('/^(\d+\.\d+).*/','$1',$v)
 	if (preg_match('/\.0$/',$short)) $short = preg_replace('/\.0$/', void, $short)
-	return rtrim($this->name.' '.$short)
+	return rtrim($this->name.space.$short)
 }
 
 prop device {

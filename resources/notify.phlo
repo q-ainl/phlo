@@ -5,9 +5,7 @@
 @ backend:  true
 @ requires: HTTP
 
-# notify($title): send a notification to the central dashboard (message-inbox + subscription-dispatch).
-# Reads [notify] from creds (url + secret, optionally app/server). Best-effort: errors are ignored.
-function notify(string $title, string $body = '', string $type = 'info', string $level = 'info', ?string $user = null): void {
+function notify(string $title, string $body = void, string $type = 'info', string $level = 'info', ?string $user = null): void {
 	$cfg = %creds->notify ?? null
 	if (!$cfg) return
 	$url = (string)($cfg->url ?? void)
@@ -17,7 +15,7 @@ function notify(string $title, string $body = '', string $type = 'info', string 
 		HTTP($url, ['secret: '.$secret], true, [
 			'app' => (string)($cfg->app ?? (defined('id') ? id : 'app')),
 			'server' => (string)($cfg->server ?? 'local'),
-			'host' => (string)(%req->host ?? ''),
+			'host' => (string)(%req->host ?? void),
 			'type' => $type,
 			'level' => $level,
 			'title' => $title,
