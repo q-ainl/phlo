@@ -46,6 +46,15 @@ $html .= $prev === null \
 
 - Blank lines never produce a `;`.
 
+**The one exception - a statement ending in `}`.** The `}` trigger above assumes `}` closes a block. When `}` instead closes a property-name interpolation (`$obj->{$expr}`, `%payload->{$key}`) or an inline closure assigned to a variable (`$fn = function(){ ... }`), the line is a complete *statement*, not a continuation - yet the auto-`;` is still stripped, so the line merges into the next one and PHP reports `unexpected token` one line down. Add an explicit `;`; this is the single place in `.phlo` where a trailing `;` is correct:
+
+```
+OK  $file = %payload->{$this->name};
+OK  method label($record) => $record->{$this->name};
+OK  $assign = function($v) use ($keys){ ... };
+NO  $file = %payload->{$this->name}      <- ; stripped, next line breaks
+```
+
 The mental model: never think about semicolons. Only ask "is my statement complete on this line?" If it is not, end the line with one of `( [ { , .` (natural in most multiline code) or an explicit `\`.
 
 **Lesson:** the FILE-level node parser tracks multiline node bodies by counting parentheses only, not square brackets. A multiline `prop x => [ ... ]` therefore ends the node at the first line and the rest becomes stray controller code (`Controller must be in one place`). Open multiline node bodies with a parenthesis: `prop x => arr(...)` or `prop x => array_merge(...)`.
@@ -268,6 +277,8 @@ Remember that each `.phlo` file is its own class. `pos.view.phlo` compiles to cl
 | `bs` | `'\\'` |
 | `semi` | `';'` |
 | `br` | `'<br>'` |
+
+Prefer the constant over the raw literal in backend/DSL code: `implode(comma, $parts)` not `implode(',', ...)`, `$out = void` not `$out = ''`, `rtrim($p, slash)` not `rtrim($p, '/')`. Constants are PHP/DSL only - never inside `<script>` JavaScript or `<style>` CSS, and never to replace a character *inside* a composite string, regex, URL or path (only standalone separator/value literals).
 
 ### Instance shorthand
 
@@ -993,6 +1004,10 @@ A CSS value was wrapped across lines without a legal continuation. Merge the val
 ### Multiline strings break into multiple statements
 
 Phlo terminates statements by line ending and does not currently treat multiline quoted strings as one statement. Keep string literals on one line, or build long SQL/text with `implode(' ', [...])` over an array of one-line strings.
+
+### `unexpected token` right after a line ending in `->{...}` or a closure
+
+The statement ended in the `}` of a property interpolation (`$obj->{$expr}`) or an inline closure (`$fn = function(){...}`), so syntax rule 2 stripped the auto-`;` and merged the following line into it. Add an explicit `;` to the end of that statement (see syntax rule 2).
 
 ### `build::lint` reports an error in a generated file
 
