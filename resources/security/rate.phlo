@@ -1,4 +1,4 @@
-@ version:  1.2
+@ version:  2.0
 @ creator:  q-ai.nl
 @ summary:  Rate-limit (fixed window) on the rate_limit table. Schema: resources/security/rate.sql
 @ package:  security
@@ -7,8 +7,8 @@
 @ requires: @MySQL
 @ tags:     rate limit throttle abuse
 
-method check($key, $limit, $windowSeconds, $storage = 'db'){
-	if ($storage === 'apcu') return $this->checkApcu($key, $limit, $windowSeconds)
+static check($key, $limit, $windowSeconds, $storage = 'db'){
+	if ($storage === 'apcu') return static::checkApcu($key, $limit, $windowSeconds)
 	$now = time()
 	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
 	if ($row && ($now - (int)$row->window_start) < $windowSeconds){
@@ -20,7 +20,7 @@ method check($key, $limit, $windowSeconds, $storage = 'db'){
 	return true
 }
 
-method checkApcu($key, $limit, $windowSeconds){
+static checkApcu($key, $limit, $windowSeconds){
 	$window = (int)floor(time() / $windowSeconds) * $windowSeconds
 	$apcuKey = 'phlo.rate.'.$key.':'.$window
 	$count = apcu_inc($apcuKey, 1, $success, $windowSeconds)
@@ -28,12 +28,12 @@ method checkApcu($key, $limit, $windowSeconds){
 	return $count <= $limit
 }
 
-method status($key, $limit, $windowSeconds){
+static status($key, $limit, $windowSeconds){
 	$now = time()
 	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
 	if (!$row || ($now - (int)$row->window_start) >= $windowSeconds) return obj(used: 0, limit: $limit, resetIn: 0)
 	return obj(used: (int)$row->count, limit: $limit, resetIn: max(0, ((int)$row->window_start + $windowSeconds) - $now))
 }
 
-method reset($key) => %MySQL->query('DELETE FROM rate_limit WHERE rkey=?', $key)
-method purge($olderThanSeconds = 604800) => %MySQL->query('DELETE FROM rate_limit WHERE window_start < ?', time() - $olderThanSeconds)
+static reset($key) => %MySQL->query('DELETE FROM rate_limit WHERE rkey=?', $key)
+static purge($olderThanSeconds = 604800) => %MySQL->query('DELETE FROM rate_limit WHERE window_start < ?', time() - $olderThanSeconds)
