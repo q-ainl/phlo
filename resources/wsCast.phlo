@@ -1,11 +1,11 @@
-@ summary:  Broadcast a message to WebSocket clients via the phloWS HTTP bridge
+@ summary:  Broadcast a message to WebSocket clients via the daemon's cast bridge
 @ package:  realtime
 @ frontend: false
 @ backend:  true
 @ requires: HTTP
-@ tags:     websocket cast realtime http
+@ tags:     websocket cast realtime http daemon
 
-function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = websocket, ...$data) => HTTP (
+function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = daemon, ...$data) => HTTP (
 	'http://127.0.0.1:'.$wsPort.'/message',
 	JSON: true,
 	POST: arr (
