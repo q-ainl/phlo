@@ -1,0 +1,4 @@
+@ summary: daemon engine test fixture: gate + one-shot fallback
+
+method ping($x = '') => 'pong:'.$x
+method daemonLoaded => class_exists('daemon') ? 'yes' : 'no'

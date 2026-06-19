@@ -1,0 +1,3 @@
+{
+    "resources": ["phlo.sync", "await", "wsCast", "HTTP"]
+}
