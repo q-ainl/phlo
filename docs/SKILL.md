@@ -779,16 +779,16 @@ phlo_app (
     build:     true,
     debug:     true,
     app:       '/path/to/app/',
-    websocket: 3001,
+    daemon:    3001,
 );
 ```
 
 - `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`).
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
 - `control` - URL prefix for the built-in **Phlo Control Center**. Auto-defaults to `'phlo'` (so `/phlo`) whenever `build: true` and `debug: true`; set `control: 'admin'` to move it or `control: false` to disable. This is NOT the Phlo Dashboard, which is the separate fleet-management app.
-- `websocket` - App-specific WebSocket port. phloWS runs one server per runtime and handles both `/websocket` upgrades and `/message` casts on the same port.
+- `daemon` - the port the Phlo Daemon listens on. phloWS, the WebSocket layer built into the daemon, handles both `/websocket` upgrades and `/message` casts on that one port.
 
-WebSocket support is optional and provided by the separate phloWS server (its own repository). Each runtime picks any free local port via `websocket:`; phloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
+WebSocket support is optional and provided by phloWS, the WebSocket layer built into the Phlo Daemon (one process, no separate repository). Each runtime points at the daemon's port via `daemon:`; phloWS serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
 
 **Worker mode:**
 ```php
