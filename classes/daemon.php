@@ -26,11 +26,11 @@ class daemon {
 	}
 
 	static function run(string $target, array $args = []){
-		return self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args])['result'] ?? null;
+		return self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args, 'build' => build])['result'] ?? null;
 	}
 
 	static function fire(string $target, array $args = []):bool {
-		self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args, 'async' => true]);
+		self::post('/dispatch', ['app' => self::app(), 'target' => $target, 'args' => $args, 'build' => build, 'async' => true]);
 		return true;
 	}
 
@@ -44,7 +44,7 @@ class daemon {
 				CURLOPT_POST => true,
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-				CURLOPT_POSTFIELDS => json_encode(['app' => self::app(), 'target' => $cb, 'args' => array_values($args)], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+				CURLOPT_POSTFIELDS => json_encode(['app' => self::app(), 'target' => $cb, 'args' => array_values($args), 'build' => build], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			]);
 			curl_multi_add_handle($mh, $ch);
 			$handles[$i] = $ch;
@@ -68,7 +68,7 @@ class daemon {
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',
 			'header'        => 'Content-Type: application/json',
-			'content'       => json_encode(['app' => self::app(), 'target' => $target, 'args' => $args, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'content'       => json_encode(['app' => self::app(), 'target' => $target, 'args' => $args, 'build' => build, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
 			'timeout'       => 300,
 			'ignore_errors' => true,
 		]]);
