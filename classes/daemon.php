@@ -10,21 +10,6 @@ class daemon {
 		return realpath($_SERVER['SCRIPT_FILENAME']);
 	}
 
-	static function register(){
-		if (!host) return;
-		$key = 'daemon:registered:'.host;
-		if (function_exists('apcu_fetch') && apcu_fetch($key)) return;
-		$ctx = stream_context_create(['http' => [
-			'method'        => 'POST',
-			'header'        => 'Content-Type: application/json',
-			'content'       => json_encode(['host' => host, 'app' => self::app(), 'build' => build]),
-			'timeout'       => 2,
-			'ignore_errors' => true,
-		]]);
-		$res = @file_get_contents(self::url().'/register', false, $ctx);
-		if ($res !== false && function_exists('apcu_store')) apcu_store($key, 1, 60);
-	}
-
 	static function post(string $path, array $body):array {
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',

@@ -24,7 +24,7 @@ static canCreate = true
 static canChange = true
 static canDelete = true
 
-static state => %req->model ??= obj(meta: [], records: [], loaded: [], includeDeleted: [])
+static state => %req->model ??= obj(meta: [], records: [], loaded: [])
 static columns {
 	if (isset(static::$columns)) return static::$columns
 	if (!method_exists(static::class, 'schema')) return static::$table.'.*'

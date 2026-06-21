@@ -255,8 +255,8 @@ class build_builder {
 			foreach ($file->assets as $asset){
 				if ($asset->node === 'script' && !$minJS) $asset->body = '/* '.$file->file." */\n".$asset->body;
 				$nsKey = str_starts_with($file->file, $resourcesDir) ? substr($file->file, strlen($resourcesDir), -5) : null;
-			$override = $nsKey !== null ? ($this->build['resourceNS'][$nsKey] ?? null) : null;
-			$namespaces = explode(comma, $override ?? $asset->ns ?? $this->build['defaultNS'] ?? 'app');
+				$override = $nsKey !== null ? ($this->build['resourceNS'][$nsKey] ?? null) : null;
+				$namespaces = explode(comma, $override ?? $asset->ns ?? $this->build['defaultNS'] ?? 'app');
 				foreach ($namespaces as $ns) ${$asset->node}[trim($ns)][] = $asset->body;
 			}
 		}

@@ -818,7 +818,7 @@ class reflect {
 			$functions && $item['functions'] = $functions;
 			$resources && $item['resources'] = $resources;
 			$methods   && $item['methods']   = $methods;
-			$comments = array_values(array_filter(($route['comments'] ?? []), 'strlen'));
+			$comments = array_values(array_filter((array)($route['comments'] ?? []), 'strlen'));
 			$comments && $item['summary'] = static::firstLineStr($comments[0]);
 			$out[] = $item;
 		}

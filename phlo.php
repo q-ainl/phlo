@@ -61,7 +61,6 @@ function phlo_app(...$args):void {
 	if ($args['debug']) require_once __DIR__.'/debug.php';
 	if ($args['build']) require_once __DIR__.'/classes/changed.php';
 	if ($args['daemon']) require_once __DIR__.'/classes/daemon.php';
-	if ($args['daemon'] && $args['host'] && PHP_SAPI !== 'cli') daemon::register();
 	if ($args['trace']) trace::boot($args['app']);
 	set_error_handler(static function(int $level, string $msg, string $file = '', int $line = 0):bool {
 		if (!(error_reporting() & $level)) return false;

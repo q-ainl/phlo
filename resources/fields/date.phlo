@@ -17,7 +17,7 @@ prop months => [
 
 method label($record){
 	$v = $record->{$this->name};
-	if ($v === null || $v === void || $v === void) return dash
+	if ($v === null || $v === void) return dash
 	$ts = is_numeric($v) ? (int)$v : strtotime($v)
 	if (!$ts) return esc($v)
 	if ($this->format) return date($this->format, $ts)
