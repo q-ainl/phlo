@@ -53,3 +53,9 @@ tests/fixtures/daemon/php/
 tests/fixtures/daemon/www/app.css
 tests/fixtures/daemon/www/app.js
 tests/fixtures/daemon/data/errors.json
+
+# Output fixture build output
+tests/fixtures/output/php/
+tests/fixtures/output/www/app.css
+tests/fixtures/output/www/app.js
+tests/fixtures/output/data/errors.json

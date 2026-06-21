@@ -15,6 +15,13 @@ final class OutputTest extends TestCase {
 		return [proc_close($proc), $out, $err];
 	}
 
+	private static function cliDebug(string ...$args):array {
+		$proc = proc_open([PHP_BINARY, __DIR__.'/fixtures/output/www/app-debug.php', ...$args], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		$out  = (string)stream_get_contents($pipes[1]);
+		$err  = (string)stream_get_contents($pipes[2]);
+		return [proc_close($proc), $out, $err];
+	}
+
 	private static function lines(string $out):array {
 		return array_values(array_filter(explode("\n", trim($out)), 'strlen'));
 	}
@@ -60,5 +67,12 @@ final class OutputTest extends TestCase {
 		$this->assertNotSame(0, $code, "expected non-zero exit, out:\n$out");
 		$this->assertStringContainsString('{"a":1}', $out, 'first output should be emitted');
 		$this->assertStringNotContainsString('{"b":2}', $out, 'the blocked second output must not be emitted');
+	}
+
+	public function testDoubleOutputMessageIsClearInDebug():void {
+		// debug surfaces the guard message; non-debug generalises it to "Error" (no internal leak)
+		[$code, $out, $err] = self::cliDebug('flow::applyChunk');
+		$this->assertNotSame(0, $code);
+		$this->assertStringContainsString('Output already started', $out.$err);
 	}
 }
