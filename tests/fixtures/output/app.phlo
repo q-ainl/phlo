@@ -1,0 +1,5 @@
+@ summary: output composition test fixture (chunk/apply streaming guard)
+
+app::route()
+
+route GET => view('ok', 'OUT')

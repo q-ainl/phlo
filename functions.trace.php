@@ -185,7 +185,7 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$prefix = trim($req->extra ?? void, slash);
 	$async = $req->async || $res->streaming;
 	if (!$req->method) return $body ?? void;
-	$res->done && error('Output already started, invalid view()');
+	!$res->streaming && $res->done && error('Output already started, invalid view()');
 	is_null($path) && $path = $req->path;
 	$asset = fn($item) => str_starts_with($item, slash) && $prefix && !str_starts_with($item, slash.$prefix.slash) && $item !== slash.$prefix ? slash.$prefix.$item : $item;
 	!$async && !is_bool($path) && $path !== $req->path && location($asset(slash.trim($path, slash)));
@@ -258,7 +258,7 @@ function apply(...$cmds):string {
 	trace('apply', compact('cmds'));
 	$req = phlo('req');
 	$res = phlo('res');
-	$res->done && error('Output already started, invalid apply()');
+	!$res->streaming && $res->done && error('Output already started, invalid apply()');
 	if (debug){
 		$d = debug_collect();
 		$d['dump'] && !isset($cmds['dump'])  && $cmds['dump']  = $d['dump'];

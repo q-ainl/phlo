@@ -1,0 +1,25 @@
+@ summary: targets for OutputTest; each exercises a chunk/apply composition
+
+static chunkOnly {
+	chunk(a: 1)
+}
+static chunkApply {
+	chunk(a: 1)
+	apply(b: 2)
+}
+static chunkChunkApply {
+	chunk(a: 1)
+	chunk(b: 2)
+	apply(c: 3)
+}
+static applyOnly {
+	apply(a: 1)
+}
+static applyApply {
+	apply(a: 1)
+	apply(b: 2)
+}
+static applyChunk {
+	apply(a: 1)
+	chunk(b: 2)
+}

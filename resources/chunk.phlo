@@ -9,16 +9,17 @@
 function chunk(...$cmds):void {
 	$res = %res
 	$cli = %req->cli
+	!$res->streaming && $res->done && error('Output already started, invalid chunk()')
 	if (debug){
 		$res->dump && [$cmds['dump'] = $res->dump, $res->dump = []]
 		$res->debug && [$cmds['debug'] = $res->debug, $res->debug = []]
 	}
 	if (!$res->streaming){
 		$res->streaming = true
-		$res->type = 'text/event-stream'
+		$res->type = 'application/x-ndjson'
 		$res->header('Cache-Control', 'no-store')
 		$res->header('X-Content-Type-Options', 'nosniff')
-		$res->render(206)
+		$res->render()
 	}
 	print(json_encode($cmds, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf)
 	$cli || [@ob_flush(), flush()]
