@@ -11,25 +11,27 @@ One daemon process serves every host on a single local port:
 ```js
 require('./phlo-daemon.js')(3001, '/usr/bin/php-zts', [
     // optional scheduled tasks; see the Daemon docs
-])
+], {
+    // websocket host -> app map; see below
+})
 ```
 
-Arguments: `(port, phpBinary, schedule = [])`. There is no host map: each app
-registers its own host on first request (`POST /register {host, app, build}`,
-persisted to `registry.json`), so the daemon resolves a connection's `Host` to
-an app itself. Inbound sockets route by `Host` (or `X-Forwarded-Host`) header.
-The same port handles these endpoints:
+Arguments: `(port, phpBinary, schedule = [], hosts = {})`. The 4th argument is
+the websocket host map: `{ 'demo.example.nl': { app: '…/www/app.php', build: true }, … }`.
+It is declared in `config/daemon.js` and loaded into the registry at startup, so
+the daemon resolves a connection's `Host` to an app from it. Inbound sockets
+route by `Host` (or `X-Forwarded-Host`) header. The same port handles these
+endpoints:
 
 | Endpoint | Method | Purpose |
 |---|---|---|
 | `/websocket` | upgrade | Client WebSocket connections |
 | `/message` | POST | Server-to-client casts (used by the `wsCast` resource) |
-| `/register` | POST | An app announces its host (`{host, app, build}`) |
-| `/health` | GET | Status: worker total/cap, per-pool stats, sockets, registered hosts |
+| `/health` | GET | Status: worker total/cap, per-pool stats, sockets, configured hosts |
 
 For each socket event the daemon dispatches the matching `websocket::<hook>`
-target on the app's pool, in-process. The execution mode follows the app's
-registered `build` flag, not any per-host config:
+target on the app's pool, in-process. The execution mode follows the host's
+`build` flag from its `config/daemon.js` entry, not any app-side toggle:
 
 - **Resident worker pool (a release app).** The daemon keeps long-lived
   `php <app>/www/app.php phlo_serve` workers that boot the app **once** and then
