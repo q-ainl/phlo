@@ -204,3 +204,9 @@ function phlo_help_reflect(string $class):array {
 	ksort($out, SORT_NATURAL | SORT_FLAG_CASE);
 	return $out;
 }
+
+function phlo_eval(string $src):mixed {
+	$src = trim($src);
+	if (!str_contains($src, lf) && !preg_match('/^(return|apply|echo|unset|yield)\b/', $src)) $src = 'return '.$src;
+	return eval(build_node::transpile($src));
+}
