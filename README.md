@@ -57,8 +57,8 @@ built with the previous one, in the same syntax:
    [Phlo CMS](https://github.com/q-ainl/phlo-cms) adds a schema-driven CRUD
    and admin layer on top.
 3. **Server**: production on [FrankenPHP](https://frankenphp.dev) in worker
-   mode, realtime through [phloWS](https://github.com/q-ainl/phlo-websocket),
-   WhatsApp messaging through phloWA, mail.
+   mode, with realtime and WhatsApp messaging built into the Phlo Daemon, and
+   mail.
 4. **Operations**: the
    [Phlo Dashboard](https://github.com/q-ainl/phlo-dashboard) manages apps
    and servers as a fleet: uptime, domains, databases, notifications.
@@ -118,8 +118,8 @@ config, source, build, release and error views. Move it with the optional `contr
 - **[docs/deploy.md](docs/deploy.md)** deployment options.
 - **[docs/apply-protocol.md](docs/apply-protocol.md)** the `apply()` SPA
   protocol.
-- **[docs/websocket-contract.md](docs/websocket-contract.md)** optional
-  WebSocket support (phloWS).
+- **[docs/websocket-contract.md](docs/websocket-contract.md)** the realtime
+  WebSocket contract (Phlo Daemon).
 - **[docs/tasks.md](docs/tasks.md)** cron tasks.
 - **[docs/model-opt-in.md](docs/model-opt-in.md)** ORM opt-in features.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** how contributions are judged.
