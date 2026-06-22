@@ -65,6 +65,21 @@ final class E2eTest extends TestCase {
 		$this->assertSame('hi', trim($out));
 	}
 
+	public function testCliReflectLoadStatus():void {
+		// Regression: functionIndex/objectIndex joined load state on function/object name
+		// but checked by resource path, so a dotted/nested resource like phlo.async
+		// (function phlo_async) read as unloaded. A listed resource must read loaded, an
+		// unlisted one not.
+		[$code, $out, $err] = self::cli('reflect::functionIndex');
+		$this->assertSame(0, $code, $err);
+		$index = json_decode($out, true);
+		$this->assertIsArray($index, "functionIndex JSON: $out");
+		$this->assertArrayHasKey('phlo_async', $index, 'phlo.async resource should surface its function');
+		$this->assertTrue($index['phlo_async']['loaded'] ?? null, 'phlo.async is listed in app.json, so phlo_async must read as loaded');
+		$this->assertArrayHasKey('slug', $index, 'unlisted function-resources still appear in the index');
+		$this->assertFalse($index['slug']['loaded'] ?? null, 'slug is not listed, so it must read as not loaded');
+	}
+
 	public function testHttpSyncAndAsync():void {
 		$port = 8920 + (getmypid() % 1000);
 		$server = proc_open(

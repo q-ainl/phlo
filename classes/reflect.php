@@ -911,13 +911,12 @@ class reflect {
 	/** Returns all available functions (loaded and unloaded) with their full metadata. */
 	private static function availableFunctions():array {
 		$resources = static::resourceNodes();
-		$loaded = [];
-		foreach (static::loadedFunctions() as $item) $loaded[strtolower((string)$item['name'])] = true;
+		$loaded = array_fill_keys(array_map('strtolower', static::loadedConfigNames()), true);
 		$available = [];
 		foreach (static::coreFunctions() as $item) $available[$item['name']] = $item + ['loaded' => true];
 		foreach ($resources as $key => $node){
 			if (empty($node['functions'])) continue;
-			$item = static::functionEntryFromResource($key, $node, isset($loaded[$key]));
+			$item = static::functionEntryFromResource($key, $node, isset($loaded[strtolower($key)]));
 			$available[$item['name']] = $item;
 		}
 		uksort($available, 'strnatcasecmp');
@@ -942,8 +941,7 @@ class reflect {
 	/** Returns all available resource objects (loaded and unloaded) with their full metadata. */
 	private static function availableObjects():array {
 		$resources = static::resourceNodes();
-		$loaded = [];
-		foreach (static::loadedObjects() as $item) $loaded[strtolower((string)$item['name'])] = true;
+		$loaded = array_fill_keys(array_map('strtolower', static::loadedConfigNames()), true);
 		$available = [];
 		foreach ($resources as $key => $node){
 			if (!static::resourceHasClass($node)) continue;
