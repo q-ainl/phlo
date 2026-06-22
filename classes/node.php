@@ -155,7 +155,7 @@ class build_node extends stdClass {
 					}
 				}
 				if (strpos($trim, '<') !== false){
-					$trim = $this->normalizeViewTags($trim);
+					$trim = $this->scanTags($trim);
 					$trim = preg_replace('/<([a-z][\\w:-]*)([^<>]*?)\\/>/', "<$1$2></$1>", $trim);
 					if (preg_match_all('/\\s([A-Za-z_:][\\w:.-]*)=([^\\s"\\\'=<>`]+)(?=[\\s>])/', $trim, $matches, PREG_SET_ORDER)){
 						foreach ($matches as $match) $trim = str_replace($match[0], space.$match[1].'="'.strtr($match[2], ['+' => space]).'"', $trim);
@@ -195,28 +195,109 @@ class build_node extends stdClass {
 		return $output.'return implode(lf, $_);';
 	}
 
-	private function normalizeViewTags(string $line):string {
-		return preg_replace_callback('/<([a-z][\\w:-]*)(#[A-Za-z][\\w-]*)?((?:\\.[A-Za-z][\\w-]*)+)?([^<>]*?)(\\/?)>/', function($m){
-			$attrs = $this->mergeClassAndId($m[4], $m[2] ? substr($m[2], 1) : null, $m[3] ? strtr(substr($m[3], 1), [dot => space]) : null);
-			$attrs = trim($attrs);
-			$attrs = $attrs ? space.$attrs : void;
-			return '<'.$m[1].$attrs.($m[5] ? slash : void).'>';
-		}, $line);
+	// Quote- and interpolation-aware tag normaliser. Finds each opening tag's real
+	// closing '>' (skipping quoted values and {{ }} interpolations, so a '>' inside a
+	// value or an arrow operator no longer ends the tag), then merges shorthand
+	// #id/.class with explicit attributes and expands self-closing tags.
+	private function scanTags(string $line):string {
+		$out = void;
+		$len = strlen($line);
+		$i   = 0;
+		while ($i < $len){
+			$next = $line[$i + 1] ?? void;
+			if ($line[$i] !== '<' || !ctype_alpha($next) || $next !== strtolower($next)){
+				$out .= $line[$i];
+				$i++;
+				continue;
+			}
+			$end = $this->tagEnd($line, $i);
+			if ($end === -1){
+				$out .= $line[$i];
+				$i++;
+				continue;
+			}
+			$out .= $this->normalizeTag(substr($line, $i + 1, $end - $i - 1));
+			$i = $end + 1;
+		}
+		return $out;
+	}
+
+	private function tagEnd(string $line, int $start):int {
+		$len = strlen($line);
+		$i   = $start + 1;
+		while ($i < $len){
+			$c = $line[$i];
+			if ($c === dq || $c === sq){
+				$close = strpos($line, $c, $i + 1);
+				if ($close === false) return -1;
+				$i = $close + 1;
+			}
+			elseif ($c === '{' && ($line[$i + 1] ?? void) === '{'){
+				$close = strpos($line, '}}', $i + 2);
+				if ($close === false) return -1;
+				$i = $close + 2;
+			}
+			elseif ($c === '>') return $i;
+			elseif ($c === '<') return -1;
+			else $i++;
+		}
+		return -1;
+	}
+
+	private function normalizeTag(string $inner):string {
+		$self = str_ends_with(rtrim($inner), slash);
+		if ($self) $inner = rtrim(rtrim($inner), slash);
+		if (!preg_match('/^([a-z][\w:-]*)((?:#[A-Za-z][\w-]*|\.[A-Za-z][\w-]*)*)/', $inner, $m)) return '<'.$inner.'>';
+		$attrs   = trim(substr($inner, strlen($m[0])));
+		$id      = null;
+		$classes = [];
+		if ($m[2] !== void){
+			preg_match_all('/#([A-Za-z][\w-]*)|\.([A-Za-z][\w-]*)/', $m[2], $sm, PREG_SET_ORDER);
+			foreach ($sm as $s){
+				if (($s[1] ?? void) !== void && $s[1] !== '') $id = $s[1];
+				elseif (($s[2] ?? void) !== void) $classes[] = $s[2];
+			}
+		}
+		$attrs = $this->mergeClassAndId($attrs, $id, $classes ? implode(space, $classes) : null);
+		return '<'.$m[1].($attrs !== void ? space.$attrs : void).($self ? '></'.$m[1].'>' : '>');
 	}
 
 	private function mergeClassAndId(string $attrs, ?string $id, ?string $shortClass):string {
 		$attrs = trim($attrs);
-		if ($shortClass){
-			if (preg_match('/\\bclass\\s*=\\s*(\"([^\"]*)\"|\\\'([^\\\']*)\\\'|([^\\s\"\\\'=<>`]+))/', $attrs, $match)){
-				$current = $match[2] ?? $match[3] ?? $match[4] ?? void;
-				$attrs   = preg_replace('/\\bclass\\s*=\\s*(\"[^\"]*\"|\\\'[^\\\']*\\\'|[^\\s\"\\\'=<>`]+)/', void, $attrs, 1);
-				$shortClass = trim($shortClass.space.$current);
+		if ($shortClass !== null){
+			if (($pos = $this->topLevelAttrPos($attrs, 'class')) !== null){
+				preg_match('/\Gclass\s*=\s*("[^"]*"|\'[^\']*\'|[^\s"\'=<>`]+)/', $attrs, $m, 0, $pos);
+				$shortClass = trim($shortClass.space.trim($m[1], '"\''));
+				$attrs      = trim(substr($attrs, 0, $pos).substr($attrs, $pos + strlen($m[0])));
 			}
 			$attrs = trim('class="'.trim($shortClass).'"'.space.$attrs);
 		}
-		if ($id && !preg_match('/\\bid\\s*=\\s*/', $attrs)) $attrs = trim('id="'.trim($id).'"'.space.$attrs);
-		$attrs = preg_replace('/\\s+/', space, $attrs);
+		if ($id !== null && $this->topLevelAttrPos($attrs, 'id') === null) $attrs = trim('id="'.$id.'"'.space.$attrs);
 		return trim($attrs);
+	}
+
+	// Offset of a top-level attribute named $name (skipping quoted values and {{ }}
+	// interpolations, so a class=/id= inside one is not mistaken for the attribute), or
+	// null. The name must sit at an attribute boundary, not inside another name.
+	private function topLevelAttrPos(string $attrs, string $name):?int {
+		$len = strlen($attrs);
+		$i   = 0;
+		while ($i < $len){
+			$c = $attrs[$i];
+			if ($c === dq || $c === sq){
+				$close = strpos($attrs, $c, $i + 1);
+				if ($close === false) return null;
+				$i = $close + 1;
+			}
+			elseif ($c === '{' && ($attrs[$i + 1] ?? void) === '{'){
+				$close = strpos($attrs, '}}', $i + 2);
+				if ($close === false) return null;
+				$i = $close + 2;
+			}
+			elseif (($i === 0 || ctype_space($attrs[$i - 1])) && preg_match('/\G'.$name.'\s*=/', $attrs, $m, 0, $i)) return $i;
+			else $i++;
+		}
+		return null;
 	}
 
 	private function indent(string $value, int $depth = 1):string {
