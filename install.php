@@ -33,7 +33,7 @@ function resource_catalog(string $engine):array {
 		$path = $file->getPathname();
 		if (!str_ends_with($path, '.phlo')) continue;
 		$key  = substr(str_replace('\\', '/', substr($path, strlen($base))), 0, -5);
-		$meta = ['summary' => '', 'package' => str_contains($key, '/') ? dirname($key) : 'general', 'requires' => []];
+		$meta = ['summary' => '', 'package' => str_contains($key, '/') ? dirname($key) : 'general', 'requires' => [], 'class' => null, 'functions' => []];
 		foreach (file($path) as $line){
 			$line = trim($line);
 			if ($line === '' || $line[0] !== '@') break;
@@ -47,6 +47,11 @@ function resource_catalog(string $engine):array {
 				}
 			}
 		}
+		$content = (string)file_get_contents($path);
+		if (preg_match('/^@\s*class:\s*(.+)$/m', $content, $cm)) $meta['class'] = trim($cm[1]);
+		elseif (preg_match('/^\s*(?:(?:public|protected|private)\s+)?(?:static|method|prop|view|const|readonly)\b/m', $content)) $meta['class'] = basename($key);
+		preg_match_all('/^function\s+([A-Za-z_]\w*)/m', $content, $fm);
+		$meta['functions'] = $fm[1] ?? [];
 		$catalog[$key] = $meta;
 	}
 	ksort($catalog, SORT_NATURAL | SORT_FLAG_CASE);
@@ -79,6 +84,14 @@ function resolve_resources(string $input, array $catalog):array {
 	if (trim($input) === '') return [];
 	$byBase = [];
 	foreach (array_keys($catalog) as $key) $byBase[strtolower(basename($key))][] = $key;
+	// On a basename collision (e.g. security/token vs fields/token), prefer the resource
+	// that actually provides a function or class named like the request, mirroring how
+	// reflect resolves dependency aliases.
+	$pick = function(string $name, array $candidates) use ($catalog):?string {
+		foreach ($candidates as $k) if (in_array($name, $catalog[$k]['functions'] ?? [], true)) return $k;
+		foreach ($candidates as $k) if (strcasecmp((string)($catalog[$k]['class'] ?? ''), $name) === 0) return $k;
+		return null;
+	};
 	$picked = [];
 	foreach (explode(',', $input) as $name){
 		$name = trim($name);
@@ -86,7 +99,7 @@ function resolve_resources(string $input, array $catalog):array {
 		if (isset($catalog[$name])){ $picked[] = $name; continue; }
 		$candidates = $byBase[strtolower($name)] ?? [];
 		if (count($candidates) === 1){ $picked[] = $candidates[0]; continue; }
-		if (count($candidates) > 1) fail("Ambiguous resource \"$name\": ".implode(', ', $candidates));
+		if (count($candidates) > 1){ if ($p = $pick($name, $candidates)){ $picked[] = $p; continue; } fail("Ambiguous resource \"$name\": ".implode(', ', $candidates)); }
 		fail("Unknown resource \"$name\"");
 	}
 	$resolved = [];
@@ -96,8 +109,10 @@ function resolve_resources(string $input, array $catalog):array {
 		if (isset($resolved[$key])) continue;
 		$resolved[$key] = true;
 		foreach ($catalog[$key]['requires'] ?? [] as $req){
-			if (isset($catalog[$req])) $queue[] = $req;
-			elseif (isset($byBase[strtolower($req)]) && count($byBase[strtolower($req)]) === 1) $queue[] = $byBase[strtolower($req)][0];
+			if (isset($catalog[$req])){ $queue[] = $req; continue; }
+			$candidates = $byBase[strtolower($req)] ?? [];
+			if (count($candidates) === 1) $queue[] = $candidates[0];
+			elseif (count($candidates) > 1 && ($p = $pick($req, $candidates))) $queue[] = $p;
 		}
 	}
 	return array_keys($resolved);

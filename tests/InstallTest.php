@@ -63,6 +63,19 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
+	public function testScaffoldDisambiguatesCollidingBasenameRequires():void {
+		$target = PHLO_TEST_TMP.'install-collide';
+		self::wipe($target);
+		// CSRF requires `token`, a basename shared by security/token (function) and
+		// fields/token (class). It must resolve to the function-providing security/token,
+		// not be dropped as ambiguous.
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'CSRF app', 'security/CSRF', 'y'], [$target]);
+		$this->assertSame(0, $code, $out.$err);
+		$config = json_decode((string)file_get_contents("$target/data/app.json"), true);
+		$this->assertContains('security/token', $config['resources'], 'ambiguous `token` must resolve to security/token');
+		self::wipe($target);
+	}
+
 	public function testCopiedInstallerRemovesItselfAfterSuccess():void {
 		$target = PHLO_TEST_TMP.'install-copy';
 		self::wipe($target);
