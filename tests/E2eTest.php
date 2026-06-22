@@ -93,6 +93,30 @@ final class E2eTest extends TestCase {
 		$this->assertContains('security/token', json_decode($out, true) ?? [], "CSRF @token should resolve to security/token: $out");
 	}
 
+	public function testCliSocialClaimVerification():void {
+		// Social login verifies the id_token's issuer, audience (== client_id) and expiry
+		// before trusting any claim (signature is skipped: the token is fetched
+		// server-to-server over TLS). Good claims pass; expired, wrong-audience and
+		// wrong-issuer tokens are rejected.
+		$src = <<<'PHLO'
+		$base = ["exp" => time() + 99, "aud" => "CID", "iss" => "https://accounts.google.com"]
+		return [
+			"ok"       => social::verifyClaims("google", ["client_id" => "CID"], $base),
+			"expired"  => social::verifyClaims("google", ["client_id" => "CID"], ["exp" => time() - 1] + $base),
+			"wrongAud" => social::verifyClaims("google", ["client_id" => "CID"], ["aud" => "OTHER"] + $base),
+			"wrongIss" => social::verifyClaims("google", ["client_id" => "CID"], ["iss" => "https://evil.example"] + $base),
+		]
+		PHLO;
+		[$code, $out, $err] = self::cli('phlo_eval', $src);
+		$this->assertSame(0, $code, $err);
+		$r = json_decode($out, true);
+		$this->assertIsArray($r, "verifyClaims JSON: $out");
+		$this->assertTrue($r['ok'] ?? null, 'valid claims must pass');
+		$this->assertFalse($r['expired'] ?? null, 'expired token rejected');
+		$this->assertFalse($r['wrongAud'] ?? null, 'wrong audience rejected');
+		$this->assertFalse($r['wrongIss'] ?? null, 'wrong issuer rejected');
+	}
+
 	public function testHttpSyncAndAsync():void {
 		$port = 8920 + (getmypid() % 1000);
 		$server = proc_open(

@@ -6,7 +6,7 @@
 @ backend:  true
 @ requires: OAuth2 creds payload
 @ tags:     oauth oidc social login google microsoft apple authentication
-@ advice:   id_token is trusted without JWKS verification because it is fetched server-to-server over TLS. Microsoft sends no email_verified, so a present email counts as verified. Apple's client_secret is an ES256 JWT signed with the .p8 key (team_id/key_id/client_id + key from creds).
+@ advice:   id_token signature is not JWKS-verified because it is fetched server-to-server over TLS, but issuer, audience (must equal client_id) and expiry ARE checked in verifyClaims before any claim is trusted. Microsoft sends no email_verified, so a present email counts as verified. Apple's client_secret is an ES256 JWT signed with the .p8 key (team_id/key_id/client_id + key from creds).
 
 static providers => arr(
 	google: arr(
@@ -14,18 +14,21 @@ static providers => arr(
 		authorize: 'https://accounts.google.com/o/oauth2/v2/auth',
 		token: 'https://oauth2.googleapis.com/token',
 		scope: 'openid email profile',
+		issuer: 'https://accounts.google.com',
 	),
 	microsoft: arr(
 		label: 'Microsoft',
 		authorize: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
 		token: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
 		scope: 'openid email profile',
+		issuer: 'https://login.microsoftonline.com/',
 	),
 	apple: arr(
 		label: 'Apple',
 		authorize: 'https://appleid.apple.com/auth/authorize',
 		token: 'https://appleid.apple.com/auth/token',
 		scope: 'name email',
+		issuer: 'https://appleid.apple.com',
 	),
 )
 
@@ -64,7 +67,7 @@ static profile($provider, $code){
 	$secret = $provider === 'apple' ? static::appleSecret() : $cfg['client_secret']
 	$token = OAuth2::exchangeCode($cfg['token'], $cfg['client_id'], $secret, $code, $cfg['redirect_uri'])
 	$claims = static::decodeIdToken($token['id_token'] ?? void)
-	if (!$claims) return null
+	if (!$claims || !static::verifyClaims($provider, $cfg, $claims)) return null
 	$profile = static::normalize($provider, $claims)
 	if ($provider === 'apple' && !$profile['name']){
 		$u = json_decode((string)(%payload->user ?? void), true)
@@ -78,6 +81,17 @@ static decodeIdToken($jwt){
 	if (count($parts) < 2) return null
 	$claims = json_decode((string)base64_decode(strtr($parts[1], '-_', '+/')), true)
 	return is_array($claims) ? $claims : null
+}
+
+static verifyClaims($provider, array $cfg, array $claims){
+	if ((int)($claims['exp'] ?? 0) <= time()) return false
+	$aud = $claims['aud'] ?? void
+	if (!in_array((string)($cfg['client_id'] ?? void), array_map('strval', is_array($aud) ? $aud : [$aud]), true)) return false
+	$expected = (string)(static::providers()[$provider]['issuer'] ?? void)
+	if ($expected === void) return true
+	$iss = (string)($claims['iss'] ?? void)
+	if ($provider === 'microsoft') return str_starts_with($iss, $expected)
+	return $iss === $expected || ($provider === 'google' && $iss === 'accounts.google.com')
 }
 
 static normalize($provider, array $claims){

@@ -1,5 +1,6 @@
 {
     "resources": [
-        "phlo.async"
+        "phlo.async",
+        "security/social"
     ]
 }
