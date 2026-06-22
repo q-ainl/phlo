@@ -76,6 +76,18 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
+	public function testScaffoldResolvesDottedNameRequires():void {
+		$target = PHLO_TEST_TMP.'install-dotted';
+		self::wipe($target);
+		// age.human requires `time_human`, the compiled name of the dotted resource
+		// time.human; the resolver must map the underscore name back to the dotted file.
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'Dotted dep app', 'age.human', 'y'], [$target]);
+		$this->assertSame(0, $code, $out.$err);
+		$config = json_decode((string)file_get_contents("$target/data/app.json"), true);
+		$this->assertContains('time.human', $config['resources'], 'age.human @time_human must resolve to time.human');
+		self::wipe($target);
+	}
+
 	public function testCopiedInstallerRemovesItselfAfterSuccess():void {
 		$target = PHLO_TEST_TMP.'install-copy';
 		self::wipe($target);
