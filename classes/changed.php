@@ -206,6 +206,7 @@ function phlo_help_reflect(string $class):array {
 }
 
 function phlo_eval(string $src):mixed {
+	phlo('req')->cli || error('phlo_eval is CLI-only');
 	$src = trim($src);
 	if (!str_contains($src, lf) && !preg_match('/^(return|apply|echo|unset|yield)\b/', $src)) $src = 'return '.$src;
 	return eval(build_node::transpile($src));
