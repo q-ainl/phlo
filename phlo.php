@@ -239,7 +239,10 @@ function phlo_serve():void {
 
 function phlo(?string $phloName = null, ...$args):mixed {
 	static $list = [];
-	if ($phloName === 'tech/reset') return array_keys($list = array_filter($list, static fn($obj) => $obj->objPers));
+	if ($phloName === 'tech/reset'){
+		obj::$classProps = [];
+		return array_keys($list = array_filter($list, static fn($obj) => $obj->objPers));
+	}
 	if ($phloName === null) return array_keys($list);
 	$class = strtr($phloName, [slash => us]);
 	$handle = method_exists($class, '__handle') ? $class::__handle(...$args) : ($args ? null : $phloName);
