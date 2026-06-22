@@ -1067,7 +1067,15 @@ class reflect {
 
 	private static function resourceStamp():string {
 		$parts = [];
-		foreach (static::resourcePaths() as $path) $parts[] = $path.':'.(@filemtime($path) ?: 0);
+		foreach (static::resourcePaths() as $path){
+			if (!is_dir($path)) continue;
+			$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path, FilesystemIterator::SKIP_DOTS));
+			foreach ($it as $file){
+				if ($file->getExtension() !== 'phlo') continue;
+				$parts[] = $file->getPathname().':'.$file->getMTime();
+			}
+		}
+		sort($parts);
 		$file = defined('data') ? data.'app.json' : void;
 		if ($file !== void && is_file($file)) $parts[] = $file.':'.filemtime($file);
 		return md5(implode('|', $parts));
