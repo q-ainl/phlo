@@ -9,8 +9,6 @@
 @ tags:     orm model database records schema
 
 static DB => error('No database engine configured for '.static::class)
-static objRecords = []
-static objLoaded = []
 static objCache = false
 static objRecordLimit = 10000
 static objAudit = false
@@ -42,7 +40,7 @@ static fields {
 	return $state->meta[static::class]['fields'] ??= static::_fields()
 }
 static _fields {
-	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet','objAudit','objValidate','objErrors','idColumn','idType']
+	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objCache','objState','objSave','objGet','objAudit','objValidate','objErrors','idColumn','idType']
 	$fields = loop(static::schema(), fn($field, $column) => last($field->name ??= $column, $field->type === 'parent' && $field->obj ??= $column, $field))
 	foreach ($reserved AS $word) isset($fields[$word]) && error("Reserved column name '$word' in ".static::class)
 	return $fields
