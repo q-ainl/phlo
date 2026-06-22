@@ -447,7 +447,10 @@ class reflect {
 	private static function graphResourceIndex(array $resNodes):array {
 		$loaded = array_fill_keys(static::loadedConfigNames(), true);
 		$items  = [];
-		$alias  = [];
+		$nameMap = [];
+		$classMap = [];
+		$funcMap = [];
+		$baseMap = [];
 		foreach ($resNodes as $name => $node){
 			$name = $name;
 			$meta = ($node['meta'] ?? []);
@@ -473,13 +476,20 @@ class reflect {
 				'methods'  => $methods,
 				'statics'  => $statics,
 			];
-			foreach (array_unique(array_filter([$name, basename($name), $class])) as $a){
-				$k = strtolower((string)$a);
-				if (!isset($alias[$k])) $alias[$k] = $name;
-				elseif ($alias[$k] !== $name) $alias[$k] = null;
+			$nameMap[strtolower($name)] = $name;
+			$bk = strtolower(basename($name));
+			$baseMap[$bk] = array_key_exists($bk, $baseMap) && $baseMap[$bk] !== $name ? null : $name;
+			if ($class !== void && static::resourceHasClass($node)){
+				$ck = strtolower($class);
+				$classMap[$ck] = array_key_exists($ck, $classMap) && $classMap[$ck] !== $name ? null : $name;
+			}
+			foreach (($node['functions'] ?? []) as $fn){
+				$fk = strtolower(trim(($fn['name'] ?? void)));
+				if ($fk === void) continue;
+				$funcMap[$fk] = array_key_exists($fk, $funcMap) && $funcMap[$fk] !== $name ? null : $name;
 			}
 		}
-		return ['items' => $items, 'alias' => $alias, 'loaded' => $loaded];
+		return ['items' => $items, 'alias' => ['name' => $nameMap, 'class' => $classMap, 'func' => $funcMap, 'base' => $baseMap], 'loaded' => $loaded];
 	}
 
 	private static function graphFunctionIndex(array $resIndex):array {
@@ -549,7 +559,9 @@ class reflect {
 		$name = trim(ltrim($name, '@'));
 		if ($name === void || str_ends_with($name, '?')) return null;
 		if (str_starts_with($name, 'php-ext:') || str_starts_with($name, 'creds:')) return null;
-		return $resIndex['alias'][strtolower($name)] ?? null;
+		$k = strtolower($name);
+		$a = $resIndex['alias'];
+		return $a['name'][$k] ?? $a['class'][$k] ?? $a['func'][$k] ?? $a['base'][$k] ?? null;
 	}
 
 	private static function graphResourceMethodTarget(array &$nodes, array $resIndex, string $resName, string $method):?string {

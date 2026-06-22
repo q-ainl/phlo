@@ -80,6 +80,19 @@ final class E2eTest extends TestCase {
 		$this->assertFalse($index['slug']['loaded'] ?? null, 'slug is not listed, so it must read as not loaded');
 	}
 
+	public function testCliResolvesAmbiguousBasenameDeps():void {
+		// Regression: a basename shared by two resources (files/file vs fields/file,
+		// security/token vs fields/token) nulled the alias, so a dependency declared by
+		// short name (@file, @token) did not resolve. Class- and function-name resolution
+		// must recover them.
+		[$code, $out, $err] = self::cli('reflect::resourceDependencies', 'payload');
+		$this->assertSame(0, $code, $err);
+		$this->assertContains('files/file', json_decode($out, true) ?? [], "payload @file should resolve to files/file: $out");
+
+		[, $out] = self::cli('reflect::resourceDependencies', 'security/CSRF');
+		$this->assertContains('security/token', json_decode($out, true) ?? [], "CSRF @token should resolve to security/token: $out");
+	}
+
 	public function testHttpSyncAndAsync():void {
 		$port = 8920 + (getmypid() % 1000);
 		$server = proc_open(
