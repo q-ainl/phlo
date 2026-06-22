@@ -40,8 +40,8 @@ function resource_catalog(string $engine):array {
 			if (preg_match('/^@\s*summary:\s*(.+)$/', $line, $m)) $meta['summary'] = trim($m[1]);
 			if (preg_match('/^@\s*package:\s*(.+)$/', $line, $m)) $meta['package'] = trim($m[1]);
 			if (preg_match('/^@\s*requires:\s*(.+)$/', $line, $m)){
-				foreach (explode(',', $m[1]) as $req){
-					$req = trim($req);
+				foreach (preg_split('/[\s,]+/', trim($m[1])) as $req){
+					$req = ltrim($req, '@');
 					if ($req === '' || str_ends_with($req, '?') || str_starts_with($req, 'php-ext:') || str_starts_with($req, 'creds:')) continue;
 					$meta['requires'][] = $req;
 				}

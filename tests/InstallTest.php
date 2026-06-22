@@ -48,6 +48,21 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
+	public function testScaffoldResolvesSpaceSeparatedRequires():void {
+		$target = PHLO_TEST_TMP.'install-multi';
+		self::wipe($target);
+		// lang declares `@ requires: @cookies @AI @INI phlo.async`: space-separated and
+		// @-prefixed. Every dependency must resolve, not survive as one unsplit token.
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'Multi-dep app', 'lang', 'y'], [$target]);
+		$this->assertSame(0, $code, $out.$err);
+		$this->assertStringContainsString('Build clean.', $out);
+		$config = json_decode((string)file_get_contents("$target/data/app.json"), true);
+		foreach (['lang', 'cookies', 'AI/AI', 'files/INI', 'phlo.async'] as $res) {
+			$this->assertContains($res, $config['resources'], "lang dependency $res must resolve");
+		}
+		self::wipe($target);
+	}
+
 	public function testCopiedInstallerRemovesItselfAfterSuccess():void {
 		$target = PHLO_TEST_TMP.'install-copy';
 		self::wipe($target);
