@@ -1,0 +1,32 @@
+@ summary: View compiler golden cases
+
+prop title = 'Views'
+prop ready = true
+prop count = 2
+prop items => ['a', 'b']
+
+app::route()
+
+route GET => view($this->main, 'Views')
+
+view main:
+<h1#top.hero.big>$this->title</h1>
+<p>{{ ucfirst($this->title) }}</p>
+<p>{( $this->ready ? 'ready' : 'not ready' )}</p>
+<a href="/x" title="1 > 0">literal gt in attribute value</a>
+<div data-id="{{ $this->title }}">arrow operator inside attribute interpolation</div>
+<div class="{( $this->count > 0 ? 'has' : 'none' )}">gt inside dynamic attribute</div>
+<span class='foo'>single quoted attribute</span>
+<span class=bar>bare unquoted attribute</span>
+<input type=text value=hello required>
+<div.card class="extra">shorthand class plus static class</div>
+<div.tier class="{( $this->ready ? 'on' : 'off' )}">shorthand class plus dynamic class</div>
+<section#sec.wrap id="explicit">shorthand id plus explicit id</section>
+<foreach $this->items AS $item>
+<li.row>{{ $item }}</li>
+</foreach>
+<if $this->ready>
+<p.on>shown</p>
+<else>
+<p.off>hidden</p>
+</if>
