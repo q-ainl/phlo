@@ -75,10 +75,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   as documented in SKILL.md. This also restores the missing
   `@media(min-width: 600px): right: auto` rule from the cookiewall resource.
 
-## 1.0Δ (Delta), baseline
+## Baseline
 
 The state of the framework at the start of the open-source preparation
-(June 2026). Highlights of what Delta already contains:
+(June 2026). Highlights of what this baseline contains:
 
 - Compile-to-PHP `.phlo` language: routes, props, methods, views, statics,
   `<style>`/`<script>` blocks, cross-resource node modifiers.
