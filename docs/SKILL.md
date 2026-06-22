@@ -711,11 +711,12 @@ On servers where `php` is not in PATH, use `/usr/bin/php-zts` for CLI checks and
 
 1. **Orient** - run `reflect::context` for a single snapshot: app identity, route/view counts, loaded packages, and recent errors. Follow with `reflect::compactRoutes` for route detail.
 2. **Explore** - use `reflect::sourceFiles`, `reflect::find <type>`, `reflect::search <query>`, `reflect::nodeBody <name>`, `reflect::fileContent <relPath>`
-3. **Read** - read the actual `.phlo` source files directly before editing
-4. **Edit** - only `.phlo` source files
-5. **Build** - `php www/app.php build::run`
-6. **Lint** - `php www/app.php build::lint` - empty array = clean; if errors, fix the `.phlo` source (not the generated PHP), then repeat from step 5
-7. **Update app.md** - after completing a task, update `data/app.md` to reflect any structural changes, new routes, resolved TODOs, or remaining work
+3. **Execute** - use `phlo_eval '<phlo>'` to run an expression or block against the live app: read records, call a method, render a view, reproduce an expression. The runtime complement to reflection's static view (see below)
+4. **Read** - read the actual `.phlo` source files directly before editing
+5. **Edit** - only `.phlo` source files
+6. **Build** - `php www/app.php build::run`
+7. **Lint** - `php www/app.php build::lint` - empty array = clean; if errors, fix the `.phlo` source (not the generated PHP), then repeat from step 6
+8. **Update app.md** - after completing a task, update `data/app.md` to reflect any structural changes, new routes, resolved TODOs, or remaining work
 
 ### build:: commands
 
@@ -726,7 +727,10 @@ On servers where `php` is not in PATH, use `/usr/bin/php-zts` for CLI checks and
 | `build::config` | Full build config from `data/app.json` |
 | `build::changed` | Source files changed since last build |
 | `build::buildFiles` | All compiled output file paths (`php/` + `www/`) |
+| `build::release` | Compiles a release build with release hooks; returns changed file paths |
+| `build::releaseFiles` | Compiled PHP and web output paths for the release build |
 | `build::flush` | Deletes all compiled files |
+| `build::traceShadow` | Regenerates the engine's `functions.trace.php` from `functions.php` |
 | `build::help` | All available methods with signatures and descriptions |
 
 ### reflect:: commands
@@ -757,13 +761,31 @@ On servers where `php` is not in PATH, use `/usr/bin/php-zts` for CLI checks and
 | `reflect::resourceFiles` | All resource file paths |
 | `reflect::availableResources` | All discoverable resources with type, kind, load status, and metadata |
 | `reflect::editorIndex` | Combined index of functions, objects, routes, and views for editor tooling |
+| `reflect::findFunction <name>` | Resource entry for a function by name, or null |
+| `reflect::findClass <name>` | Resource class entry by name or class alias, or null |
 | `reflect::help` | All available methods with signatures and descriptions |
 
 **CLI dispatch rules:**
-- `build::method` and `reflect::method` call static methods on the engine classes
+- `build::method` and `reflect::method` call static methods on the engine classes (these run outside the app: no app boot, source-only)
 - `object.method` calls a method on a Phlo runtime object (e.g. `app.someMethod`)
+- `function args` calls a global function (e.g. `phlo_eval`, `answer`); these boot the app first
 - All output is JSON on stdout; errors go to stderr with a non-zero exit code
 - Only available when `build: true`
+
+### phlo_eval
+
+`phlo_eval '<phlo source>'` transpiles a string of Phlo statements and runs them in the live app. It is the runtime complement to `reflect::`: where reflection reads the static source, `phlo_eval` executes against real data, resources and views.
+
+```bash
+php www/app.php phlo_eval "user::recordCount()"            # 38, no return keyword
+php www/app.php phlo_eval "%app->title"                    # "App"
+php www/app.php phlo_eval "echo %app->error('boom')"       # <div class="app-error">boom</div>
+```
+
+- A single line auto-returns, exactly like a `=>` arrow body, so you write just the expression, no `return`. The exceptions are lines starting with `return`/`apply`/`echo`/`unset`/`yield`. Only a multiline block needs its own `return`.
+- `return <expr>` prints the value as JSON: type-safe, non-scalar-capable, and errors come back as `{"error": ...}`. `echo <expr>` prints raw to stdout, for viewing rendered HTML/markup as-is.
+- `%resource` refs resolve as normal. The app is constructed but its app-controller (router/init) is skipped, like any CLI callback; resource controllers do run, so the database and resources are live.
+- **Power and danger:** it runs arbitrary code with full app privileges against the live app. It can read secrets and PII and mutate the database (`%db->exec(...)`). It is **CLI-only and build-only** by design and never exists in a release/prod app. Treat the source as developer-authored only; never pass it untrusted input.
 
 ---
 
