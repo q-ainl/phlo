@@ -42,6 +42,29 @@ final class E2eTest extends TestCase {
 		$this->assertSame('"E2E"', trim($out));
 	}
 
+	public function testCliPhloEval():void {
+		// A single expression auto-returns, exactly like a => arrow body.
+		[$code, $out, $err] = self::cli('phlo_eval', '1 + 2 * 3');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame('7', trim($out));
+
+		// Resource objects resolve: %app becomes phlo('app').
+		[, $out] = self::cli('phlo_eval', '%app->title');
+		$this->assertSame('"E2E"', trim($out));
+
+		// An explicit return is honoured and never doubled.
+		[, $out] = self::cli('phlo_eval', 'return 2 + 2');
+		$this->assertSame('4', trim($out));
+
+		// A multiline block requires its own return.
+		[, $out] = self::cli('phlo_eval', "\$x = 21\nreturn \$x * 2");
+		$this->assertSame('42', trim($out));
+
+		// echo controls its own output, so it is not given a return.
+		[, $out] = self::cli('phlo_eval', "echo 'hi'");
+		$this->assertSame('hi', trim($out));
+	}
+
 	public function testHttpSyncAndAsync():void {
 		$port = 8920 + (getmypid() % 1000);
 		$server = proc_open(

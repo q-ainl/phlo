@@ -85,6 +85,11 @@ class build_node extends stdClass {
 		return "\t$vis$const$static$readonly$type $name$body;\n";
 	}
 
+	public static function transpile(string $body):string {
+		$node = new self(['body' => $body]);
+		return $node->parsePHP($node->parseObjects($body));
+	}
+
 	private function route_args():string {
 		if (!$this->path) return void;
 		preg_match_all('/\\$[A-Za-z0-9_]+/', $this->path, $matches);
