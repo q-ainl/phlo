@@ -15,7 +15,6 @@ static objCache = false
 static objRecordLimit = 10000
 static objAudit = false
 static objValidate = false
-static objLastErrors = []
 static idColumn = 'id'
 static idType = 'int'
 
@@ -24,7 +23,7 @@ static canCreate = true
 static canChange = true
 static canDelete = true
 
-static state => %req->model ??= obj(meta: [], records: [], loaded: [])
+static state => %req->model ??= obj(meta: [], records: [], loaded: [], errors: [])
 static columns {
 	if (isset(static::$columns)) return static::$columns
 	if (!method_exists(static::class, 'schema')) return static::$table.'.*'
@@ -43,7 +42,7 @@ static fields {
 	return $state->meta[static::class]['fields'] ??= static::_fields()
 }
 static _fields {
-	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet','objAudit','objValidate','objLastErrors','idColumn','idType']
+	$reserved = ['table','order','fields','columns','create','change','delete','records','record','column','item','pair','DB','objRecords','objLoaded','objCache','objState','objSave','objGet','objAudit','objValidate','objErrors','idColumn','idType']
 	$fields = loop(static::schema(), fn($field, $column) => last($field->name ??= $column, $field->type === 'parent' && $field->obj ??= $column, $field))
 	foreach ($reserved AS $word) isset($fields[$word]) && error("Reserved column name '$word' in ".static::class)
 	return $fields
@@ -71,11 +70,11 @@ static objRunValidation($data){
 		if (!($field = $fields[$column] ?? null) || !method_exists($field, 'objValidate')) continue
 		if ($error = $field->objValidate($value)) $errors[$column] = $error
 	}
-	static::$objLastErrors = $errors
+	static::state()->errors[static::class] = $errors
 	return empty($errors)
 }
 
-static objErrors => static::$objLastErrors ?? []
+static objErrors => static::state()->errors[static::class] ?? []
 static createRecord(...$args) => static::DB()->create(static::$table, ...$args)
 static change($where, ...$args) => static::DB()->change(static::$table, $where, ...$args)
 
