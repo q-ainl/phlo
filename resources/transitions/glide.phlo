@@ -3,12 +3,12 @@
 <style ns=trans.glide>
 html.glide {
 	main: view-transition-name: main
-	\::view-transition-old(main): animation: 250ms ease-out fade-slide-out both
-	\::view-transition-new(main): animation: 250ms ease-out fade-slide-in both
-	\.back::view-transition-old(main): animation: 250ms ease-out fade-slide-out-reverse both
-	\.back::view-transition-new(main): animation: 250ms ease-out fade-slide-in-reverse both
+	\::view-transition-old(main): animation: 250ms ease-out glide-out both
+	\::view-transition-new(main): animation: 250ms ease-out glide-in both
+	\.back::view-transition-old(main): animation: 250ms ease-out glide-out-reverse both
+	\.back::view-transition-new(main): animation: 250ms ease-out glide-in-reverse both
 }
-@keyframes fade-slide-out {
+@keyframes glide-out {
 	0% {
 		opacity: 1
 		transform: translateX(0)
@@ -18,11 +18,11 @@ html.glide {
 		transform: translateX(100dvw)
 	}
 }
-@keyframes fade-slide-in {
+@keyframes glide-in {
 	0%: transform: translateX(-100dvw)
 	100%: transform: translateX(0)
 }
-@keyframes fade-slide-out-reverse {
+@keyframes glide-out-reverse {
 	0% {
 		opacity: 1
 		transform: translateX(0)
@@ -32,7 +32,7 @@ html.glide {
 		transform: translateX(-100dvw)
 	}
 }
-@keyframes fade-slide-in-reverse {
+@keyframes glide-in-reverse {
 	0%: transform: translateX(100dvw)
 	100%: transform: translateX(0)
 }
