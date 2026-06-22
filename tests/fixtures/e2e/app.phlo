@@ -6,6 +6,7 @@ app::route()
 
 route GET => $this->home
 route both GET ping => $this->pong
+route GET eval => phlo_eval('return 31337')
 
 method home => view($this->main, 'Home')
 

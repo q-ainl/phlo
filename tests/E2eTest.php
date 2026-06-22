@@ -92,6 +92,10 @@ final class E2eTest extends TestCase {
 			$data = json_decode($json, true);
 			$this->assertIsArray($data, 'No JSON from async ping: '.$json);
 			$this->assertTrue($data['pong'] ?? null);
+
+			// phlo_eval is CLI-only: even wired into a route it must refuse over HTTP and never emit its value.
+			$evalBody = self::get("http://127.0.0.1:$port/eval");
+			$this->assertStringNotContainsString('31337', $evalBody, 'phlo_eval executed over HTTP but must be CLI-only');
 		}
 		finally {
 			proc_terminate($server);
