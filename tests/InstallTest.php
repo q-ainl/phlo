@@ -1,5 +1,6 @@
 <?php
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 // Exercises install.php in both invocation modes: from the engine with a
 // target argument (original stays), and as a copy inside the app directory
@@ -88,25 +89,37 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
-	public function testReflectAndInstallerAgreeOnDependencies():void {
+	public static function parityResources():array {
+		// Each exercises a different resolver path the installer and reflect must agree on:
+		// a basename collision (security/token), space-separated @requires, a dotted
+		// compiled name (time_human -> time.human), and pure transitive resolution.
+		return [
+			'basename collision'       => ['security/CSRF'],
+			'space-separated requires' => ['lang'],
+			'dotted compiled name'     => ['age.human'],
+			'transitive only'          => ['payload'],
+		];
+	}
+
+	#[DataProvider('parityResources')]
+	public function testReflectAndInstallerAgreeOnDependencies(string $resource):void {
 		$target = PHLO_TEST_TMP.'install-parity';
 		self::wipe($target);
 		// The installer and reflect resolve resource names with separate code; they must
-		// agree. Scaffold a resource whose deps exercise a basename collision
-		// (security/token) and transitive resolution (payload -> files/file), then ask
-		// reflect for the same resource's deps and require the same set.
-		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'Parity app', 'security/CSRF', 'y'], [$target]);
+		// agree. Scaffold the resource, then ask reflect for the same resource's deps and
+		// require the same set.
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'Parity app', $resource, 'y'], [$target]);
 		$this->assertSame(0, $code, $out.$err);
 		$config    = json_decode((string)file_get_contents("$target/data/app.json"), true);
-		$installer = array_values(array_diff($config['resources'], ['security/CSRF']));
+		$installer = array_values(array_diff($config['resources'], [$resource]));
 		sort($installer);
 
-		$proc    = proc_open([PHP_BINARY, "$target/www/app.php", 'reflect::resourceDependencies', 'security/CSRF'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		$proc    = proc_open([PHP_BINARY, "$target/www/app.php", 'reflect::resourceDependencies', $resource], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
 		$reflect = json_decode(trim((string)stream_get_contents($pipes[1])), true) ?? [];
 		proc_close($proc);
 		sort($reflect);
 
-		$this->assertSame($installer, $reflect, 'the installer and reflect must resolve the same dependency set');
+		$this->assertSame($installer, $reflect, "installer and reflect must agree for $resource");
 		self::wipe($target);
 	}
 
