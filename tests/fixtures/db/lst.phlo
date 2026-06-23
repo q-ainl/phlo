@@ -26,3 +26,14 @@ static runTests {
 	$out['childrenB'] = count(static::record(id: $bId)->getChildren('items'))
 	return $out
 }
+
+static runHeldRef {
+	static::prepareTable()
+	itm::prepareTable()
+	$aId = static::create(name: 'A')->id
+	itm::create(list_id: $aId, label: 'a1')
+	phlo('tech/reset')
+	$held = static::record(id: $aId)
+	static::record(id: $aId)
+	return ['heldChildren' => count($held->getChildren('items'))]
+}

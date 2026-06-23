@@ -77,4 +77,14 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['logged'] ?? null, 'the bound WHERE must match the row so the update is audited; '.$out);
 		$this->assertTrue($r['amountChanged'] ?? false, 'the audit must capture the amount change; '.$out);
 	}
+
+	public function testHeldReferenceMissesRelationAfterRefetch():void {
+		// Documents a known limitation: the per-request cache keeps the freshest record but
+		// is not a true identity map. Holding a record and re-fetching the same PK replaces
+		// the cache entry, so a relation load fills the new object and the held reference
+		// reads an empty relation. If this is ever made a real identity map, update this.
+		[$code, $out, $err] = self::cli('lst::runHeldRef');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame(0, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference does not get its relation after a re-fetch (no true identity map)');
+	}
 }
