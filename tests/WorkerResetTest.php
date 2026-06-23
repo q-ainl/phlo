@@ -1,10 +1,14 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// Worker-safety: computed statics (`static x => ...`) are cached process-globally in
-// obj::$classProps. In a persistent FrankenPHP worker that cache would otherwise bleed
-// one request's result into the next, so tech/reset drops it between requests. The
-// model's request-local state (records/loaded/errors) rides on exactly this mechanism.
+// Worker-safety covers two distinct caches that tech/reset must reset between requests
+// in a persistent FrankenPHP worker:
+//  (1) computed statics reached via the `_x()` underscore fallback cache in
+//      obj::$classProps (process-global) -> tech/reset clears that cache;
+//  (2) the model's request-local state, `static state => %req->model ??= obj(...)`,
+//      compiles to a PLAIN method (not a cached `_x()`) that caches on the request
+//      resource %req, which tech/reset drops by dropping non-persistent resources.
+// The fixture mirrors both forms exactly so the tests exercise the real mechanisms.
 final class WorkerResetTest extends TestCase {
 
 	public function testTechResetRecomputesComputedStatics():void {
@@ -15,7 +19,7 @@ final class WorkerResetTest extends TestCase {
 		$this->assertSame(2, WorkerResetFixture::counter(), 'recomputed after reset');
 	}
 
-	public function testComputedStaticStateIsRequestLocal():void {
+	public function testModelStateIsRequestLocal():void {
 		$first = WorkerResetFixture::state();
 		$first->records['x'] = 1;
 		$this->assertSame($first, WorkerResetFixture::state(), 'same state object within a request');
@@ -29,5 +33,7 @@ final class WorkerResetTest extends TestCase {
 class WorkerResetFixture extends obj {
 	public static int $ticks = 0;
 	protected static function _counter():int { return ++self::$ticks; }
-	protected static function _state():obj { return new obj(records: []); }
+	// Mirrors what `static state => %req->model ??= obj(...)` compiles to: a plain
+	// method caching on the request resource, NOT a cached `_state()` in classProps.
+	public static function state():obj { return phlo('req')->model ??= new obj(records: []); }
 }

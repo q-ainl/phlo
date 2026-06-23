@@ -399,7 +399,7 @@ method objSet($key, $value) => $key === 'readonly' ? true : null
 
 **Data API.** `objImport(...$data)` bulk-assigns named values and returns `$this` (chainable; `new obj(name: 'x')` uses it). `objData` is the raw storage array; `objKeys()`/`objValues()`/`objLength()` inspect it; `objClear()` wipes it; iteration (`foreach $obj`) and `json_encode($obj)` expose exactly `objData`. Every write or unset flips `objChanged = true`, which is what the ORM uses as its dirty flag.
 
-**Computed prop caching.** `prop x => ...` compiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. The same works statically: `static x => ...` caches per class in `obj::$classProps`.
+**Computed prop caching.** `prop x => ...` compiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. Statics differ: a bare `static x => ...` compiles to a plain method and is recomputed on every call; only the underscore form `_x()` (reached as `x()` via `__callStatic`) caches per class in `obj::$classProps`. For per-request static state cache it on `%req` (`static state => %req->model ??= ...`), which resets each request.
 
 **Worker persistence.** Set `$this->objPers = true` (or `prop objPers = true`) and the instance survives between worker-mode requests: `phlo()`'s internal registry only keeps `objPers` instances on the per-request reset. Use it for DB connections and parsed config; never for request- or user-scoped state.
 
