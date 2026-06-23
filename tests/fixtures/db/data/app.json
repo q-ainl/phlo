@@ -2,6 +2,7 @@
     "resources": [
         "DB/DB",
         "DB/model",
-        "DB/SQLite"
+        "DB/SQLite",
+        "security/audit"
     ]
 }

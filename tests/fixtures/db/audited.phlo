@@ -1,0 +1,29 @@
+@ summary: ORM audit test: an audited model with a custom idColumn. Proves that a
+@          change() under objAudit binds the WHERE placeholders for its pre-update
+@          SELECT (else nothing matches and nothing is audited). audit writes to the
+@          audited model's own DB, so this runs entirely on SQLite.
+@ requires: audit
+@ extends: model
+
+static table = 'audited'
+static idColumn = 'ref'
+static objAudit = true
+static columns = 'ref,status,amount'
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS audited (ref TEXT PRIMARY KEY, status TEXT, amount INTEGER)')
+	static::DB()->query('DELETE FROM audited')
+}
+
+static runTests {
+	static::prepareTable()
+	static::DB()->query('CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, user INTEGER, model TEXT, record_id TEXT, action TEXT, changes TEXT, ip TEXT)')
+	static::DB()->query('DELETE FROM audit_log')
+	static::DB()->query("INSERT INTO audited (ref, status, amount) VALUES ('A', 'open', 1)")
+	static::change('ref=? AND status=?', 'A', 'open', amount: 9)
+	$changes = (string)static::DB()->query('SELECT changes FROM audit_log ORDER BY id DESC LIMIT 1')->fetchColumn()
+	return [
+		'logged'        => (int)static::DB()->query("SELECT COUNT(*) FROM audit_log WHERE model='audited' AND action='update' AND record_id='A'")->fetchColumn(),
+		'amountChanged' => str_contains($changes, '"amount"'),
+	]
+}

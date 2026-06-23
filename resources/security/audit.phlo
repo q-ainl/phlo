@@ -4,7 +4,6 @@
 @ package:  security
 @ frontend: false
 @ backend:  true
-@ requires: @MySQL
 @ tags:     audit log compliance traceability
 
 static log($model, $action, $before = [], $after = [], $exclude = []){
@@ -16,10 +15,10 @@ static log($model, $action, $before = [], $after = [], $exclude = []){
 	$after = (array)$after
 	foreach ($exclude AS $col) unset($before[$col], $after[$col])
 	$changes = $action === 'update' ? static::diff($before, $after) : ($action === 'create' ? $after : $before)
-	%MySQL->query(
+	$class::DB()->query(
 		'INSERT INTO audit_log (ts, user, model, record_id, action, changes, ip) VALUES (?, ?, ?, ?, ?, ?, ?)',
 		time(),
-		isset(%session->user) ? (int)%session->user : null,
+		class_exists('session') && isset(%session->user) ? (int)%session->user : null,
 		$class,
 		(string)$id,
 		$action,
@@ -39,17 +38,17 @@ static diff($before, $after){
 
 static history($model, $recordId, $limit = 50){
 	$class = is_object($model) ? get_class($model) : (string)$model
-	return %MySQL->query(
+	return $class::DB()->query(
 		'SELECT * FROM audit_log WHERE model=? AND record_id=? ORDER BY ts DESC LIMIT ?',
 		$class, (string)$recordId, (int)$limit,
 	)->fetchAll(\PDO::FETCH_OBJ)
 }
 
-static byUser($userId, $fromTs = 0, $limit = 100){
-	return %MySQL->query(
+static byUser($model, $userId, $fromTs = 0, $limit = 100){
+	return $model::DB()->query(
 		'SELECT * FROM audit_log WHERE user=? AND ts >= ? ORDER BY ts DESC LIMIT ?',
 		(int)$userId, (int)$fromTs, (int)$limit,
 	)->fetchAll(\PDO::FETCH_OBJ)
 }
 
-static purge($olderThanSeconds = 31536000) => %MySQL->query('DELETE FROM audit_log WHERE ts < ?', time() - $olderThanSeconds)
+static purge($model, $olderThanSeconds = 31536000) => $model::DB()->query('DELETE FROM audit_log WHERE ts < ?', time() - $olderThanSeconds)

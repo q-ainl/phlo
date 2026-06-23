@@ -69,4 +69,12 @@ final class DbTest extends TestCase {
 		$this->assertSame(0, $code, $err);
 		$this->assertSame([], json_decode(trim($out), true), 'every @requires must resolve to a resource, function, constant or class; gaps: '.$out);
 	}
+
+	public function testAuditedChangeBindsWherePlaceholders():void {
+		[$code, $out, $err] = self::cli('audited::runTests');
+		$this->assertSame(0, $code, "an audited change must bind its WHERE placeholders for the pre-update SELECT:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertSame(1, $r['logged'] ?? null, 'the bound WHERE must match the row so the update is audited; '.$out);
+		$this->assertTrue($r['amountChanged'] ?? false, 'the audit must capture the amount change; '.$out);
+	}
 }

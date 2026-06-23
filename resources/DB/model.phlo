@@ -78,7 +78,8 @@ static createRecord(...$args) => static::DB()->create(static::$table, ...$args)
 static change($where, ...$args){
 	if (!static::objAudit()) return static::DB()->change(static::$table, $where, ...$args)
 	$pk = static::idColumn()
-	$old = static::records(where: $where)
+	$bindings = array_values(array_filter($args, 'is_int', ARRAY_FILTER_USE_KEY))
+	$old = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$bindings)->fetchAll(\PDO::FETCH_CLASS, static::class)
 	$result = static::DB()->change(static::$table, $where, ...$args)
 	foreach ($old AS $record){
 		$fresh = static::record(...[$pk => $record->$pk])
