@@ -10,6 +10,13 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- `HTTP()` gains optional arguments: `cookies` (off by default, `true` maps to
+  `data/cookies.txt`, a string is treated as a jar path), `timeout` (default
+  15s) and a by-reference `response` that receives an
+  `obj(ok, status, headers, error)`. The body-string return and the
+  throw-on-transport-error behaviour are unchanged; the only behavioural change
+  is that the shared cookie jar is now opt-in. `AI`'s internal HTTP client is
+  refactored onto `HTTP()`.
 - MIT `LICENSE`, `composer.json`, `CHANGELOG.md`, `CONTRIBUTING.md` and
   `SECURITY.md` in preparation for the public open-source release.
 - CI publishes the Docker image to `ghcr.io/<owner>/phlo` on version tags
