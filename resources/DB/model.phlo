@@ -155,7 +155,7 @@ static recordsLoad($args, $fetch, $fetchMode, $saveRelations = false){
 	else $records = static::DB()->load(...$args)->$fetch(...$fetchMode)
 	if ($saveRelations && $records){
 		$state = static::state()
-		$state->records[static::class] = ($state->records[static::class] ?? []) + array_column($records, null, $pk)
+		$state->records[static::class] = array_replace($state->records[static::class] ?? [], array_column($records, null, $pk))
 		count($state->records[static::class]) > static::objRecordLimit() && $state->records[static::class] = array_slice($state->records[static::class], -static::objRecordLimit(), preserve_keys: true)
 	}
 	return $records

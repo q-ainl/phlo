@@ -26,6 +26,7 @@ static runTests {
 	static::change('id=?', (int)$a->id, done: 1, title: 'first-edited')
 	$edited = static::record(id: (int)$a->id)
 	$out['update'] = (bool)($edited && (int)$edited->done === 1 && $edited->title === 'first-edited')
+	$out['cacheFresh'] = (static::state()->records[static::class][$a->id]->title ?? null) === 'first-edited'
 	static::delete('id=?', (int)$b->id)
 	$out['deleteGone'] = static::record(id: (int)$b->id) === null
 	$out['countAfterDelete'] = (int)static::recordCount()

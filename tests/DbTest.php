@@ -38,6 +38,7 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['ignoreNoNewRow'] ?? false, 'INSERT OR IGNORE adds no row on conflict');
 		$this->assertTrue($r['ignoreNoOverwrite'] ?? false, 'INSERT OR IGNORE does not overwrite');
 		$this->assertTrue($r['update'] ?? false, 'change');
+		$this->assertTrue($r['cacheFresh'] ?? false, 'identity-map cache reflects the update, not a stale copy');
 		$this->assertTrue($r['deleteGone'] ?? false, 'delete removes the row');
 		$this->assertSame(1, $r['countAfterDelete'] ?? null, 'count after delete');
 	}
