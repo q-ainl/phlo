@@ -45,6 +45,8 @@ class daemon {
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
 				CURLOPT_POSTFIELDS => json_encode(['app' => self::app(), 'target' => $cb, 'args' => array_values($args), 'build' => build], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+				CURLOPT_CONNECTTIMEOUT => 5,
+				CURLOPT_TIMEOUT => 300,
 			]);
 			curl_multi_add_handle($mh, $ch);
 			$handles[$i] = $ch;
