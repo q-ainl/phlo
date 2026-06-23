@@ -181,4 +181,11 @@ final class ParserTest extends TestCase {
 		$this->assertStringContainsString("view(\$this->main, 'Home')", $file->nodes['controller']->body);
 		$this->assertArrayNotHasKey('view', $file->nodes);
 	}
+
+	public function testInlineControlTagIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/inline control tag/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<td><if \$x>a<else>b</if></td>", 'line' => 3]);
+		$node->renderMethod('App');
+	}
 }

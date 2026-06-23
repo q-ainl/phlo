@@ -120,18 +120,32 @@ class build_node extends stdClass {
 		return "\t$body";
 	}
 
+	// Control tags compile to block statements that wrap whole lines, so each must be on
+	// its own line. An inline <if>/<foreach>/<else> (mid-line, or open and close on one
+	// line) is rejected here rather than emitted as literal markup or mis-parsed.
+	private function guardInlineControl(string $trim, int $ln):void {
+		$block = $trim === '</if>' || $trim === '</foreach>' || $trim === '<else>'
+			|| (str_ends_with($trim, '>') && (
+				(str_starts_with($trim, '<if ') && !str_contains($trim, '</if>'))
+				|| (str_starts_with($trim, '<foreach ') && !str_contains($trim, '</foreach>'))
+				|| (str_starts_with($trim, '<elseif ') && !str_contains($trim, '</if>'))));
+		if (!$block && preg_match('#<(?:if |foreach |elseif |else>)|</(?:if|foreach)>#', $trim))
+			error('Build error: inline control tag on line '.(((int)$this->line) + 1 + $ln).': <if>/<foreach>/<else> must each be on their own line; got '.$trim);
+	}
+
 	private function buildView():string {
 		$blockDepth = 0;
 		$view  = [];
 		$lines = [];
 		$body  = preg_replace('/{\\(\\s*(.*?)\\s*\\)}/s', '{{ ($1) }}', $this->body ?? void);
-		foreach (explode(lf, $body) as $line){
+		foreach (explode(lf, $body) as $ln => $line){
 			preg_match('/^\s*/', $line, $padMatch);
 			$pad    = $padMatch[0] ?? void;
 			$tabs   = substr_count($pad, "\t");
 			$spaces = strlen(str_replace("\t", void, $pad));
 			$depth  = $tabs + intdiv($spaces, 2);
 			$trim   = ltrim($line);
+			$this->guardInlineControl($trim, $ln);
 			if (str_starts_with($trim, '<foreach ')) [$blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'foreach ('.$this->parseObjects(trim(substr($trim, 9, -1))).'){'];
 			elseif ($trim === '</foreach>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
 			elseif (str_starts_with($trim, '<if ')) [$blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'if ('.$this->parseObjects(trim(substr($trim, 4, -1))).'){'];
