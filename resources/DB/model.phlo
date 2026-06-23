@@ -58,7 +58,7 @@ static create(...$args){
 	$record = static::record(...[$pk => $args[$pk] ?? $id])
 	method_exists(static::class, 'afterCreate') && $record->afterCreate()
 	method_exists(static::class, 'afterSave') && $record->afterSave()
-	static::objAudit() && audit::log($record, 'create', [], (array)$record)
+	static::objAudit() && audit::log($record, 'create', [], $record->objData)
 	return $record
 }
 
@@ -84,7 +84,7 @@ static delete($where, ...$args){
 		$result = static::DB()->delete(static::$table, $where, ...$args)
 		foreach ($records AS $record){
 			method_exists(static::class, 'afterDelete') && $record->afterDelete()
-			static::objAudit() && audit::log($record, 'delete', (array)$record, [])
+			static::objAudit() && audit::log($record, 'delete', $record->objData, [])
 		}
 		return $result
 	}
@@ -97,7 +97,7 @@ static objLogChange($where, ...$args){
 	$result = static::DB()->change(static::$table, $where, ...$args)
 	foreach ($old AS $record){
 		$fresh = static::record(id: $record->id)
-		$fresh && audit::log($fresh, 'update', (array)$record, (array)$fresh)
+		$fresh && audit::log($fresh, 'update', $record->objData, $fresh->objData)
 	}
 	return $result
 }
@@ -120,7 +120,7 @@ method objSave {
 		static::change($pk.'=?', $pkValue, ...$this)
 		$saved = static::record(...[$pk => $pkValue])
 		method_exists(static::class, 'afterChange') && $saved->afterChange($old)
-		static::objAudit() && audit::log($saved, 'update', (array)$old, (array)$saved)
+		static::objAudit() && audit::log($saved, 'update', $old->objData, $saved->objData)
 	}
 	method_exists(static::class, 'afterSave') && $saved->afterSave($old)
 	return $saved

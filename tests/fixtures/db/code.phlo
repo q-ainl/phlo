@@ -17,6 +17,7 @@ static runTests {
 	$created = static::create(slug: 'abc', label: 'first')
 	$out['create'] = (bool)($created && $created->slug === 'abc' && $created->label === 'first')
 	$out['reload'] = (static::record(slug: 'abc')->label ?? null) === 'first'
+	$out['columns'] = ($created->objData['slug'] ?? null) === 'abc' && ($created->objData['label'] ?? null) === 'first'
 	$newObj = new code(slug: 'xyz', label: 'v1')
 	$savedNew = $newObj->objSave()
 	$out['saveNew'] = ($savedNew->slug ?? null) === 'xyz' && ($savedNew->label ?? null) === 'v1'
