@@ -1,0 +1,36 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Google Sheets connector (OAuth2): read ranges and append rows
+@ extends:  OAuthConnector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @OAuthConnector creds:Google
+@ tags:     google sheets spreadsheet oauth connector
+
+const section = 'Google'
+const tokenUrl = 'https://oauth2.googleapis.com/token'
+
+method base => 'https://sheets.googleapis.com/v4/spreadsheets'
+
+static fields => arr(
+	section: 'Google',
+	secret: arr(
+		client_id: 'OAuth client ID',
+		client_secret: 'OAuth client secret',
+		refresh_token: 'OAuth refresh token (scopes: calendar, spreadsheets)',
+	),
+	scopes: 'https://www.googleapis.com/auth/spreadsheets',
+)
+
+method guard => $this->missing('client_id', 'client_secret', 'refresh_token')
+
+method values($spreadsheetId, string $range):obj {
+	if ($m = $this->guard) return $m
+	return $this->get($spreadsheetId.'/values/'.rawurlencode($range))
+}
+
+method append($spreadsheetId, string $range, array $rows, string $valueInputOption = 'USER_ENTERED'):obj {
+	if ($m = $this->guard) return $m
+	return $this->post($spreadsheetId.'/values/'.rawurlencode($range).':append?valueInputOption='.$valueInputOption, ['values' => $rows])
+}

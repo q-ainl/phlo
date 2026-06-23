@@ -1,0 +1,83 @@
+<?php
+// source:   %PHLO%/resources/security/creds.phlo
+// phlo:     %VERSION%
+// version:  1.0
+// creator:  q-ai.nl
+// summary:  Credentials resolver from env and ini sources
+// package:  security
+// frontend: false
+// backend:  true
+// tags:     credentials env ini secrets configuration
+class creds extends obj {
+	public function __construct(?array $values = null){
+		$values ??= $this->resolve();
+		foreach ($values AS $key => $value){
+			$this->$key = is_array($value) ? new static($value) : new \SensitiveParameterValue((string)$value);
+		}
+	}
+	protected function resolve(){
+		$data = [];
+		$this->merge($data, $this->loadINI(data.'creds.ini'));
+		$this->merge($data, $this->envValues(false));
+		$this->merge($data, $this->envValues(true));
+		return $data;
+	}
+	protected function loadINI(string $file):array {
+		if (!is_file($file)) return [];
+		$ini = parse_ini_file($file, true, INI_SCANNER_RAW);
+		return is_array($ini) ? $ini : [];
+	}
+	protected function envValues(bool $hostScoped = false):array {
+		$out = [];
+		$prefix = $hostScoped ? ('PHLO_'.$this->hostKey().'__') : 'PHLO__';
+		$sources = [];
+		is_array($_ENV ?? null) && $sources[] = $_ENV;
+		is_array($_SERVER ?? null) && $sources[] = $_SERVER;
+		is_array($env = getenv()) && $sources[] = $env;
+		foreach ($sources AS $source){
+			foreach ($source AS $key => $value){
+				$key = (string)$key;
+				if (!str_starts_with($key, $prefix)) continue;
+				$path = substr($key, strlen($prefix));
+				if (!$path) continue;
+				$this->envAssign($out, explode('__', $path), (string)$value);
+			}
+		}
+		return $out;
+	}
+	protected function hostKey(){
+		$host = strtoupper(phlo('req')->host);
+		$host = preg_replace('/[^A-Z0-9]+/', us, $host);
+		return trim($host, us);
+	}
+	protected function envAssign(array &$target, array $parts, string $value):void {
+		$parts = array_values(array_filter(loop($parts, fn($part) => trim($part)), 'strlen'));
+		if (!$parts) return;
+		$node = &$target;
+		$last = count($parts) - 1;
+		foreach ($parts AS $i => $part){
+			if ($i === $last){
+				$node[$part] = $value;
+				return;
+			}
+			if (!isset($node[$part]) || !is_array($node[$part])) $node[$part] = [];
+			$node = &$node[$part];
+		}
+	}
+	protected function merge(array &$base, array $add):void {
+		foreach ($add AS $key => $value){
+			if (isset($base[$key]) && is_array($base[$key]) && is_array($value)){
+				$this->merge($base[$key], $value);
+				continue;
+			}
+			$base[$key] = $value;
+		}
+	}
+	public function objGet($key){
+		if ($key === 'toArray') return loop($this->objData, fn($value) => is_a($value, 'SensitiveParameterValue') ? $value->getValue() : $value);
+		if (isset($this->objData[$key]) && is_a($this->objData[$key], '\SensitiveParameterValue')) return $this->objData[$key]->getValue();
+	}
+	public function objInfo(){
+		return loop($this->objData, fn($value) => is_a($value, '\SensitiveParameterValue') ? str_repeat('*', strlen($value->getValue())) : $value);
+	}
+}

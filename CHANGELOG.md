@@ -10,6 +10,16 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- API connectors under `resources/connectors/`: a `Connector` base class
+  (credential resolution from a `creds.ini` section, JSON request helpers built
+  on `HTTP()`, opt-in idempotent retry, pagination and a normalized
+  `obj(ok, status, data, error)` result), plus connectors for Shopify,
+  Lightspeed, Slack, Telegram, Twilio, MessageBird, Resend, Moneybird,
+  Exact Online, Microsoft Graph, Google Calendar and Google Sheets. OAuth2
+  connectors share an `OAuthConnector` base with a refreshing `TokenStore`.
+  Documented in `docs/connectors.md` with a `docs/creds.example.ini` template;
+  covered by `tests/ConnectorTest.php`, `tests/HttpTest.php` and a `connectors`
+  golden fixture.
 - `HTTP()` gains optional arguments: `cookies` (off by default, `true` maps to
   `data/cookies.txt`, a string is treated as a jar path), `timeout` (default
   15s) and a by-reference `response` that receives an

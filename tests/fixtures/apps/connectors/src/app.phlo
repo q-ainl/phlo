@@ -1,0 +1,8 @@
+@ summary: Connector compile coverage
+
+prop title = 'Connectors'
+
+route GET => view($this->main, 'Connectors')
+
+view main:
+<h1>$this->title</h1>

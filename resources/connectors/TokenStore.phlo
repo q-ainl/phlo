@@ -1,0 +1,48 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Persisted OAuth2 token store with automatic refresh via the OAuth2 resource
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: OAuth2
+@ tags:     oauth oauth2 token refresh store credentials
+
+static path($key):string => data.'tokens/'.preg_replace('/[^a-z0-9_.-]+/i', us, (string)$key).'.json'
+
+static read($key):array {
+	$file = static::path($key)
+	return is_file($file) ? (array)json_read($file, true) : []
+}
+
+static write($key, array $token):void {
+	$dir = data.'tokens'
+	is_dir($dir) || mkdir($dir, 0775, true)
+	json_write(static::path($key), $token)
+}
+
+static valid(array $token):bool => ($token['access_token'] ?? void) !== void && (int)($token['expires_at'] ?? 0) > time() + 30
+
+static store($res, $refresh):array {
+	$token = [
+		'access_token' => $res['access_token'],
+		'refresh_token' => $res['refresh_token'] ?? $refresh,
+		'expires_at' => time() + (int)($res['expires_in'] ?? 3600),
+	]
+	return $token
+}
+
+static access($key, $tokenUrl, $clientId, $clientSecret, array $seed = []):?string {
+	$token = static::read($key)
+	if (!($token['refresh_token'] ?? null) && ($seed['refresh_token'] ?? null)){
+		$token = ['refresh_token' => $seed['refresh_token']]
+		static::write($key, $token)
+	}
+	if (static::valid($token)) return $token['access_token']
+	$refresh = $token['refresh_token'] ?? null
+	if (!$refresh || !$tokenUrl || !$clientId) return null
+	$res = OAuth2::refresh($tokenUrl, $clientId, $clientSecret, $refresh)
+	if (!($res['access_token'] ?? null)) return null
+	$token = static::store($res, $refresh)
+	static::write($key, $token)
+	return $token['access_token']
+}

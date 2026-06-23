@@ -1,0 +1,54 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Lightspeed Retail (V3) connector: read customers and sales, create customers
+@ extends:  Connector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @Connector creds:Lightspeed
+@ tags:     lightspeed webshop retail pos customers connector
+
+const section = 'Lightspeed'
+
+method base => 'https://api.lightspeedapp.com/API/V3/Account/'.($this->config['cluster_id'] ?? void)
+
+method headers => [static::basic($this->config['api_key'] ?? void, $this->config['api_secret'] ?? void)]
+
+static fields => arr(
+	section: 'Lightspeed',
+	config: arr(
+		cluster_id: 'Account / cluster ID',
+		language: 'Language (optional, default nl)',
+	),
+	secret: arr(
+		api_key: 'API key',
+		api_secret: 'API secret',
+	),
+	scopes: 'Customer read/write, Sale read',
+)
+
+method customers(array $query = []):obj {
+	if ($m = $this->missing('cluster_id', 'api_key', 'api_secret')) return $m
+	return $this->get('Customer.json', $query)
+}
+
+method findCustomer($participant):obj {
+	if ($m = $this->missing('cluster_id', 'api_key', 'api_secret')) return $m
+	$field = str_contains((string)$participant, '@') ? 'Email' : 'Phone'
+	return $this->get('Customer.json', [$field => $participant, 'limit' => 1])
+}
+
+method customer($id):obj {
+	if ($m = $this->missing('cluster_id', 'api_key', 'api_secret')) return $m
+	return $this->get('Customer/'.$id.'.json')
+}
+
+method sales(array $query = []):obj {
+	if ($m = $this->missing('cluster_id', 'api_key', 'api_secret')) return $m
+	return $this->get('Sale.json', $query)
+}
+
+method createCustomer(array $customer):obj {
+	if ($m = $this->missing('cluster_id', 'api_key', 'api_secret')) return $m
+	return $this->post('Customer.json', $customer)
+}

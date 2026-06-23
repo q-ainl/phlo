@@ -122,6 +122,8 @@ config, source, build, release and error views. Move it with the optional `contr
   WebSocket contract (Phlo Daemon).
 - **[docs/tasks.md](docs/tasks.md)** cron tasks.
 - **[docs/model-opt-in.md](docs/model-opt-in.md)** ORM opt-in features.
+- **[docs/connectors.md](docs/connectors.md)** API connectors (webshops,
+  messaging, accounting, cloud) and how to write your own.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** how contributions are judged.
 
 ## Editor support

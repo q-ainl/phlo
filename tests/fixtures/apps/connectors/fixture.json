@@ -1,0 +1,22 @@
+{
+    "engineResources": [
+        "security/creds",
+        "HTTP",
+        "security/OAuth2",
+        "connectors/Connector",
+        "connectors/TokenStore",
+        "connectors/OAuthConnector",
+        "connectors/shops/Shopify",
+        "connectors/shops/Lightspeed",
+        "connectors/chat/Slack",
+        "connectors/chat/Telegram",
+        "connectors/chat/Twilio",
+        "connectors/chat/MessageBird",
+        "connectors/chat/Resend",
+        "connectors/finance/Moneybird",
+        "connectors/finance/ExactOnline",
+        "connectors/cloud/MicrosoftGraph",
+        "connectors/cloud/GoogleCalendar",
+        "connectors/cloud/GoogleSheets"
+    ]
+}

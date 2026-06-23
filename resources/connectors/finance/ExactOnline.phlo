@@ -1,0 +1,42 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Exact Online connector (OAuth2): read sales invoices and accounts, create sales invoices
+@ extends:  OAuthConnector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @OAuthConnector creds:ExactOnline
+@ tags:     exact exactonline accounting invoices oauth connector
+
+const section = 'ExactOnline'
+const tokenUrl = 'https://start.exactonline.nl/api/oauth2/token'
+
+method base => 'https://start.exactonline.nl/api/v1/'.($this->config['division'] ?? void)
+
+static fields => arr(
+	section: 'ExactOnline',
+	config: arr(division: 'Division (administration) number'),
+	secret: arr(
+		client_id: 'OAuth client ID',
+		client_secret: 'OAuth client secret',
+		refresh_token: 'OAuth refresh token (managed and rotated after first authorization)',
+	),
+	scopes: 'OAuth2 authorization code flow; token endpoint refreshes automatically',
+)
+
+method guard => $this->missing('division', 'client_id', 'client_secret', 'refresh_token')
+
+method invoices(array $query = []):obj {
+	if ($m = $this->guard) return $m
+	return $this->get('salesinvoice/SalesInvoices', $query)
+}
+
+method accounts(array $query = []):obj {
+	if ($m = $this->guard) return $m
+	return $this->get('crm/Accounts', $query)
+}
+
+method createInvoice(array $invoice):obj {
+	if ($m = $this->guard) return $m
+	return $this->post('salesinvoice/SalesInvoices', $invoice)
+}

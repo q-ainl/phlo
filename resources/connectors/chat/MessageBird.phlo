@@ -1,0 +1,32 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  MessageBird connector: send SMS
+@ extends:  Connector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @Connector creds:MessageBird
+@ tags:     messagebird sms messaging connector
+
+const section = 'MessageBird'
+
+method base => 'https://rest.messagebird.com'
+
+method headers => ['Authorization: AccessKey '.($this->config['access_key'] ?? void)]
+
+static fields => arr(
+	section: 'MessageBird',
+	config: arr(originator: 'Originator (sender number or name)'),
+	secret: arr(access_key: 'Access key'),
+)
+
+static errorMessage($data, string $raw, int $status):string {
+	if (is_object($data) && isset($data->errors[0]->description)) return (string)$data->errors[0]->description
+	return parent::errorMessage($data, $raw, $status)
+}
+
+method sms($to, $body, array $extra = []):obj {
+	if ($m = $this->missing('access_key', 'originator')) return $m
+	$recipients = is_array($to) ? $to : [$to]
+	return $this->post('messages', ['originator' => $this->config['originator'], 'recipients' => $recipients, 'body' => $body] + $extra)
+}

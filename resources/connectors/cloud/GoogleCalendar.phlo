@@ -1,0 +1,36 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Google Calendar connector (OAuth2): read events and create events
+@ extends:  OAuthConnector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @OAuthConnector creds:Google
+@ tags:     google calendar events oauth connector
+
+const section = 'Google'
+const tokenUrl = 'https://oauth2.googleapis.com/token'
+
+method base => 'https://www.googleapis.com/calendar/v3'
+
+static fields => arr(
+	section: 'Google',
+	secret: arr(
+		client_id: 'OAuth client ID',
+		client_secret: 'OAuth client secret',
+		refresh_token: 'OAuth refresh token (scopes: calendar, spreadsheets)',
+	),
+	scopes: 'https://www.googleapis.com/auth/calendar, https://www.googleapis.com/auth/spreadsheets',
+)
+
+method guard => $this->missing('client_id', 'client_secret', 'refresh_token')
+
+method events(string $calendarId = 'primary', array $query = []):obj {
+	if ($m = $this->guard) return $m
+	return $this->get('calendars/'.rawurlencode($calendarId).'/events', $query)
+}
+
+method createEvent(array $event, string $calendarId = 'primary'):obj {
+	if ($m = $this->guard) return $m
+	return $this->post('calendars/'.rawurlencode($calendarId).'/events', $event)
+}

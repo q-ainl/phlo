@@ -1,0 +1,51 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Moneybird connector: read contacts and invoices, create sales invoices
+@ extends:  Connector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @Connector creds:Moneybird
+@ tags:     moneybird accounting invoices contacts connector
+
+const section = 'Moneybird'
+
+method base => 'https://moneybird.com/api/v2/'.($this->config['administration_id'] ?? void)
+
+method headers => [static::bearer($this->config['access_token'] ?? void)]
+
+static fields => arr(
+	section: 'Moneybird',
+	config: arr(administration_id: 'Administration ID'),
+	secret: arr(access_token: 'Personal access token with read/write for contacts and invoices'),
+)
+
+method contacts(array $query = []):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->get('contacts.json', $query)
+}
+
+method findContact($query):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->get('contacts.json', ['query' => $query, 'per_page' => 1])
+}
+
+method contact($id):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->get('contacts/'.$id.'.json')
+}
+
+method invoices(array $query = []):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->get('sales_invoices.json', $query)
+}
+
+method createContact(array $contact):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->post('contacts.json', ['contact' => $contact])
+}
+
+method createInvoice(array $invoice):obj {
+	if ($m = $this->missing('administration_id', 'access_token')) return $m
+	return $this->post('sales_invoices.json', ['sales_invoice' => $invoice])
+}
