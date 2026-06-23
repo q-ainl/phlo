@@ -188,4 +188,25 @@ final class ParserTest extends TestCase {
 		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<td><if \$x>a<else>b</if></td>", 'line' => 3]);
 		$node->renderMethod('App');
 	}
+
+	public function testMismatchedControlCloseIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/closes a <foreach>/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<foreach \$x AS \$y>\n<p>a</p>\n</if>", 'line' => 1]);
+		$node->renderMethod('App');
+	}
+
+	public function testUnclosedControlBlockIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/unclosed <if>/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<if \$x>\n<p>a</p>", 'line' => 1]);
+		$node->renderMethod('App');
+	}
+
+	public function testElseOutsideIfIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/must be inside an <if>/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<p>a</p>\n<else>\n<p>b</p>", 'line' => 1]);
+		$node->renderMethod('App');
+	}
 }

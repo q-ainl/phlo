@@ -133,8 +133,23 @@ class build_node extends stdClass {
 			error('Build error: inline control tag on line '.(((int)$this->line) + 1 + $ln).': <if>/<foreach>/<else> must each be on their own line; got '.$trim);
 	}
 
+	// Pop the open block a close tag belongs to, failing on a stray close (no open) or a
+	// mismatched one (e.g. </foreach> closing an <if>). Each stack entry is [type, line].
+	private function popBlock(array &$stack, string $tag, int $ln):void {
+		$open = array_pop($stack);
+		$open !== null || error('Build error: stray </'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' has no matching <'.$tag.'>');
+		$open[0] === $tag || error('Build error: </'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' closes a <'.$open[0].'> opened on line '.(((int)$this->line) + 1 + $open[1]));
+	}
+
+	// <else>/<elseif> are only valid directly inside an <if>.
+	private function requireIf(array $stack, string $tag, int $ln):void {
+		$open = $stack ? $stack[array_key_last($stack)] : null;
+		($open && $open[0] === 'if') || error('Build error: <'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' must be inside an <if>');
+	}
+
 	private function buildView():string {
 		$blockDepth = 0;
+		$blockStack = [];
 		$view  = [];
 		$lines = [];
 		$body  = preg_replace('/{\\(\\s*(.*?)\\s*\\)}/s', '{{ ($1) }}', $this->body ?? void);
@@ -146,12 +161,12 @@ class build_node extends stdClass {
 			$depth  = $tabs + intdiv($spaces, 2);
 			$trim   = ltrim($line);
 			$this->guardInlineControl($trim, $ln);
-			if (str_starts_with($trim, '<foreach ')) [$blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'foreach ('.$this->parseObjects(trim(substr($trim, 9, -1))).'){'];
-			elseif ($trim === '</foreach>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
-			elseif (str_starts_with($trim, '<if ')) [$blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'if ('.$this->parseObjects(trim(substr($trim, 4, -1))).'){'];
-			elseif (str_starts_with($trim, '<elseif ')) [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'elseif ('.$this->parseObjects(trim(substr($trim, 8, -1))).'){'];
-			elseif ($trim === '<else>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'else {'];
-			elseif ($trim === '</if>') [$lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
+			if (str_starts_with($trim, '<foreach ')) [$blockStack[] = ['foreach', $ln], $blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'foreach ('.$this->parseObjects(trim(substr($trim, 9, -1))).'){'];
+			elseif ($trim === '</foreach>') [$this->popBlock($blockStack, 'foreach', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
+			elseif (str_starts_with($trim, '<if ')) [$blockStack[] = ['if', $ln], $blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'if ('.$this->parseObjects(trim(substr($trim, 4, -1))).'){'];
+			elseif (str_starts_with($trim, '<elseif ')) [$this->requireIf($blockStack, 'elseif', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'elseif ('.$this->parseObjects(trim(substr($trim, 8, -1))).'){'];
+			elseif ($trim === '<else>') [$this->requireIf($blockStack, 'else', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'else {'];
+			elseif ($trim === '</if>') [$this->popBlock($blockStack, 'if', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
 			else {
 				if (preg_match_all('/{\\s*([a-z]{2}):\\s*(.*?)\\s*}/is', $trim, $matches, PREG_SET_ORDER)){
 					foreach ($matches as $match){
@@ -199,6 +214,10 @@ class build_node extends stdClass {
 			}
 		}
 		if ($lines) $view[] = $lines;
+		if ($blockStack){
+			[$type, $openLn] = $blockStack[0];
+			error('Build error: unclosed <'.$type.'> opened on line '.(((int)$this->line) + 1 + $openLn));
+		}
 		if (count($view) === 1 && is_array($view[0]) && count($view[0]) === 1) return 'return "'.$view[0][0][1].'";';
 		$output = '$_ = [];'.lf;
 		foreach ($view as $chunk){
