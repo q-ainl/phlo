@@ -75,7 +75,17 @@ static objRunValidation($data){
 
 static objErrors => static::state()->errors[static::class] ?? []
 static createRecord(...$args) => static::DB()->create(static::$table, ...$args)
-static change($where, ...$args) => static::DB()->change(static::$table, $where, ...$args)
+static change($where, ...$args){
+	if (!static::objAudit()) return static::DB()->change(static::$table, $where, ...$args)
+	$pk = static::idColumn()
+	$old = static::records(where: $where)
+	$result = static::DB()->change(static::$table, $where, ...$args)
+	foreach ($old AS $record){
+		$fresh = static::record(...[$pk => $record->$pk])
+		$fresh && audit::log($fresh, 'update', $record->objData, $fresh->objData)
+	}
+	return $result
+}
 
 static delete($where, ...$args){
 	if (method_exists(static::class, 'beforeDelete') || method_exists(static::class, 'afterDelete') || static::objAudit()){
@@ -91,16 +101,7 @@ static delete($where, ...$args){
 	return static::DB()->delete(static::$table, $where, ...$args)
 }
 
-static objLogChange($where, ...$args){
-	if (!static::objAudit()) return static::change($where, ...$args)
-	$old = static::records(where: $where)
-	$result = static::DB()->change(static::$table, $where, ...$args)
-	foreach ($old AS $record){
-		$fresh = static::record(id: $record->id)
-		$fresh && audit::log($fresh, 'update', $record->objData, $fresh->objData)
-	}
-	return $result
-}
+static objLogChange($where, ...$args) => static::change($where, ...$args)
 
 method objSave {
 	$pk = static::idColumn()
@@ -120,7 +121,6 @@ method objSave {
 		static::change($pk.'=?', $pkValue, ...$this)
 		$saved = static::record(...[$pk => $pkValue])
 		method_exists(static::class, 'afterChange') && $saved->afterChange($old)
-		static::objAudit() && audit::log($saved, 'update', $old->objData, $saved->objData)
 	}
 	method_exists(static::class, 'afterSave') && $saved->afterSave($old)
 	return $saved
