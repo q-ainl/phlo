@@ -682,14 +682,13 @@ apply(
 | `log` / `error` | Console log / error handler |
 | `phlo` / `debug` / `dump` | Debug output to the browser console (debug mode) |
 
-**Streaming.** Set `%res->streaming = true` in a route and every subsequent `apply(...)` is printed and flushed immediately as one JSON line instead of buffered: progressive UI updates over a single HTTP response, no WebSocket needed. The frontend keeps applying commands as they arrive. This is how long-running work (AI token streams, batch progress) reaches the DOM:
+**Streaming.** `chunk(...)` opens a streaming response and flushes each package immediately as one newline-delimited JSON line (`application/x-ndjson`) instead of buffering, so progressive updates reach the frontend over a single HTTP response with no WebSocket. Call it repeatedly for long-running work (AI token streams, batch progress); the frontend keeps applying the commands as they arrive. `apply(...)` and `view(...)` are single, finalizing responses, but once `chunk()` has opened the stream they compose into it (flushing instead of finalizing), so a stream can end with one closing `apply(...)`. (`chunk()` ships as the `chunk` resource; `apply()`/`view()` are built in.)
 
 ```phlo
 route async POST report::generate {
-	%res->streaming = true
 	foreach ($this->steps AS $i => $step){
 		$step->run
-		apply(inner: arr('#progress' => $i + 1 .'/'. count($this->steps)))
+		chunk(inner: arr('#progress' => $i + 1 .'/'. count($this->steps)))
 	}
 	apply(toast: 'Done')
 }

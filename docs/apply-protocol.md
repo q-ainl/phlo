@@ -82,11 +82,31 @@ core command.
 
 ## Stream semantics
 
+A response is either a single buffered object or a stream of newline-separated
+JSON lines (`application/x-ndjson`).
+
+On the wire:
+
 - One HTTP response is one or more newline-separated JSON lines.
-- Each line is a complete `apply({...})` object.
-- The frontend parses line by line and executes immediately.
+- Each line is a complete command object (an `apply({...})` / `chunk({...})`
+  payload).
+- The frontend parses line by line and executes each immediately, so the DOM
+  updates progressively.
 - No rollback if one command fails: the other commands in the same batch
   still run.
+
+Producing a stream (server side):
+
+- `chunk(...)` opens the stream: the first call sets the `application/x-ndjson`
+  type and flips the response to streaming; every call writes its commands as
+  one line and flushes immediately. Call it repeatedly for progressive output
+  (AI token streams, batch progress).
+- `apply(...)` and `view(...)` are single, finalizing responses. Once `chunk()`
+  has opened the stream they compose into it (flush a line instead of
+  finalizing), so a stream can end with one closing `apply(...)`.
+- The `Output already started` guard only fires when the response is not
+  streaming; while streaming, `chunk()`/`apply()`/`view()` compose freely.
+- `chunk()` ships as the `chunk` resource; `apply()` and `view()` are built in.
 
 ## Error handling
 
