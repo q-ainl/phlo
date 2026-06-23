@@ -148,6 +148,11 @@ final class E2eTest extends TestCase {
 			// phlo_eval is CLI-only: even wired into a route it must refuse over HTTP and never emit its value.
 			$evalBody = self::get("http://127.0.0.1:$port/eval");
 			$this->assertStringNotContainsString('31337', $evalBody, 'phlo_eval executed over HTTP but must be CLI-only');
+
+			// A literal "0" path segment must still match: array_filter must drop empties, not '0'.
+			$segBody = self::get("http://127.0.0.1:$port/seg/0", ['X-Requested-With: phlo']);
+			$segData = json_decode($segBody, true);
+			$this->assertSame('0', $segData['seg'] ?? null, 'a 0 path segment must match');
 		}
 		finally {
 			proc_terminate($server);

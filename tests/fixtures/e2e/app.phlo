@@ -7,11 +7,16 @@ app::route()
 route GET => $this->home
 route both GET ping => $this->pong
 route GET eval => phlo_eval('return 31337')
+route both GET seg $n => $this->seg($n)
 
 method home => view($this->main, 'Home')
 
 method pong {
 	apply(pong: true)
+}
+
+method seg($n){
+	apply(seg: $n)
 }
 
 view main:

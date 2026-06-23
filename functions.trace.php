@@ -101,10 +101,10 @@ function route(?string $method = null, string $path = void, ?bool $async = null,
 	if ($method && $method !== $req->method && !($method === 'GET' && $req->method === 'HEAD')) return false;
 	if (!is_null($async) && $async !== $req->async) return false;
 	if ($data && phlo('payload')->objKeys !== explode(comma, $data)) return false;
-	$parts  = array_values(array_filter(explode(slash, $req->path)));
+	$parts  = array_values(array_filter(explode(slash, $req->path), 'strlen'));
 	$cbArgs = [];
 	$index  = -1;
-	foreach (array_filter(explode(space, $path)) as $index => $item){
+	foreach (array_filter(explode(space, $path), 'strlen') as $index => $item){
 		$reqItem = $parts[$index] ?? null;
 		if (str_starts_with($item, '$')){
 			$item = substr($item, 1);
