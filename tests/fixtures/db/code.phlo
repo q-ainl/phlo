@@ -1,0 +1,21 @@
+@ summary: ORM test model with a non-default idColumn, to exercise create()
+@          reloading the new record by its custom primary key rather than 'id'.
+@ extends: model
+
+static table = 'codes'
+static idColumn = 'slug'
+static columns = 'slug,label'
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS codes (slug TEXT PRIMARY KEY, label TEXT)')
+	static::DB()->query('DELETE FROM codes')
+}
+
+static runTests {
+	static::prepareTable()
+	$created = static::create(slug: 'abc', label: 'first')
+	return [
+		'create' => (bool)($created && $created->slug === 'abc' && $created->label === 'first'),
+		'reload' => (static::record(slug: 'abc')->label ?? null) === 'first',
+	]
+}
