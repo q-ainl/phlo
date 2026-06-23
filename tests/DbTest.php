@@ -63,4 +63,10 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['childrenA'] ?? null, 'the first parent loads its children');
 		$this->assertSame(1, $r['childrenB'] ?? null, 'a parent loaded after the first still loads its children');
 	}
+
+	public function testCatalogHasNoUnresolvedRequires():void {
+		[$code, $out, $err] = self::cli('reflect::catalogGaps');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame([], json_decode(trim($out), true), 'every @requires must resolve to a resource, function, constant or class; gaps: '.$out);
+	}
 }

@@ -723,6 +723,27 @@ class reflect {
 	}
 
 	/** Returns a summary of loaded packages, resource counts, and external requirements. */
+	// Resources whose declared @requires name a resource the resolver cannot find. Skips
+	// what is legitimately not a resource: optional (`name?`), external (`php-ext:`/
+	// `creds:`), and anything that resolves to an engine function, constant or class.
+	// What remains is a genuine catalog gap (a typo or a removed resource).
+	public static function catalogGaps():array {
+		$resIndex = static::graphResourceIndex(static::resourceNodes(true));
+		$alias    = $resIndex['alias'];
+		$gaps     = [];
+		foreach ($resIndex['items'] as $name => $info){
+			foreach (($info['requires'] ?? []) as $req){
+				$r = trim(ltrim($req, '@'));
+				if ($r === void || str_ends_with($r, '?') || str_starts_with($r, 'php-ext:') || str_starts_with($r, 'creds:')) continue;
+				$k = strtolower($r);
+				if ($alias['name'][$k] ?? $alias['class'][$k] ?? $alias['func'][$k] ?? $alias['base'][$k] ?? null) continue;
+				if (function_exists($r) || defined($r) || class_exists($r)) continue;
+				$gaps[$name][] = $req;
+			}
+		}
+		return $gaps;
+	}
+
 	public static function resourceSummary():array {
 		$functions = static::loadedFunctions();
 		$objects   = static::loadedObjects();
