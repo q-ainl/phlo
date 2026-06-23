@@ -54,4 +54,13 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['saveNew'] ?? false, 'objSave inserts and reloads the new record by its PK');
 		$this->assertTrue($r['saveUpdate'] ?? false, 'objSave updates and reloads an existing record');
 	}
+
+	public function testRelationLoaderHandlesIncrementalParents():void {
+		[$code, $out, $err] = self::cli('lst::runTests');
+		$this->assertSame(0, $code, "lst::runTests failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from lst::runTests: '.$out);
+		$this->assertSame(1, $r['childrenA'] ?? null, 'the first parent loads its children');
+		$this->assertSame(1, $r['childrenB'] ?? null, 'a parent loaded after the first still loads its children');
+	}
 }

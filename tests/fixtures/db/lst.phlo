@@ -1,0 +1,28 @@
+@ summary: ORM relation test: a parent list with children. Loads one parent,
+@          reads its children, then loads a SECOND parent and reads its children.
+@          A global "loaded" flag made the second parent come back empty; the
+@          per-parent marker must load it too.
+@ extends: model
+
+static table = 'lists'
+static columns = 'id,name'
+static objChildren = ['items' => ['obj' => 'itm', 'key' => 'list_id']]
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS lists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)')
+	static::DB()->query('DELETE FROM lists')
+}
+
+static runTests {
+	static::prepareTable()
+	itm::prepareTable()
+	$aId = static::create(name: 'A')->id
+	$bId = static::create(name: 'B')->id
+	itm::create(list_id: $aId, label: 'a1')
+	itm::create(list_id: $bId, label: 'b1')
+	phlo('tech/reset')
+	$out = []
+	$out['childrenA'] = count(static::record(id: $aId)->getChildren('items'))
+	$out['childrenB'] = count(static::record(id: $bId)->getChildren('items'))
+	return $out
+}
