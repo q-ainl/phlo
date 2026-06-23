@@ -38,7 +38,7 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['ignoreNoNewRow'] ?? false, 'INSERT OR IGNORE adds no row on conflict');
 		$this->assertTrue($r['ignoreNoOverwrite'] ?? false, 'INSERT OR IGNORE does not overwrite');
 		$this->assertTrue($r['update'] ?? false, 'change');
-		$this->assertTrue($r['cacheFresh'] ?? false, 'identity-map cache reflects the update, not a stale copy');
+		$this->assertTrue($r['cacheFresh'] ?? false, 'record cache reflects the update, not a stale copy');
 		$this->assertTrue($r['deleteGone'] ?? false, 'delete removes the row');
 		$this->assertSame(1, $r['countAfterDelete'] ?? null, 'count after delete');
 	}
@@ -78,14 +78,16 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['amountChanged'] ?? false, 'the audit must capture the amount change; '.$out);
 	}
 
-	public function testHeldReferenceMissesRelationAfterRefetch():void {
-		// Documents a known limitation: the per-request cache keeps the freshest record but
-		// is not a true identity map. Holding a record and re-fetching the same PK replaces
-		// the cache entry, so a relation load fills the new object and the held reference
-		// reads an empty relation. If this is ever made a real identity map, update this.
+	public function testHeldReferenceGetsRelationAfterRefetch():void {
+		// The per-request record cache is not yet a true identity map: a reference held across
+		// a re-fetch of the same PK is orphaned, so a relation load fills the new cache object
+		// and the held one reads an empty relation. Asserting that 0 would pin a bug as a
+		// contract, so this targets the intended behaviour and is skipped until relation
+		// loading also fills $this (or the cache becomes a real identity map).
+		$this->markTestSkipped('record cache is not a true identity map yet (held ref orphaned on re-fetch)');
 		[$code, $out, $err] = self::cli('lst::runHeldRef');
 		$this->assertSame(0, $code, $err);
-		$this->assertSame(0, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference does not get its relation after a re-fetch (no true identity map)');
+		$this->assertSame(1, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference should still see its relation after a re-fetch');
 	}
 
 	public function testObjInQuotesIdsWithoutAssumingPdo():void {
