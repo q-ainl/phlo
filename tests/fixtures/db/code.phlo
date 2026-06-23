@@ -13,9 +13,15 @@ static prepareTable {
 
 static runTests {
 	static::prepareTable()
+	$out = []
 	$created = static::create(slug: 'abc', label: 'first')
-	return [
-		'create' => (bool)($created && $created->slug === 'abc' && $created->label === 'first'),
-		'reload' => (static::record(slug: 'abc')->label ?? null) === 'first',
-	]
+	$out['create'] = (bool)($created && $created->slug === 'abc' && $created->label === 'first')
+	$out['reload'] = (static::record(slug: 'abc')->label ?? null) === 'first'
+	$newObj = new code(slug: 'xyz', label: 'v1')
+	$savedNew = $newObj->objSave()
+	$out['saveNew'] = ($savedNew->slug ?? null) === 'xyz' && ($savedNew->label ?? null) === 'v1'
+	$savedNew->label = 'v2'
+	$savedNew->objSave()
+	$out['saveUpdate'] = (static::record(slug: 'xyz')->label ?? null) === 'v2'
+	return $out
 }

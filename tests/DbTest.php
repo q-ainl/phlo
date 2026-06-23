@@ -49,5 +49,7 @@ final class DbTest extends TestCase {
 		$this->assertIsArray($r, 'No JSON from code::runTests: '.$out);
 		$this->assertTrue($r['create'] ?? false, 'create returns the row reloaded by its custom PK');
 		$this->assertTrue($r['reload'] ?? false, 'record() finds the row by the custom PK');
+		$this->assertTrue($r['saveNew'] ?? false, 'objSave inserts and reloads the new record by its PK');
+		$this->assertTrue($r['saveUpdate'] ?? false, 'objSave updates and reloads an existing record');
 	}
 }

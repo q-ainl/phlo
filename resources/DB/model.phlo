@@ -106,19 +106,19 @@ method objSave {
 	$pk = static::idColumn()
 	$pkValue = $this->$pk ?? $this->id ?? null
 	$pkValue || error('Can\'t save '.static::class.' record without '.$pk)
-	$isNew = !static::item([$pk => $pkValue, 'columns' => $pk])
+	$isNew = !static::item(...[$pk => $pkValue, 'columns' => $pk])
 	$old = $isNew ? null : clone $this
 	method_exists(static::class, 'beforeSave') && $this->beforeSave($old)
 	if ($isNew){
 		method_exists(static::class, 'beforeCreate') && $this->beforeCreate()
 		static::createRecord(...$this)
-		$saved = static::record([$pk => $pkValue])
+		$saved = static::record(...[$pk => $pkValue])
 		method_exists(static::class, 'afterCreate') && $saved->afterCreate()
 	}
 	else {
 		method_exists(static::class, 'beforeChange') && $this->beforeChange($old)
 		static::change($pk.'=?', $pkValue, ...$this)
-		$saved = static::record([$pk => $pkValue])
+		$saved = static::record(...[$pk => $pkValue])
 		method_exists(static::class, 'afterChange') && $saved->afterChange($old)
 		static::objAudit() && audit::log($saved, 'update', (array)$old, (array)$saved)
 	}
