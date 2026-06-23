@@ -20,9 +20,8 @@ static check($key, $limit, $windowSeconds, $storage = 'db'){
 static checkApcu($key, $limit, $windowSeconds){
 	$window = (int)floor(time() / $windowSeconds) * $windowSeconds
 	$apcuKey = 'phlo.rate.'.$key.':'.$window
-	$count = apcu_inc($apcuKey, 1, $success, $windowSeconds)
-	if (!$success) apcu_store($apcuKey, 1, $windowSeconds)
-	return $count <= $limit
+	apcu_add($apcuKey, 0, $windowSeconds)
+	return apcu_inc($apcuKey, 1) <= $limit
 }
 
 static status($key, $limit, $windowSeconds){
