@@ -295,13 +295,39 @@ class build_node extends stdClass {
 		return '<'.$m[1].($attrs !== void ? space.$attrs : void).($self ? '></'.$m[1].'>' : '>');
 	}
 
+	// End offset (exclusive) of the attribute value starting at $i, treating {{ }} as
+	// opaque so a quote inside an interpolation does not end a quoted value early
+	// (e.g. class="{( $x === "yes" ? .. )}" must not stop at the first inner ").
+	private function attrValueEnd(string $s, int $i):int {
+		$len = strlen($s);
+		if ($i >= $len) return $i;
+		$q = $s[$i];
+		if ($q === dq || $q === sq){
+			$j = $i + 1;
+			while ($j < $len){
+				if ($s[$j] === '{' && ($s[$j + 1] ?? void) === '{'){
+					$close = strpos($s, '}}', $j + 2);
+					$j = $close === false ? $len : $close + 2;
+				}
+				elseif ($s[$j] === $q) return $j + 1;
+				else $j++;
+			}
+			return $len;
+		}
+		$j = $i;
+		while ($j < $len && !ctype_space($s[$j]) && strpos('"\'=<>`', $s[$j]) === false) $j++;
+		return $j;
+	}
+
 	private function mergeClassAndId(string $attrs, ?string $id, ?string $shortClass):string {
 		$attrs = trim($attrs);
 		if ($shortClass !== null){
 			if (($pos = $this->topLevelAttrPos($attrs, 'class')) !== null){
-				preg_match('/\Gclass\s*=\s*("[^"]*"|\'[^\']*\'|[^\s"\'=<>`]+)/', $attrs, $m, 0, $pos);
-				$shortClass = trim($shortClass.space.trim($m[1], '"\''));
-				$attrs      = trim(substr($attrs, 0, $pos).substr($attrs, $pos + strlen($m[0])));
+				$vs = strpos($attrs, '=', $pos) + 1;
+				while ($vs < strlen($attrs) && ctype_space($attrs[$vs])) $vs++;
+				$ve = $this->attrValueEnd($attrs, $vs);
+				$shortClass = trim($shortClass.space.trim(substr($attrs, $vs, $ve - $vs), '"\''));
+				$attrs      = trim(substr($attrs, 0, $pos).substr($attrs, $ve));
 			}
 			$attrs = trim('class="'.trim($shortClass).'"'.space.$attrs);
 		}

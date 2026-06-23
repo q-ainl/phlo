@@ -22,6 +22,7 @@ view main:
 <div.card class="extra">shorthand class plus static class</div>
 <div.tier class="{( $this->ready ? 'on' : 'off' )}">shorthand class plus dynamic class</div>
 <div class="{( $this->ready ? "yes" : "no" )}">double-quoted strings inside a dynamic class</div>
+<div.tier class="{( $this->ready === "yes" ? "on" : "off" )}">shorthand plus double-quoted dynamic class</div>
 <section#sec.wrap id="explicit">shorthand id plus explicit id</section>
 <foreach $this->items AS $item>
 <li.row>{{ $item }}</li>

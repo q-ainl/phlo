@@ -32,6 +32,7 @@ class app extends obj {
 		$_[] = "<div class=\"card extra\">shorthand class plus static class</div>";
 		$_[] = "<div class=\"tier ".($this->ready ? 'on' : 'off')."\">shorthand class plus dynamic class</div>";
 		$_[] = "<div class=\"".($this->ready ? "yes" : "no")."\">double-quoted strings inside a dynamic class</div>";
+		$_[] = "<div class=\"tier ".($this->ready === "yes" ? "on" : "off")."\">shorthand plus double-quoted dynamic class</div>";
 		$_[] = "<section class=\"wrap\" id=\"explicit\">shorthand id plus explicit id</section>";
 		foreach ($this->items AS $item){
 			$_[] = "<li class=\"row\">".$item."</li>";
