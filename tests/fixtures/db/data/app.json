@@ -3,6 +3,8 @@
         "DB/DB",
         "DB/model",
         "DB/SQLite",
+        "DB/JSONDB",
+        "DB/JSON.result",
         "security/audit"
     ]
 }

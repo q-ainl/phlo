@@ -1,0 +1,9 @@
+@ summary: JSONDB-backed model. Proves objIn works on a driver that has no PDO: the
+@          relation loaders quote IN-lists through DB->quoteList, so JSONDB returns
+@          its own literal-quoted form instead of crashing on PDO::quote.
+@ requires: DB/JSONDB
+@ extends: model
+
+static table = 'jdocs'
+
+static runTests => ['objIn' => (new static)->objIn(['1', '2'])]

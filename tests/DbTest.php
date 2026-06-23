@@ -87,4 +87,12 @@ final class DbTest extends TestCase {
 		$this->assertSame(0, $code, $err);
 		$this->assertSame(0, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference does not get its relation after a re-fetch (no true identity map)');
 	}
+
+	public function testObjInQuotesIdsWithoutAssumingPdo():void {
+		// JSONDB has no PDO; the relation loaders must quote IN-lists through the driver's
+		// quoteList, not PDO::quote directly, or every JSONDB relation load fatals.
+		[$code, $out, $err] = self::cli('jdoc::runTests');
+		$this->assertSame(0, $code, "objIn must not assume a PDO driver:\n$out$err");
+		$this->assertSame('"1","2"', json_decode(trim($out), true)['objIn'] ?? null, $out);
+	}
 }

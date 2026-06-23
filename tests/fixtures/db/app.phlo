@@ -2,6 +2,7 @@
 @          injection idiom apps use, pointing it at a dependency-free SQLite file.
 
 static %model.DB => %SQLite(data.'test.db')
+static %jdoc.DB => %JSONDB(data.'jdocs.json')
 
 app::route()
 

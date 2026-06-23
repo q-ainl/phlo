@@ -169,7 +169,7 @@ static objRel($key){
 
 prop objState = ['parents' => [], 'children' => [], 'many' => []]
 method objGet($key) => $this->getParent($key) ?? $this->getChildren($key) ?? $this->getMany($key)
-method objIn($ids) => $ids ? loop($ids, fn($id) => static::DB()->PDO->quote((string)$id), comma) : 'NULL'
+method objIn($ids) => $ids ? static::DB()->quoteList($ids) : 'NULL'
 
 method getParent($key){
 	if (array_key_exists($key, $this->objState['parents'])) return $this->objState['parents'][$key]

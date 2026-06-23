@@ -51,6 +51,7 @@ method group(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_GROUP|\PDO
 method records(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS|\PDO::FETCH_UNIQUE, obj::class)
 method rows(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS, obj::class)
 method record(...$args) => $this->load(...$args)->fetchObject(obj::class) ?: null
+method quoteList(array $ids) => loop($ids, fn($id) => $this->PDO->quote((string)$id), comma)
 
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])

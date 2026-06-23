@@ -17,6 +17,10 @@ prop PDO => error('JSONDB driver does not use PDO')
 prop fieldQuotes = void
 prop lastInsertedId = null
 
+// objFilter strips the surrounding quotes again; this driver has no PDO and runs no
+// SQL, so a literal-quoted list (not PDO escaping) is what its IN parsing expects.
+method quoteList(array $ids) => dq.implode(dq.comma.dq, $ids).dq
+
 method objRead => file_exists($this->file) ? json_decode(file_get_contents($this->file), true) ?: [] : []
 method objWrite(array $data) => file_put_contents($this->file, json_encode(array_values($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
 method objNextId(array $data) => $data ? (int)max(array_column($data, 'id')) + 1 : 1
