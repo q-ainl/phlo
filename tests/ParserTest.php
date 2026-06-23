@@ -209,4 +209,18 @@ final class ParserTest extends TestCase {
 		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<p>a</p>\n<else>\n<p>b</p>", 'line' => 1]);
 		$node->renderMethod('App');
 	}
+
+	public function testDoubleElseIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/comes after <else>/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<if \$x>\na\n<else>\nb\n<else>\nc\n</if>", 'line' => 1]);
+		$node->renderMethod('App');
+	}
+
+	public function testElseifAfterElseIsRejected():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/comes after <else>/');
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<if \$x>\na\n<else>\nb\n<elseif \$y>\nc\n</if>", 'line' => 1]);
+		$node->renderMethod('App');
+	}
 }

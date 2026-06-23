@@ -141,10 +141,13 @@ class build_node extends stdClass {
 		$open[0] === $tag || error('Build error: </'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' closes a <'.$open[0].'> opened on line '.(((int)$this->line) + 1 + $open[1]));
 	}
 
-	// <else>/<elseif> are only valid directly inside an <if>.
-	private function requireIf(array $stack, string $tag, int $ln):void {
-		$open = $stack ? $stack[array_key_last($stack)] : null;
-		($open && $open[0] === 'if') || error('Build error: <'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' must be inside an <if>');
+	// <else>/<elseif> are only valid directly inside an <if>, and not after an <else>
+	// (which must be the last branch): a second <else> or a trailing <elseif> is invalid.
+	private function requireIf(array &$stack, string $tag, int $ln):void {
+		$top = $stack ? array_key_last($stack) : null;
+		($top !== null && $stack[$top][0] === 'if') || error('Build error: <'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' must be inside an <if>');
+		empty($stack[$top][2]) || error('Build error: <'.$tag.'> on line '.(((int)$this->line) + 1 + $ln).' comes after <else>; <else> must be the last branch');
+		if ($tag === 'else') $stack[$top][2] = true;
 	}
 
 	private function buildView():string {
@@ -163,7 +166,7 @@ class build_node extends stdClass {
 			$this->guardInlineControl($trim, $ln);
 			if (str_starts_with($trim, '<foreach ')) [$blockStack[] = ['foreach', $ln], $blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'foreach ('.$this->parseObjects(trim(substr($trim, 9, -1))).'){'];
 			elseif ($trim === '</foreach>') [$this->popBlock($blockStack, 'foreach', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
-			elseif (str_starts_with($trim, '<if ')) [$blockStack[] = ['if', $ln], $blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'if ('.$this->parseObjects(trim(substr($trim, 4, -1))).'){'];
+			elseif (str_starts_with($trim, '<if ')) [$blockStack[] = ['if', $ln, false], $blockDepth++, $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'if ('.$this->parseObjects(trim(substr($trim, 4, -1))).'){'];
 			elseif (str_starts_with($trim, '<elseif ')) [$this->requireIf($blockStack, 'elseif', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'elseif ('.$this->parseObjects(trim(substr($trim, 8, -1))).'){'];
 			elseif ($trim === '<else>') [$this->requireIf($blockStack, 'else', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}'.lf.str_repeat(tab, $blockDepth - 1).'else {'];
 			elseif ($trim === '</if>') [$this->popBlock($blockStack, 'if', $ln), $lines && $view[] = $lines, $lines = [], $view[] = str_repeat(tab, $blockDepth - 1).'}', $blockDepth--];
