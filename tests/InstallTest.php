@@ -98,6 +98,8 @@ final class InstallTest extends TestCase {
 			'space-separated requires' => ['lang'],
 			'dotted compiled name'     => ['age.human'],
 			'transitive only'          => ['payload'],
+			'deep dependency chain'    => ['security/social'],
+			'no dependencies'          => ['files/UBL'],
 		];
 	}
 
