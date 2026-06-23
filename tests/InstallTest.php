@@ -88,6 +88,28 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
+	public function testReflectAndInstallerAgreeOnDependencies():void {
+		$target = PHLO_TEST_TMP.'install-parity';
+		self::wipe($target);
+		// The installer and reflect resolve resource names with separate code; they must
+		// agree. Scaffold a resource whose deps exercise a basename collision
+		// (security/token) and transitive resolution (payload -> files/file), then ask
+		// reflect for the same resource's deps and require the same set.
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'Parity app', 'security/CSRF', 'y'], [$target]);
+		$this->assertSame(0, $code, $out.$err);
+		$config    = json_decode((string)file_get_contents("$target/data/app.json"), true);
+		$installer = array_values(array_diff($config['resources'], ['security/CSRF']));
+		sort($installer);
+
+		$proc    = proc_open([PHP_BINARY, "$target/www/app.php", 'reflect::resourceDependencies', 'security/CSRF'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		$reflect = json_decode(trim((string)stream_get_contents($pipes[1])), true) ?? [];
+		proc_close($proc);
+		sort($reflect);
+
+		$this->assertSame($installer, $reflect, 'the installer and reflect must resolve the same dependency set');
+		self::wipe($target);
+	}
+
 	public function testCopiedInstallerRemovesItselfAfterSuccess():void {
 		$target = PHLO_TEST_TMP.'install-copy';
 		self::wipe($target);
