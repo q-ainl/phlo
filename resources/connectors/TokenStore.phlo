@@ -11,7 +11,9 @@ static path($key):string => data.'tokens/'.preg_replace('/[^a-z0-9_.-]+/i', us, 
 
 static read($key):array {
 	$file = static::path($key)
-	return is_file($file) ? (array)json_read($file, true) : []
+	if (!is_file($file)) return []
+	@chmod($file, 0600)
+	return (array)json_read($file, true)
 }
 
 static write($key, array $token):void {
@@ -40,7 +42,7 @@ static lock($key){
 	$dir = data.'tokens'
 	is_dir($dir) || mkdir($dir, 0700, true)
 	$lock = fopen(static::path($key).'.lock', 'c')
-	flock($lock, LOCK_EX)
+	$lock && flock($lock, LOCK_EX)
 	return $lock
 }
 
@@ -63,7 +65,7 @@ static access($key, $tokenUrl, $clientId, $clientSecret, array $seed = []):?stri
 		static::write($key, $token)
 		return $token['access_token']
 	} finally {
-		flock($lock, LOCK_UN)
-		fclose($lock)
+		$lock && flock($lock, LOCK_UN)
+		$lock && fclose($lock)
 	}
 }

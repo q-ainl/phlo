@@ -78,11 +78,11 @@
 		'map' => [
 			['php' => 14, 'phlo' => 10, 'name' => 'path'],
 			['php' => 17, 'phlo' => 13, 'name' => 'read'],
-			['php' => 21, 'phlo' => 18, 'name' => 'write'],
-			['php' => 29, 'phlo' => 26, 'name' => 'valid'],
-			['php' => 32, 'phlo' => 29, 'name' => 'store'],
-			['php' => 42, 'phlo' => 40, 'name' => 'lock'],
-			['php' => 49, 'phlo' => 48, 'name' => 'access'],
+			['php' => 23, 'phlo' => 20, 'name' => 'write'],
+			['php' => 31, 'phlo' => 28, 'name' => 'valid'],
+			['php' => 34, 'phlo' => 31, 'name' => 'store'],
+			['php' => 44, 'phlo' => 42, 'name' => 'lock'],
+			['php' => 51, 'phlo' => 50, 'name' => 'access'],
 		],
 	],
 	'%PHP%/OAuthConnector.php' => [
