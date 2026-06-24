@@ -19,6 +19,12 @@ final class DbTest extends TestCase {
 		return [proc_close($proc), $out, $err];
 	}
 
+	private static function cleanTokens():void {
+		$dir = self::$appDir.'data/tokens';
+		foreach (glob($dir.'/*') ?: [] as $f) @unlink($f);
+		@rmdir($dir);
+	}
+
 	public static function setUpBeforeClass():void {
 		@unlink(self::$appDir.'data/test.db');
 		[$code, $out, $err] = self::cli('build::run');
@@ -134,11 +140,14 @@ final class DbTest extends TestCase {
 
 	public function testTokenStoreWritesSecureFileModes():void {
 		// Secrets must not be world-readable: write() stores the token file 0600 in a 0700 dir.
+		// Start clean so the 0700 directory creation is actually exercised, and leave clean.
+		self::cleanTokens();
 		[$code, $out, $err] = self::cli('tstest::runWrite');
 		$this->assertSame(0, $code, $err);
 		$r = json_decode(trim($out), true);
 		$this->assertSame('600', $r['file'] ?? null, 'token file must be 0600; '.$out);
 		$this->assertSame('700', $r['dir'] ?? null, 'token dir must be 0700; '.$out);
+		self::cleanTokens();
 	}
 
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
