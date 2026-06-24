@@ -1,6 +1,6 @@
 <?php
 
-function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, bool $DELETE = false, ?string $agent = null, string|bool $cookies = false, int $timeout = 15, &$response = null){
+function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, bool $DELETE = false, string|bool|null $agent = null, string|bool $cookies = false, int $timeout = 15, &$response = null){
 	$curl = curl_init($url);
 	if ($POST !== null || $PUT !== null || $PATCH !== null){
 		if (!is_null($POST)) [$method = 'POST', $content = $POST];
