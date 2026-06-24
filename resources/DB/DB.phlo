@@ -78,6 +78,7 @@ method commit => $this->PDO->commit()
 method rollback => $this->PDO->inTransaction() && $this->PDO->rollBack()
 
 method transaction($callback){
+	if ($this->PDO->inTransaction()) return $callback()
 	$this->begin
 	try {
 		$result = $callback()

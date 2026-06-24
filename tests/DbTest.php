@@ -78,6 +78,17 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['amountChanged'] ?? false, 'the audit must capture the amount change; '.$out);
 	}
 
+	public function testAuditFailureRollsBackTheChange():void {
+		// Under objAudit the mutation and the audit insert run in one transaction, so an audit
+		// failure (here: no audit_log table) rolls the change back instead of leaving the row
+		// changed but unaudited.
+		[$code, $out, $err] = self::cli('audited::runRollback');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertTrue($r['threw'] ?? false, 'the audit failure must propagate; '.$out);
+		$this->assertSame(1, $r['amount'] ?? null, 'the change must roll back when its audit insert fails; '.$out);
+	}
+
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
 		// A reference held across a re-fetch of the same PK is orphaned from the record cache;
 		// relation loading mirrors the relation onto the held object too (objMirror), so it

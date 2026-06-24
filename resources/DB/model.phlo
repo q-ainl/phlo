@@ -54,6 +54,10 @@ static create(...$args){
 	method_exists(static::class, 'beforeSave') && $record->beforeSave()
 	method_exists(static::class, 'beforeCreate') && $record->beforeCreate()
 	$pk = static::idColumn()
+	return static::objAudit() ? static::transaction(fn() => static::objCreateCommit($args, $pk)) : static::objCreateCommit($args, $pk)
+}
+
+static objCreateCommit($args, $pk){
 	$id = static::createRecord(...$args)
 	$record = static::record(...[$pk => $args[$pk] ?? $id])
 	method_exists(static::class, 'afterCreate') && $record->afterCreate()
@@ -79,27 +83,33 @@ static change($where, ...$args){
 	if (!static::objAudit()) return static::DB()->change(static::$table, $where, ...$args)
 	$pk = static::idColumn()
 	$bindings = array_values(array_filter($args, 'is_int', ARRAY_FILTER_USE_KEY))
-	$old = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$bindings)->fetchAll(\PDO::FETCH_CLASS, static::class)
-	$result = static::DB()->change(static::$table, $where, ...$args)
-	foreach ($old AS $record){
-		$fresh = static::record(...[$pk => $record->$pk])
-		$fresh && audit::log($fresh, 'update', $record->objData, $fresh->objData)
-	}
-	return $result
+	return static::transaction(function() use ($where, $args, $bindings, $pk){
+		$old = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$bindings)->fetchAll(\PDO::FETCH_CLASS, static::class)
+		$result = static::DB()->change(static::$table, $where, ...$args)
+		foreach ($old AS $record){
+			$fresh = static::record(...[$pk => $record->$pk])
+			$fresh && audit::log($fresh, 'update', $record->objData, $fresh->objData)
+		}
+		return $result
+	})
 }
 
 static delete($where, ...$args){
 	if (method_exists(static::class, 'beforeDelete') || method_exists(static::class, 'afterDelete') || static::objAudit()){
 		$records = static::DB()->query('SELECT '.static::$table.'.* FROM '.static::$table.' WHERE '.$where, ...$args)->fetchAll(\PDO::FETCH_CLASS, static::class)
 		foreach ($records AS $record) method_exists(static::class, 'beforeDelete') && $record->beforeDelete()
-		$result = static::DB()->delete(static::$table, $where, ...$args)
-		foreach ($records AS $record){
-			method_exists(static::class, 'afterDelete') && $record->afterDelete()
-			static::objAudit() && audit::log($record, 'delete', $record->objData, [])
-		}
-		return $result
+		return static::objAudit() ? static::transaction(fn() => static::objDeleteCommit($where, $args, $records)) : static::objDeleteCommit($where, $args, $records)
 	}
 	return static::DB()->delete(static::$table, $where, ...$args)
+}
+
+static objDeleteCommit($where, $args, $records){
+	$result = static::DB()->delete(static::$table, $where, ...$args)
+	foreach ($records AS $record){
+		method_exists(static::class, 'afterDelete') && $record->afterDelete()
+		static::objAudit() && audit::log($record, 'delete', $record->objData, [])
+	}
+	return $result
 }
 
 static objLogChange($where, ...$args) => static::change($where, ...$args)

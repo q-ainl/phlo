@@ -27,3 +27,19 @@ static runTests {
 		'amountChanged' => str_contains($changes, '"amount"'),
 	]
 }
+
+static runRollback {
+	static::prepareTable()
+	static::DB()->query('DROP TABLE IF EXISTS audit_log')
+	static::DB()->query("INSERT INTO audited (ref, status, amount) VALUES ('A', 'open', 1)")
+	$threw = false
+	try {
+		static::change('ref=? AND status=?', 'A', 'open', amount: 9)
+	} catch (\Throwable $e){
+		$threw = true
+	}
+	return [
+		'threw'  => $threw,
+		'amount' => (int)static::DB()->query("SELECT amount FROM audited WHERE ref='A'")->fetchColumn(),
+	]
+}
