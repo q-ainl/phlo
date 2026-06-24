@@ -79,9 +79,10 @@
 			['php' => 14, 'phlo' => 10, 'name' => 'path'],
 			['php' => 17, 'phlo' => 13, 'name' => 'read'],
 			['php' => 21, 'phlo' => 18, 'name' => 'write'],
-			['php' => 26, 'phlo' => 23, 'name' => 'valid'],
-			['php' => 29, 'phlo' => 26, 'name' => 'store'],
-			['php' => 37, 'phlo' => 35, 'name' => 'access'],
+			['php' => 29, 'phlo' => 26, 'name' => 'valid'],
+			['php' => 32, 'phlo' => 29, 'name' => 'store'],
+			['php' => 42, 'phlo' => 40, 'name' => 'lock'],
+			['php' => 49, 'phlo' => 48, 'name' => 'access'],
 		],
 	],
 	'%PHP%/OAuthConnector.php' => [

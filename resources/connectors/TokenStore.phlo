@@ -16,8 +16,11 @@ static read($key):array {
 
 static write($key, array $token):void {
 	$dir = data.'tokens'
-	is_dir($dir) || mkdir($dir, 0775, true)
-	json_write(static::path($key), $token)
+	is_dir($dir) || mkdir($dir, 0700, true)
+	@chmod($dir, 0700)
+	$file = static::path($key)
+	json_write($file, $token)
+	@chmod($file, 0600)
 }
 
 static valid(array $token):bool => ($token['access_token'] ?? void) !== void && (int)($token['expires_at'] ?? 0) > time() + 30
@@ -31,18 +34,36 @@ static store($res, $refresh):array {
 	return $token
 }
 
+// Exclusive lock around a key's refresh cycle, so concurrent callers do not each fire a
+// refresh (which rotates the refresh_token and would brick the losers).
+static lock($key){
+	$dir = data.'tokens'
+	is_dir($dir) || mkdir($dir, 0700, true)
+	$lock = fopen(static::path($key).'.lock', 'c')
+	flock($lock, LOCK_EX)
+	return $lock
+}
+
 static access($key, $tokenUrl, $clientId, $clientSecret, array $seed = []):?string {
 	$token = static::read($key)
-	if (!($token['refresh_token'] ?? null) && ($seed['refresh_token'] ?? null)){
-		$token = ['refresh_token' => $seed['refresh_token']]
-		static::write($key, $token)
-	}
 	if (static::valid($token)) return $token['access_token']
-	$refresh = $token['refresh_token'] ?? null
-	if (!$refresh || !$tokenUrl || !$clientId) return null
-	$res = OAuth2::refresh($tokenUrl, $clientId, $clientSecret, $refresh)
-	if (!($res['access_token'] ?? null)) return null
-	$token = static::store($res, $refresh)
-	static::write($key, $token)
-	return $token['access_token']
+	$lock = static::lock($key)
+	try {
+		$token = static::read($key)
+		if (!($token['refresh_token'] ?? null) && ($seed['refresh_token'] ?? null)){
+			$token = ['refresh_token' => $seed['refresh_token']]
+			static::write($key, $token)
+		}
+		if (static::valid($token)) return $token['access_token']
+		$refresh = $token['refresh_token'] ?? null
+		if (!$refresh || !$tokenUrl || !$clientId) return null
+		$res = OAuth2::refresh($tokenUrl, $clientId, $clientSecret, $refresh)
+		if (!($res['access_token'] ?? null)) return null
+		$token = static::store($res, $refresh)
+		static::write($key, $token)
+		return $token['access_token']
+	} finally {
+		flock($lock, LOCK_UN)
+		fclose($lock)
+	}
 }
