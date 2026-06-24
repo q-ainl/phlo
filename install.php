@@ -120,6 +120,10 @@ function resolve_resources(string $input, array $catalog):array {
 	return array_keys($resolved);
 }
 
+// Reuse the resolver/catalog functions above (e.g. from the parity test) without running
+// the interactive installer below.
+if (defined('PHLO_INSTALL_LIB')) return;
+
 $self   = realpath(__FILE__);
 $engine = engine_dir($self);
 $target = isset($argv[1]) ? rtrim($argv[1], '/') : rtrim(getcwd(), '/');

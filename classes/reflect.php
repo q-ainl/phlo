@@ -767,8 +767,8 @@ class reflect {
 	}
 
 	/** Returns required resource names for a given resource, resolved from @ requires metadata. Pass full: true to also include phpExt and creds lists. */
-	public static function resourceDependencies(string $name, bool $transitive = true, bool $full = false):array {
-		$resIndex = static::graphResourceIndex(static::resourceNodes(false));
+	public static function resourceDependencies(string $name, bool $transitive = true, bool $full = false, ?array $resIndex = null):array {
+		$resIndex ??= static::graphResourceIndex(static::resourceNodes(false));
 		$root = static::graphResourceByAlias($name, $resIndex);
 		if (!$root) return [];
 		$intern = [];
@@ -800,6 +800,14 @@ class reflect {
 		$out = ['intern' => array_values($intern)];
 		$phpExt && $out['phpExt'] = array_values(array_unique($phpExt));
 		$creds  && $out['creds']  = array_values(array_unique($creds));
+		return $out;
+	}
+
+	/** {resource => intern deps} for every resource, built from one shared index, for whole-catalog parity checks. */
+	public static function resourceDependencyMap():array {
+		$resIndex = static::graphResourceIndex(static::resourceNodes(false));
+		$out = [];
+		foreach (array_keys($resIndex['items']) as $name) $out[$name] = static::resourceDependencies($name, true, false, $resIndex);
 		return $out;
 	}
 

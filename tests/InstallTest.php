@@ -125,6 +125,35 @@ final class InstallTest extends TestCase {
 		self::wipe($target);
 	}
 
+	public function testInstallerAndReflectAgreeOnEveryResource():void {
+		// Structural parity, not just the curated cases above: the installer's file-scan
+		// resolver and reflect's node-graph resolver must agree on the dependencies of every
+		// resource in the catalog. install.php's resolver runs in-process (library mode);
+		// reflect's whole-catalog map comes from a scaffolded app's runtime.
+		$target = PHLO_TEST_TMP.'install-allparity';
+		self::wipe($target);
+		[$code, $out, $err] = self::runInstaller(engine.'install.php', ['Demo', 'demo.test', 'All-resource parity', '', 'y'], [$target]);
+		$this->assertSame(0, $code, $out.$err);
+		$proc       = proc_open([PHP_BINARY, "$target/www/app.php", 'reflect::resourceDependencyMap'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		$reflectMap = json_decode(trim((string)stream_get_contents($pipes[1])), true) ?? [];
+		proc_close($proc);
+		$this->assertNotEmpty($reflectMap, 'reflect produced no dependency map');
+
+		if (!defined('PHLO_INSTALL_LIB')) define('PHLO_INSTALL_LIB', true);
+		require_once engine.'install.php';
+		$catalog  = resource_catalog(rtrim(engine, '/'));
+		$mismatch = [];
+		foreach ($catalog as $key => $meta){
+			$installer = array_values(array_diff(resolve_resources($key, $catalog), [$key]));
+			sort($installer);
+			$reflect = $reflectMap[$key] ?? [];
+			sort($reflect);
+			if ($installer !== $reflect) $mismatch[$key] = ['installer' => $installer, 'reflect' => $reflect];
+		}
+		$this->assertSame([], $mismatch, count($catalog).' resources checked; installer and reflect must resolve identical dependencies for every one');
+		self::wipe($target);
+	}
+
 	public function testCopiedInstallerRemovesItselfAfterSuccess():void {
 		$target = PHLO_TEST_TMP.'install-copy';
 		self::wipe($target);
