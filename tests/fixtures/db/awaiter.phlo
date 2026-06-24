@@ -1,0 +1,6 @@
+@ summary: await CLI-fallback test. Spawns sibling CLI targets and collects their JSON
+@          output through the concurrent stdout/stderr reader (the non-daemon path).
+@ requires: await
+
+static emit($x) => ['echo' => $x]
+static run => await(['awaiter::emit', 'a'], ['awaiter::emit', 'b'])

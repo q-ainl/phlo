@@ -89,6 +89,14 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['amount'] ?? null, 'the change must roll back when its audit insert fails; '.$out);
 	}
 
+	public function testAwaitCliFallbackCollectsResults():void {
+		// The non-daemon await drains each child's stdout and stderr concurrently; spawn two
+		// sibling targets and confirm both JSON results come back, in order.
+		[$code, $out, $err] = self::cli('awaiter::run');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame([['echo' => 'a'], ['echo' => 'b']], json_decode(trim($out), true), $out);
+	}
+
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
 		// A reference held across a re-fetch of the same PK is orphaned from the record cache;
 		// relation loading mirrors the relation onto the held object too (objMirror), so it

@@ -5,6 +5,7 @@
         "DB/SQLite",
         "DB/JSONDB",
         "DB/JSON.result",
-        "security/audit"
+        "security/audit",
+        "await"
     ]
 }

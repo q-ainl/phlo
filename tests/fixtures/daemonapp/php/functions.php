@@ -15,22 +15,48 @@ function phlo_sync(string $cb, ...$args){
 function await(...$jobs){
 	if (daemon) return daemon::await($jobs);
 	$children = [];
+	$open = [];
 	foreach ($jobs AS $i => $job){
 		[$cb, $args] = is_array($job) ? [$job[0], array_slice($job, 1)] : [$job, []];
 		$cmd = cli.space.escapeshellarg($_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void);
 		$desc = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']];
 		$proc = proc_open($cmd, $desc, $pipes);
 		fclose($pipes[0]);
-		$children[$i] = obj(proc: $proc, out: $pipes[1], err: $pipes[2]);
+		stream_set_blocking($pipes[1], false);
+		stream_set_blocking($pipes[2], false);
+		$children[$i] = obj(proc: $proc, out: $pipes[1], err: $pipes[2], stdout: void, stderr: void);
+		$open['o'.$i] = $pipes[1];
+		$open['e'.$i] = $pipes[2];
+	}
+	// Drain every child's stdout AND stderr together: reading one stream to EOF before the;
+	// other deadlocks a child that fills the unread pipe. Bound the whole wait so a hung;
+	// child cannot block the caller forever.
+	$deadline = time() + 30;
+	while ($open){
+		$read = $open;
+		$write = $except = [];
+		if (@stream_select($read, $write, $except, 1) === false) break;
+		foreach ($read AS $key => $stream){
+			$chunk = fread($stream, 65536);
+			if ($chunk === void || $chunk === false){
+				feof($stream) && $open = array_diff_key($open, [$key => 1]);
+				continue;
+			}
+			$i = (int)substr($key, 1);
+			if ($key[0] === 'o') $children[$i]->stdout .= $chunk;
+			else $children[$i]->stderr .= $chunk;
+		}
+		if (time() >= $deadline){
+			foreach ($children AS $child) (proc_get_status($child->proc)['running'] ?? false) && proc_terminate($child->proc);
+			break;
+		}
 	}
 	$results = [];
 	foreach ($children AS $i => $child){
-		$out = stream_get_contents($child->out);
-		$err = stream_get_contents($child->err);
 		fclose($child->out);
 		fclose($child->err);
 		$code = proc_close($child->proc);
-		$err = trim($err);
+		$err = trim($child->stderr);
 		if ($err !== void){
 			$ej = json_decode($err, true);
 			$results[$i] = json_last_error() === JSON_ERROR_NONE ? $ej : $err;
@@ -40,8 +66,8 @@ function await(...$jobs){
 			$results[$i] = obj(error: 'CLI process failed', code: $code);
 			continue;
 		}
-		$json = json_decode($out, true);
-		$results[$i] = json_last_error() === JSON_ERROR_NONE ? $json : $out;
+		$json = json_decode($child->stdout, true);
+		$results[$i] = json_last_error() === JSON_ERROR_NONE ? $json : $child->stdout;
 	}
 	return $results;
 }
