@@ -89,6 +89,24 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['amount'] ?? null, 'the change must roll back when its audit insert fails; '.$out);
 	}
 
+	public function testNestedAuditFailureRollsBackWithinOuterTransaction():void {
+		// Inside an outer transaction the audited change runs on a savepoint, so a failing
+		// audit undoes only its own update even though the caller commits the outer transaction.
+		[$code, $out, $err] = self::cli('audited::runNestedRollback');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertTrue($r['threw'] ?? false, $out);
+		$this->assertSame(1, $r['amount'] ?? null, 'a nested audit failure must roll back its update via savepoint; '.$out);
+	}
+
+	public function testObjSaveCreateIsAudited():void {
+		// objSave() on a new record must audit the create like static::create() does; updates
+		// via objSave() already audit because they route through change().
+		[$code, $out, $err] = self::cli('audited::runSaveCreate');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame(1, json_decode(trim($out), true)['logged'] ?? null, 'objSave() of a new audited record must log a create; '.$out);
+	}
+
 	public function testAwaitCliFallbackCollectsResults():void {
 		// The non-daemon await drains each child's stdout and stderr concurrently; spawn two
 		// sibling targets and confirm both JSON results come back, in order.

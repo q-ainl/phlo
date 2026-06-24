@@ -10,6 +10,7 @@
 
 prop PDO => error('No PDO connector defined')
 prop fieldQuotes = bt
+prop savepoint = 0
 prop insertIgnore = ' IGNORE'
 prop insertOnConflict = void
 
@@ -78,14 +79,30 @@ method commit => $this->PDO->commit()
 method rollback => $this->PDO->inTransaction() && $this->PDO->rollBack()
 
 method transaction($callback){
-	if ($this->PDO->inTransaction()) return $callback()
-	$this->begin
+	if (!$this->PDO->inTransaction()){
+		$this->begin
+		try {
+			$result = $callback()
+			$this->commit
+			return $result
+		} catch (\Throwable $e){
+			$this->rollback
+			throw $e
+		}
+	}
+	// Nested: a savepoint gives the inner unit its own rollback point, so its failure
+	// (e.g. an audit insert) is undone even when the outer transaction commits.
+	$sp = 'phlo_sp_'.(++$this->savepoint)
+	$this->PDO->exec('SAVEPOINT '.$sp)
 	try {
 		$result = $callback()
-		$this->commit
+		$this->PDO->exec('RELEASE SAVEPOINT '.$sp)
+		$this->savepoint--
 		return $result
 	} catch (\Throwable $e){
-		$this->rollback
+		$this->PDO->exec('ROLLBACK TO SAVEPOINT '.$sp)
+		$this->PDO->exec('RELEASE SAVEPOINT '.$sp)
+		$this->savepoint--
 		throw $e
 	}
 }

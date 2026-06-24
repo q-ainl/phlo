@@ -123,9 +123,7 @@ method objSave {
 	method_exists(static::class, 'beforeSave') && $this->beforeSave($old)
 	if ($isNew){
 		method_exists(static::class, 'beforeCreate') && $this->beforeCreate()
-		static::createRecord(...$this)
-		$saved = static::record(...[$pk => $pkValue])
-		method_exists(static::class, 'afterCreate') && $saved->afterCreate()
+		$saved = static::objAudit() ? static::transaction(fn() => $this->objSaveCreate($pk, $pkValue)) : $this->objSaveCreate($pk, $pkValue)
 	}
 	else {
 		method_exists(static::class, 'beforeChange') && $this->beforeChange($old)
@@ -134,6 +132,14 @@ method objSave {
 		method_exists(static::class, 'afterChange') && $saved->afterChange($old)
 	}
 	method_exists(static::class, 'afterSave') && $saved->afterSave($old)
+	return $saved
+}
+
+method objSaveCreate($pk, $pkValue){
+	static::createRecord(...$this)
+	$saved = static::record(...[$pk => $pkValue])
+	method_exists(static::class, 'afterCreate') && $saved->afterCreate()
+	static::objAudit() && audit::log($saved, 'create', [], $saved->objData)
 	return $saved
 }
 
