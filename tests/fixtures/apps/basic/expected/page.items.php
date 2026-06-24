@@ -14,7 +14,7 @@ class page_items extends obj {
 		$_ = [];
 		$_[] = "<ul class=\"list\">";
 		foreach ($items AS $item){
-			$_[] = "<li data-kind=\"item\">".$this->label($item)."</li>";
+			$_[] = "<li data-kind=\"item\">".($this->label($item))."</li>";
 		}
 		$_[] = "</ul>";
 		return implode(lf, $_);
