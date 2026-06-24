@@ -215,7 +215,7 @@ method getChildren($key){
 	$column = $isArray ? $relation['key'] : static::objShortName()
 	$toLoad = array_filter($state->records[static::class] ?? [], fn($p) => !array_key_exists($key, $p->objState['children']))
 	if ($toLoad){
-		$fq = static::DB()->fieldQuotes
+		$fq = $class::DB()->fieldQuotes
 		$children = $class::records(where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad), $class::DB()).')')
 		foreach ($toLoad AS $parentRecord) $parentRecord->objState['children'][$key] = []
 		foreach ($children AS $childId => $child) !is_null($pId = $child->objData[$column] ?? null) && isset($state->records[static::class][$pId]) && $state->records[static::class][$pId]->objState['children'][$key][$childId] = $child
@@ -257,7 +257,7 @@ method getCount($key){
 			$isArray = is_array($relation)
 			$class = $isArray ? $relation['obj'] : $relation
 			$column = $isArray ? $relation['key'] : static::objShortName()
-			$fq = static::DB()->fieldQuotes
+			$fq = $class::DB()->fieldQuotes
 			$counts = $class::pair(columns: $fq.$column.$fq.', COUNT(*)', where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad), $class::DB()).')', group: $fq.$column.$fq)
 			foreach ($toLoad as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
 		}
@@ -288,7 +288,7 @@ method getLast($key){
 			$class = $isArray ? $relation['obj'] : $relation
 			$column = $isArray ? $relation['key'] : static::objShortName()
 			$childTable = $class::$table
-			$fq = static::DB()->fieldQuotes
+			$fq = $class::DB()->fieldQuotes
 			$qt = $fq.$childTable.$fq
 			$qc = $fq.$column.$fq
 			$ids = $this->objIn(array_keys($toLoad), $class::DB())
