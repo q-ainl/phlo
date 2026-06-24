@@ -130,7 +130,7 @@ final class HttpTest extends TestCase {
 		return <<<'PHP'
 		<?php
 		$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-		$cf = sys_get_temp_dir().'/phlo-httptest-flaky-'.getmypid().'.cnt';
+		$cf = __DIR__.'/phlo-httptest-flaky-'.getmypid().'.cnt';
 		header('Content-Type: application/json');
 		if ($path === '/json'){ header('X-Test: hi'); echo json_encode(['ok' => true, 'id' => 1]); exit; }
 		if ($path === '/err'){ http_response_code(503); echo json_encode(['error' => 'boom']); exit; }
