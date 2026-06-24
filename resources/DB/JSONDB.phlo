@@ -19,6 +19,9 @@ prop lastInsertedId = null
 
 // objFilter strips the surrounding quotes again; this driver has no PDO and runs no
 // SQL, so a literal-quoted list (not PDO escaping) is what its IN parsing expects.
+// Limitation: objFilter splits the IN list on commas and trims quotes, so a string
+// primary key that itself contains a comma or a quote is not matched; numeric and
+// token-style ids (the relation-loader case) are fine.
 method quoteList(array $ids) => dq.implode(dq.comma.dq, $ids).dq
 
 method objRead => file_exists($this->file) ? json_decode(file_get_contents($this->file), true) ?: [] : []
