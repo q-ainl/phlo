@@ -15,13 +15,13 @@
 				'source' => '/srv/control/phlo/resources/await.phlo',
 			],
 			[
-				'php' => 50,
+				'php' => 76,
 				'phlo' => 10,
 				'name' => 'wsCast',
 				'source' => '/srv/control/phlo/resources/wsCast.phlo',
 			],
 			[
-				'php' => 62,
+				'php' => 88,
 				'phlo' => 10,
 				'name' => 'HTTP',
 				'source' => '/srv/control/phlo/resources/HTTP.phlo',
