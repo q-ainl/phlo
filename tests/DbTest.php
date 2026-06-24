@@ -79,12 +79,9 @@ final class DbTest extends TestCase {
 	}
 
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
-		// The per-request record cache is not yet a true identity map: a reference held across
-		// a re-fetch of the same PK is orphaned, so a relation load fills the new cache object
-		// and the held one reads an empty relation. Asserting that 0 would pin a bug as a
-		// contract, so this targets the intended behaviour and is skipped until relation
-		// loading also fills $this (or the cache becomes a real identity map).
-		$this->markTestSkipped('record cache is not a true identity map yet (held ref orphaned on re-fetch)');
+		// A reference held across a re-fetch of the same PK is orphaned from the record cache;
+		// relation loading mirrors the relation onto the held object too (objMirror), so it
+		// still sees its children instead of an empty list.
 		[$code, $out, $err] = self::cli('lst::runHeldRef');
 		$this->assertSame(0, $code, $err);
 		$this->assertSame(1, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference should still see its relation after a re-fetch');
