@@ -155,7 +155,7 @@ class build_node extends stdClass {
 		$blockStack = [];
 		$view  = [];
 		$lines = [];
-		$body  = preg_replace('/{\\(\\s*(.*?)\\s*\\)}/s', '{{ ($1) }}', $this->body ?? void);
+		$body  = $this->convertParenInterp($this->body ?? void);
 		foreach (explode(lf, $body) as $ln => $line){
 			preg_match('/^\s*/', $line, $padMatch);
 			$pad    = $padMatch[0] ?? void;
@@ -293,6 +293,39 @@ class build_node extends stdClass {
 			$j++;
 		}
 		return $len;
+	}
+
+	// Offset just past the )} that closes a {( opened at $i, skipping PHP string literals.
+	private function parenInterpEnd(string $s, int $i):int {
+		$len = strlen($s);
+		$j   = $i + 2;
+		while ($j < $len){
+			if ($s[$j] === dq || $s[$j] === sq){ $j = $this->skipQuoted($s, $j); continue; }
+			if ($s[$j] === ')' && ($s[$j + 1] ?? void) === '}') return $j + 2;
+			$j++;
+		}
+		return $len;
+	}
+
+	// Convert {( expr )} interpolations to {{ (expr) }}, quote-aware so a )} inside a PHP
+	// string literal does not close the interpolation early.
+	private function convertParenInterp(string $body):string {
+		$out = void;
+		$len = strlen($body);
+		$i   = 0;
+		while ($i < $len){
+			if ($body[$i] === '{' && ($body[$i + 1] ?? void) === '('){
+				$end = $this->parenInterpEnd($body, $i);
+				if (substr($body, $end - 2, 2) === ')}'){
+					$out .= '{{ ('.trim(substr($body, $i + 2, $end - $i - 4)).') }}';
+					$i = $end;
+					continue;
+				}
+			}
+			$out .= $body[$i];
+			$i++;
+		}
+		return $out;
 	}
 
 	private function tagEnd(string $line, int $start):int {

@@ -34,6 +34,7 @@ class app extends obj {
 		$_[] = "<div class=\"".($this->ready ? "yes" : "no")."\">double-quoted strings inside a dynamic class</div>";
 		$_[] = "<div class=\"tier ".($this->ready === "yes" ? "on" : "off")."\">shorthand plus double-quoted dynamic class</div>";
 		$_[] = "<div class=\"tier ".($this->ready === "}}" ? "on" : "off")."\">closing braces in a string inside a dynamic class</div>";
+		$_[] = "<div class=\"tier ".($this->ready === ")}" ? "on" : "off")."\">paren-brace in a string inside a dynamic class</div>";
 		$_[] = "<a href=\"".($this->count > 1 ? "/many" : "/few")."\">gt plus double-quoted strings in an attribute interpolation</a>";
 		$_[] = "<section class=\"wrap\" id=\"explicit\">shorthand id plus explicit id</section>";
 		foreach ($this->items AS $item){
