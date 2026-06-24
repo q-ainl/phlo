@@ -202,7 +202,16 @@ class build_node extends stdClass {
 						$trim = str_replace($match[0], "{{ phlo('$base')".$chain.' }}', $trim);
 					}
 				}
-				$segments = preg_split('/{{\s*(.*?)\s*}}/s', $trim, -1, PREG_SPLIT_DELIM_CAPTURE);
+				$segments = [];
+				$pos      = 0;
+				while (($open = strpos($trim, '{{', $pos)) !== false){
+					$end = $this->interpEnd($trim, $open);
+					if (substr($trim, $end - 2, 2) !== '}}') break;
+					$segments[] = substr($trim, $pos, $open - $pos);
+					$segments[] = substr($trim, $open + 2, $end - $open - 4);
+					$pos        = $end;
+				}
+				$segments[] = substr($trim, $pos);
 				$out = void;
 				foreach ($segments as $i => $segment){
 					if ($i % 2 === 0){
@@ -258,21 +267,41 @@ class build_node extends stdClass {
 		return $out;
 	}
 
+	// Skip a PHP string literal: $s[$i] is the opening quote; returns the offset just past
+	// its matching close quote (honouring \-escapes), or strlen($s) if unterminated.
+	private function skipQuoted(string $s, int $i):int {
+		$q   = $s[$i];
+		$len = strlen($s);
+		$j   = $i + 1;
+		while ($j < $len){
+			if ($s[$j] === bs){ $j += 2; continue; }
+			if ($s[$j] === $q) return $j + 1;
+			$j++;
+		}
+		return $len;
+	}
+
+	// Offset just past the }} that closes the interpolation opened at $i ($s[$i..i+1] is
+	// {{), skipping PHP string literals so a }} inside one does not close it early. The
+	// shared quote-aware primitive behind tagEnd, attrValueEnd and topLevelAttrPos.
+	private function interpEnd(string $s, int $i):int {
+		$len = strlen($s);
+		$j   = $i + 2;
+		while ($j < $len){
+			if ($s[$j] === dq || $s[$j] === sq){ $j = $this->skipQuoted($s, $j); continue; }
+			if ($s[$j] === '}' && ($s[$j + 1] ?? void) === '}') return $j + 2;
+			$j++;
+		}
+		return $len;
+	}
+
 	private function tagEnd(string $line, int $start):int {
 		$len = strlen($line);
 		$i   = $start + 1;
 		while ($i < $len){
 			$c = $line[$i];
-			if ($c === dq || $c === sq){
-				$close = strpos($line, $c, $i + 1);
-				if ($close === false) return -1;
-				$i = $close + 1;
-			}
-			elseif ($c === '{' && ($line[$i + 1] ?? void) === '{'){
-				$close = strpos($line, '}}', $i + 2);
-				if ($close === false) return -1;
-				$i = $close + 2;
-			}
+			if ($c === dq || $c === sq) $i = $this->attrValueEnd($line, $i);
+			elseif ($c === '{' && ($line[$i + 1] ?? void) === '{') $i = $this->interpEnd($line, $i);
 			elseif ($c === '>') return $i;
 			elseif ($c === '<') return -1;
 			else $i++;
@@ -308,10 +337,7 @@ class build_node extends stdClass {
 		if ($q === dq || $q === sq){
 			$j = $i + 1;
 			while ($j < $len){
-				if ($s[$j] === '{' && ($s[$j + 1] ?? void) === '{'){
-					$close = strpos($s, '}}', $j + 2);
-					$j = $close === false ? $len : $close + 2;
-				}
+				if ($s[$j] === '{' && ($s[$j + 1] ?? void) === '{') $j = $this->interpEnd($s, $j);
 				elseif ($s[$j] === $q) return $j + 1;
 				else $j++;
 			}
@@ -346,16 +372,8 @@ class build_node extends stdClass {
 		$i   = 0;
 		while ($i < $len){
 			$c = $attrs[$i];
-			if ($c === dq || $c === sq){
-				$close = strpos($attrs, $c, $i + 1);
-				if ($close === false) return null;
-				$i = $close + 1;
-			}
-			elseif ($c === '{' && ($attrs[$i + 1] ?? void) === '{'){
-				$close = strpos($attrs, '}}', $i + 2);
-				if ($close === false) return null;
-				$i = $close + 2;
-			}
+			if ($c === dq || $c === sq) $i = $this->attrValueEnd($attrs, $i);
+			elseif ($c === '{' && ($attrs[$i + 1] ?? void) === '{') $i = $this->interpEnd($attrs, $i);
 			elseif (($i === 0 || ctype_space($attrs[$i - 1])) && preg_match('/\G'.$name.'\s*=/', $attrs, $m, 0, $i)) return $i;
 			else $i++;
 		}
