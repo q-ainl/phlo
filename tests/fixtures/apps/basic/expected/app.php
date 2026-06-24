@@ -29,7 +29,7 @@ class app extends obj {
 	protected function main():string {
 		$_ = [];
 		$_[] = "<h1 id=\"top\" class=\"hero\">$this->title</h1>";
-		$_[] = "<p>".ucfirst($this->title)."</p>";
+		$_[] = "<p>".(ucfirst($this->title))."</p>";
 		$_[] = "<p>".($this->ready ? 'ready' : 'not ready')."</p>";
 		return implode(lf, $_);
 	}

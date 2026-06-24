@@ -21,10 +21,11 @@ class app extends obj {
 	protected function main():string {
 		$_ = [];
 		$_[] = "<h1 id=\"top\" class=\"hero big\">$this->title</h1>";
-		$_[] = "<p>".ucfirst($this->title)."</p>";
+		$_[] = "<p>".(ucfirst($this->title))."</p>";
 		$_[] = "<p>".($this->ready ? 'ready' : 'not ready')."</p>";
+		$_[] = "<p>".($this->count > 0 ? 'ternary in double braces' : 'must be grouped as one operand')."</p>";
 		$_[] = "<a href=\"/x\" title=\"1 > 0\">literal gt in attribute value</a>";
-		$_[] = "<div data-id=\"".$this->title."\">arrow operator inside attribute interpolation</div>";
+		$_[] = "<div data-id=\"".($this->title)."\">arrow operator inside attribute interpolation</div>";
 		$_[] = "<div class=\"".($this->count > 0 ? 'has' : 'none')."\">gt inside dynamic attribute</div>";
 		$_[] = "<span class='foo'>single quoted attribute</span>";
 		$_[] = "<span class=\"bar\">bare unquoted attribute</span>";
@@ -38,7 +39,7 @@ class app extends obj {
 		$_[] = "<a href=\"".($this->count > 1 ? "/many" : "/few")."\">gt plus double-quoted strings in an attribute interpolation</a>";
 		$_[] = "<section class=\"wrap\" id=\"explicit\">shorthand id plus explicit id</section>";
 		foreach ($this->items AS $item){
-			$_[] = "<li class=\"row\">".$item."</li>";
+			$_[] = "<li class=\"row\">".($item)."</li>";
 		}
 		if ($this->ready){
 			$_[] = "<p class=\"on\">shown</p>";

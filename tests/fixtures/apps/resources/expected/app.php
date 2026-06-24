@@ -15,8 +15,8 @@ class app extends obj {
 	}
 	protected function shell():string {
 		$_ = [];
-		$_[] = "<main>".phlo('widget')->render."</main>";
-		$_[] = "<p>".camel('hello there')."</p>";
+		$_[] = "<main>".(phlo('widget')->render)."</main>";
+		$_[] = "<p>".(camel('hello there'))."</p>";
 		return implode(lf, $_);
 	}
 }

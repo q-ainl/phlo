@@ -218,7 +218,7 @@ class build_node extends stdClass {
 						$out .= strtr($segment, [bs.dq => bs.bs.bs.dq, dq => bs.dq]);
 						continue;
 					}
-					$out .= dq.dot.$this->parseObjects(trim($segment)).dot.dq;
+					$out .= dq.dot.'('.$this->parseObjects(trim($segment)).')'.dot.dq;
 				}
 				$trim   = $out;
 				$indent = max(0, $depth - $blockDepth);
@@ -317,7 +317,7 @@ class build_node extends stdClass {
 			if ($body[$i] === '{' && ($body[$i + 1] ?? void) === '('){
 				$end = $this->parenInterpEnd($body, $i);
 				if (substr($body, $end - 2, 2) === ')}'){
-					$out .= '{{ ('.trim(substr($body, $i + 2, $end - $i - 4)).') }}';
+					$out .= '{{ '.trim(substr($body, $i + 2, $end - $i - 4)).' }}';
 					$i = $end;
 					continue;
 				}

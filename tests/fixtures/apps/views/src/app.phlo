@@ -13,6 +13,7 @@ view main:
 <h1#top.hero.big>$this->title</h1>
 <p>{{ ucfirst($this->title) }}</p>
 <p>{( $this->ready ? 'ready' : 'not ready' )}</p>
+<p>{{ $this->count > 0 ? 'ternary in double braces' : 'must be grouped as one operand' }}</p>
 <a href="/x" title="1 > 0">literal gt in attribute value</a>
 <div data-id="{{ $this->title }}">arrow operator inside attribute interpolation</div>
 <div class="{( $this->count > 0 ? 'has' : 'none' )}">gt inside dynamic attribute</div>
