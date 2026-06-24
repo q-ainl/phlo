@@ -6,6 +6,7 @@
         "DB/JSONDB",
         "DB/JSON.result",
         "security/audit",
-        "await"
+        "await",
+        "connectors/TokenStore"
     ]
 }

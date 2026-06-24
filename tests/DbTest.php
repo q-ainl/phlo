@@ -132,6 +132,15 @@ final class DbTest extends TestCase {
 		$this->assertSame('CLI process failed', $r[0]['error'] ?? null, 'await must report the killed child, not its late result; '.$out);
 	}
 
+	public function testTokenStoreWritesSecureFileModes():void {
+		// Secrets must not be world-readable: write() stores the token file 0600 in a 0700 dir.
+		[$code, $out, $err] = self::cli('tstest::runWrite');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertSame('600', $r['file'] ?? null, 'token file must be 0600; '.$out);
+		$this->assertSame('700', $r['dir'] ?? null, 'token dir must be 0700; '.$out);
+	}
+
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
 		// A reference held across a re-fetch of the same PK is orphaned from the record cache;
 		// relation loading mirrors the relation onto the held object too (objMirror), so it

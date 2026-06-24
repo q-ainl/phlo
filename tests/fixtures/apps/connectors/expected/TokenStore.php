@@ -16,6 +16,7 @@ class TokenStore extends obj {
 	public static function read($key):array {
 		$file = static::path($key);
 		if (!is_file($file)) return [];
+		@chmod(data.'tokens', 0700);
 		@chmod($file, 0600);
 		return (array)json_read($file, true);
 	}
@@ -43,14 +44,18 @@ class TokenStore extends obj {
 	public static function lock($key){
 		$dir = data.'tokens';
 		is_dir($dir) || mkdir($dir, 0700, true);
-		$lock = fopen(static::path($key).'.lock', 'c');
-		$lock && flock($lock, LOCK_EX);
+		$lock = @fopen(static::path($key).'.lock', 'c');
+		if (!$lock || !flock($lock, LOCK_EX)){
+			$lock && fclose($lock);
+			return null;
+		}
 		return $lock;
 	}
 	public static function access($key, $tokenUrl, $clientId, $clientSecret, array $seed = []):?string {
 		$token = static::read($key);
 		if (static::valid($token)) return $token['access_token'];
 		$lock = static::lock($key);
+		if (!$lock) return null;
 		try {
 			$token = static::read($key);
 			if (!($token['refresh_token'] ?? null) && ($seed['refresh_token'] ?? null)){
@@ -66,8 +71,8 @@ class TokenStore extends obj {
 			static::write($key, $token);
 			return $token['access_token'];
 		} finally {
-			$lock && flock($lock, LOCK_UN);
-			$lock && fclose($lock);
+			flock($lock, LOCK_UN);
+			fclose($lock);
 		}
 	}
 }

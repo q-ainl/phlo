@@ -1,0 +1,10 @@
+@ summary: TokenStore filemode test. write() must store the secret 0600 in a 0700 dir.
+@ requires: connectors/TokenStore
+
+static runWrite {
+	TokenStore::write('tmtest', ['access_token' => 'x', 'expires_at' => 9999999999])
+	return [
+		'file' => substr(sprintf('%o', fileperms(TokenStore::path('tmtest'))), -3),
+		'dir'  => substr(sprintf('%o', fileperms(data.'tokens')), -3),
+	]
+}
