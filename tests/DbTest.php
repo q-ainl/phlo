@@ -87,11 +87,15 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, json_decode(trim($out), true)['heldChildren'] ?? null, 'a held reference should still see its relation after a re-fetch');
 	}
 
-	public function testObjInQuotesIdsWithoutAssumingPdo():void {
-		// JSONDB has no PDO; the relation loaders must quote IN-lists through the driver's
-		// quoteList, not PDO::quote directly, or every JSONDB relation load fatals.
+	public function testObjInQuotesIdsThroughTheExecutingDriver():void {
+		// JSONDB has no PDO, so objIn must quote IN-lists through the driver's quoteList,
+		// not PDO::quote directly (or every JSONDB relation load fatals). And a relation
+		// query runs on the related model's DB, so objIn quotes through the DB passed to it
+		// (here SQLite) rather than the source model's own driver.
 		[$code, $out, $err] = self::cli('jdoc::runTests');
 		$this->assertSame(0, $code, "objIn must not assume a PDO driver:\n$out$err");
-		$this->assertSame('"1","2"', json_decode(trim($out), true)['objIn'] ?? null, $out);
+		$r = json_decode(trim($out), true);
+		$this->assertSame('"1","2"', $r['objIn'] ?? null, 'JSONDB quoteList is literal-quoted, no PDO: '.$out);
+		$this->assertSame("'1','2'", $r['objInDb'] ?? null, 'objIn quotes through the executing DB passed in (SQLite), not the model own driver: '.$out);
 	}
 }

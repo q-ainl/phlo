@@ -6,4 +6,7 @@
 
 static table = 'jdocs'
 
-static runTests => ['objIn' => (new static)->objIn(['1', '2'])]
+static runTests => [
+	'objIn'   => (new static)->objIn(['1', '2']),
+	'objInDb' => (new static)->objIn(['1', '2'], note::DB()),
+]

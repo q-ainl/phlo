@@ -169,7 +169,7 @@ static objRel($key){
 
 prop objState = ['parents' => [], 'children' => [], 'many' => []]
 method objGet($key) => $this->getParent($key) ?? $this->getChildren($key) ?? $this->getMany($key)
-method objIn($ids) => $ids ? static::DB()->quoteList($ids) : 'NULL'
+method objIn($ids, $db = null) => $ids ? ($db ?? static::DB())->quoteList($ids) : 'NULL'
 
 // A reference held across a re-fetch is orphaned from the record cache; after a
 // relation is loaded onto the canonical record, mirror it onto this object too so the
@@ -200,7 +200,7 @@ method getParent($key){
 			$pClass = $pIsArray ? $pRelation['obj'] : $pRelation
 			if ($pClass === $class) foreach (array_column($allObjData, $pIsArray ? $pRelation['key'] ?? $pKey : $pKey) as $pId) $pId && !isset($state->records[$class][$pId]) && $idsToLoad[$pId] = true
 		}
-		if ($idsToLoad = array_keys($idsToLoad)) $class::records(where: $class::idColumn().' IN ('.$this->objIn($idsToLoad).')')
+		if ($idsToLoad = array_keys($idsToLoad)) $class::records(where: $class::idColumn().' IN ('.$this->objIn($idsToLoad, $class::DB()).')')
 	}
 	$parentObject = $state->records[$class][$parentId] ?? null
 	return $this->objState['parents'][$key] = $parentObject
@@ -216,7 +216,7 @@ method getChildren($key){
 	$toLoad = array_filter($state->records[static::class] ?? [], fn($p) => !array_key_exists($key, $p->objState['children']))
 	if ($toLoad){
 		$fq = static::DB()->fieldQuotes
-		$children = $class::records(where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad)).')')
+		$children = $class::records(where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad), $class::DB()).')')
 		foreach ($toLoad AS $parentRecord) $parentRecord->objState['children'][$key] = []
 		foreach ($children AS $childId => $child) !is_null($pId = $child->objData[$column] ?? null) && isset($state->records[static::class][$pId]) && $state->records[static::class][$pId]->objState['children'][$key][$childId] = $child
 	}
@@ -236,7 +236,7 @@ method getMany($key){
 		$fk = $relation['foreignKey']
 		$pivotRows = static::DB()->rows(table: $relation['table'], columns: $fq.$lk.$fq.comma.$fq.$fk.$fq, where: $fq.$lk.$fq.' IN ('.$this->objIn(array_keys($toLoad)).')')
 		$targetIds = array_unique(array_map(fn($row) => $row->{$relation['foreignKey']}, $pivotRows ?: []))
-		$targetRecords = $targetIds ? $class::records(where: $class::idColumn().' IN ('.$this->objIn($targetIds).')') : []
+		$targetRecords = $targetIds ? $class::records(where: $class::idColumn().' IN ('.$this->objIn($targetIds, $class::DB()).')') : []
 		foreach ($toLoad AS $parentRecord) $parentRecord->objState['many'][$key] = []
 		foreach ($pivotRows ?: [] AS $row){
 			$parentId = $row->$lk
@@ -258,7 +258,7 @@ method getCount($key){
 			$class = $isArray ? $relation['obj'] : $relation
 			$column = $isArray ? $relation['key'] : static::objShortName()
 			$fq = static::DB()->fieldQuotes
-			$counts = $class::pair(columns: $fq.$column.$fq.', COUNT(*)', where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad)).')', group: $fq.$column.$fq)
+			$counts = $class::pair(columns: $fq.$column.$fq.', COUNT(*)', where: $fq.$column.$fq.' IN ('.$this->objIn(array_keys($toLoad), $class::DB()).')', group: $fq.$column.$fq)
 			foreach ($toLoad as $id => $record) $record->objState['counts'][$key] = (int)($counts[$id] ?? 0)
 		}
 		$this->objMirror('counts', $key)
@@ -291,7 +291,7 @@ method getLast($key){
 			$fq = static::DB()->fieldQuotes
 			$qt = $fq.$childTable.$fq
 			$qc = $fq.$column.$fq
-			$ids = $this->objIn(array_keys($toLoad))
+			$ids = $this->objIn(array_keys($toLoad), $class::DB())
 			$childPk = $class::idColumn()
 			$joins = ' INNER JOIN (SELECT MAX('.$fq.$childPk.$fq.') AS last_id, '.$qc.' AS parent_id FROM '.$qt.' WHERE '.$qc.' IN ('.$ids.') GROUP BY '.$qc.') AS lcmax ON '.$qt.'.'.$fq.$childPk.$fq.' = lcmax.last_id'
 			$lastChildren = $class::records(joins: $joins)
