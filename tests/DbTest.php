@@ -115,6 +115,23 @@ final class DbTest extends TestCase {
 		$this->assertSame([['echo' => 'a'], ['echo' => 'b']], json_decode(trim($out), true), $out);
 	}
 
+	public function testAwaitDrainsLargeStderrWithoutDeadlock():void {
+		// A child flooding stderr past the pipe buffer deadlocked the old read-stdout-then-
+		// stderr code; the concurrent reader captures it whole.
+		[$code, $out, $err] = self::cli('awaiter::runNoisy');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertSame(100000, strlen((string)($r[0] ?? '')), 'await must capture the full large stderr without deadlocking');
+	}
+
+	public function testAwaitTimesOutAndKillsAHungChild():void {
+		// A child outliving await_timeout must be killed, not waited on to completion.
+		[$code, $out, $err] = self::cli('awaiter::runTimeout');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertSame('CLI process failed', $r[0]['error'] ?? null, 'await must report the killed child, not its late result; '.$out);
+	}
+
 	public function testHeldReferenceGetsRelationAfterRefetch():void {
 		// A reference held across a re-fetch of the same PK is orphaned from the record cache;
 		// relation loading mirrors the relation onto the held object too (objMirror), so it

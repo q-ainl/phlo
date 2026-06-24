@@ -26,7 +26,7 @@ function await(...$jobs){
 	// Drain every child's stdout AND stderr together: reading one stream to EOF before the
 	// other deadlocks a child that fills the unread pipe. Bound the whole wait so a hung
 	// child cannot block the caller forever.
-	$deadline = time() + 30
+	$deadline = time() + (defined('await_timeout') ? await_timeout : 300)
 	while ($open){
 		$read = $open
 		$write = $except = []
@@ -41,11 +41,11 @@ function await(...$jobs){
 			if ($key[0] === 'o') $children[$i]->stdout .= $chunk
 			else $children[$i]->stderr .= $chunk
 		}
-		if (time() >= $deadline){
-			foreach ($children AS $child) (proc_get_status($child->proc)['running'] ?? false) && proc_terminate($child->proc)
-			break
-		}
+		if (time() >= $deadline) break
 	}
+	// Terminate any child still running (deadline or a stream_select error). SIGKILL cannot
+	// be ignored, so proc_close below will not block on a process that drops SIGTERM.
+	foreach ($children AS $child) (proc_get_status($child->proc)['running'] ?? false) && proc_terminate($child->proc, 9)
 	$results = []
 	foreach ($children AS $i => $child){
 		fclose($child->out)

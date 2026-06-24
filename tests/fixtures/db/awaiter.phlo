@@ -4,3 +4,19 @@
 
 static emit($x) => ['echo' => $x]
 static run => await(['awaiter::emit', 'a'], ['awaiter::emit', 'b'])
+
+// A child that floods stderr (>64KB pipe buffer) before exiting: the old read-stdout-
+// then-stderr code deadlocked here; the concurrent reader drains it. The short timeout
+// bounds a regression to a clean failure instead of a hung test.
+static noisy => last(fwrite(STDERR, str_repeat('x', 100000)), ['ok' => true])
+static runNoisy {
+	defined('await_timeout') || define('await_timeout', 2)
+	return await(['awaiter::noisy'])
+}
+
+// A child that outlives await_timeout: it must be killed, not waited on to completion.
+static slow => last(usleep(6000000), ['done' => true])
+static runTimeout {
+	defined('await_timeout') || define('await_timeout', 2)
+	return await(['awaiter::slow'])
+}
