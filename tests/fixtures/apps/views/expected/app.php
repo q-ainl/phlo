@@ -24,6 +24,7 @@ class app extends obj {
 		$_[] = "<p>".(ucfirst($this->title))."</p>";
 		$_[] = "<p>".($this->ready ? 'ready' : 'not ready')."</p>";
 		$_[] = "<p>".($this->count > 0 ? 'ternary in double braces' : 'must be grouped as one operand')."</p>";
+		$_[] = "<p>".void." a bare identifier must stay unwrapped, never wrapped into a PHP cast</p>";
 		$_[] = "<a href=\"/x\" title=\"1 > 0\">literal gt in attribute value</a>";
 		$_[] = "<div data-id=\"".($this->title)."\">arrow operator inside attribute interpolation</div>";
 		$_[] = "<div class=\"".($this->count > 0 ? 'has' : 'none')."\">gt inside dynamic attribute</div>";

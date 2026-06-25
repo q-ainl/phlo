@@ -22,7 +22,7 @@
 			['php' => 6, 'phlo' => 3, 'name' => 'title'],
 			['php' => 8, 'phlo' => 7, 'name' => 'GETW'],
 			['php' => 11, 'phlo' => 9, 'name' => 'slugTitle'],
-			['php' => 14, 'phlo' => 12, 'name' => 'shell'],
+			['php' => 15, 'phlo' => 12, 'name' => 'shell'],
 		],
 	],
 	'%PHP%/widget.php' => [

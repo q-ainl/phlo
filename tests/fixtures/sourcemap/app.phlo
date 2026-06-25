@@ -1,0 +1,39 @@
+@ summary: Sourcemap line-mapping fixture. Each node carries a unique MARK_<type> token a few
+@          lines into its body, so SourcemapTest can map the compiled line back to source and
+@          catch per-node-type off-by-one errors in the sourcemap.
+
+prop label = 'sourcemap'
+
+method plainMethod($x){
+	$one = 1
+	$two = 'MARK_METHOD'
+	return $one.$two.$x
+}
+
+app::route()
+
+route GET status {
+	$ok = true
+	$tag = 'MARK_ROUTE'
+	return output(['tag' => $tag, 'ok' => $ok])
+}
+
+route GET => view($this->tile('home'), 'Home')
+
+view tile($title):
+<section>
+<h3>$title</h3>
+<p>MARK_VIEWARG</p>
+</section>
+
+view footer:
+<footer>
+<small>filler line one</small>
+<em>MARK_VIEWVAL</em>
+</footer>
+
+function looseFn($n){
+	$a = 1
+	$b = 'MARK_FUNCTION'
+	return $a.$b.$n
+}

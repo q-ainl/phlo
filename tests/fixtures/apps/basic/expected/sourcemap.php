@@ -20,7 +20,7 @@
 			['php' => 21, 'phlo' => 11, 'name' => 'GETHome'],
 			['php' => 24, 'phlo' => 12, 'name' => 'AsyncPOSTItemsSave'],
 			['php' => 27, 'phlo' => 14, 'name' => 'home'],
-			['php' => 30, 'phlo' => 17, 'name' => 'main'],
+			['php' => 31, 'phlo' => 17, 'name' => 'main'],
 		],
 	],
 	'%PHP%/page.items.php' => [
@@ -29,7 +29,7 @@
 			['php' => 6, 'phlo' => 3, 'name' => 'items'],
 			['php' => 8, 'phlo' => 5, 'name' => 'label'],
 			['php' => 11, 'phlo' => 7, 'name' => 'save'],
-			['php' => 14, 'phlo' => 12, 'name' => 'list'],
+			['php' => 15, 'phlo' => 12, 'name' => 'list'],
 		],
 	],
 ];

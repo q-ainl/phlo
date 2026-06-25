@@ -218,7 +218,10 @@ class build_node extends stdClass {
 						$out .= strtr($segment, [bs.dq => bs.bs.bs.dq, dq => bs.dq]);
 						continue;
 					}
-					$out .= dq.dot.'('.$this->parseObjects(trim($segment)).')'.dot.dq;
+					$expr = $this->parseObjects(trim($segment));
+					// A bare identifier (e.g. the `void` empty-string constant) must NOT be wrapped: PHP lexes
+					// `(void)`/`(int)`/... as a cast token. Only compound expressions need the precedence grouping.
+					$out .= dq.dot.(preg_match('/^[A-Za-z_]\w*$/', $expr) ? $expr : '('.$expr.')').dot.dq;
 				}
 				$trim   = $out;
 				$indent = max(0, $depth - $blockDepth);

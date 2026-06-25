@@ -228,7 +228,9 @@ class build_builder {
 			if (isset($node->line)){
 				$line    = substr_count($PHP.$body, lf);
 				$hasBody = $isMethod && str_contains($node->body ?? void, lf);
-				$map[]   = ['php' => $line + 1 + ($isMethod ? 1 : 0), 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name];
+				// A view body opens with a synthetic `$_ = [];` line that maps to no source line, so the php
+				// anchor must skip it too, otherwise every body line reports one line too late.
+				$map[]   = ['php' => $line + 1 + ($isMethod ? 1 : 0) + ($node->operator === 'view' && $hasBody ? 1 : 0), 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name];
 			}
 			if ($isValue)        $body .= $node->renderValue();
 			elseif ($isShortRoute) ;
