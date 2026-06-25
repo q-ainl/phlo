@@ -119,14 +119,15 @@ class phlo_dashboard {
 			.$s('release', !empty($cfg['release']) ? esc("$relPhp php / $relWww assets") : '<span class="muted">Not configured</span>');
 
 		$errRows = void;
-		foreach ($errors as $err){
+		foreach ($errors as $id => $err){
+			$ref   = esc((string)$id);
 			$file  = static::dashboardFileLink((string)($err['file'] ?? ''));
 			$msg   = esc((string)($err['msg'] ?? ''));
 			$count = (int)($err['count'] ?? 0);
 			$last  = esc((string)($err['lastOccurred'] ?? ''));
-			$errRows .= "<tr class=\"row\"><td>$file</td><td>$msg</td><td class=\"num\">$count</td><td class=\"num\">$last</td></tr>\n";
+			$errRows .= "<tr class=\"row\"><td class=\"num\"><code>$ref</code></td><td>$file</td><td>$msg</td><td class=\"num\">$count</td><td class=\"num\">$last</td></tr>\n";
 		}
-		if (!$errRows) $errRows = "<tr class=\"row\"><td colspan=\"4\" class=\"muted\">No errors logged</td></tr>\n";
+		if (!$errRows) $errRows = "<tr class=\"row\"><td colspan=\"5\" class=\"muted\">No errors logged</td></tr>\n";
 
 		$routeCount = count($routes);
 		$viewCount  = count($views);
@@ -192,7 +193,7 @@ class phlo_dashboard {
 			."<div class=\"dash-card-head\">Recent Errors</div>\n"
 			."<div class=\"dash-card-body\">\n"
 			."<table>\n"
-			."<thead><tr><th>File</th><th>Message</th><th>#</th><th>Last seen</th></tr></thead>\n"
+			."<thead><tr><th>Ref</th><th>File</th><th>Message</th><th>#</th><th>Last seen</th></tr></thead>\n"
 			."<tbody>\n$errRows</tbody>\n"
 			."</table>\n"
 			."</div>\n"
@@ -612,15 +613,16 @@ class phlo_dashboard {
 
 		$errors   = reflect::errors(0);
 		$rows     = void;
-		foreach ($errors as $err){
-			$filter = esc(json_encode($err, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: void);
+		foreach ($errors as $id => $err){
+			$filter = esc(json_encode(['id' => $id] + $err, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: void);
+			$ref    = esc((string)$id);
 			$file   = static::dashboardFileLink((string)($err['file'] ?? ''));
 			$msg    = esc((string)($err['msg'] ?? ''));
 			$count  = (int)($err['count'] ?? 0);
 			$last   = esc((string)($err['lastOccurred'] ?? ''));
-			$rows  .= "<tr class=\"row\"><td data-filter=\"$filter\">$file</td><td>$msg</td><td class=\"num\">$count</td><td class=\"num\">$last</td></tr>\n";
+			$rows  .= "<tr class=\"row\"><td class=\"num\" data-filter=\"$filter\"><code>$ref</code></td><td>$file</td><td>$msg</td><td class=\"num\">$count</td><td class=\"num\">$last</td></tr>\n";
 		}
-		if (!$rows) $rows = "<tr class=\"row\"><td colspan=\"4\" class=\"muted\">No errors logged.</td></tr>\n";
+		if (!$rows) $rows = "<tr class=\"row\"><td colspan=\"5\" class=\"muted\">No errors logged.</td></tr>\n";
 
 		$errCount = count($errors);
 		$resetUrl = esc('/'.ltrim("$base/errors/reset", '/'));
@@ -635,7 +637,7 @@ class phlo_dashboard {
 			."</div>\n"
 			."<div class=\"dash-errors-body\">\n"
 			."<table>\n"
-			."<thead><tr><th>File</th><th>Message</th><th>#</th><th>Last seen</th></tr></thead>\n"
+			."<thead><tr><th>Ref</th><th>File</th><th>Message</th><th>#</th><th>Last seen</th></tr></thead>\n"
 			."<tbody>\n$rows</tbody>\n"
 			."</table>\n"
 			."</div>\n"

@@ -70,6 +70,24 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['childrenB'] ?? null, 'a parent loaded after the first still loads its children');
 	}
 
+	public function testGoneAwayReconnectsAndRetriesOnce():void {
+		[$code, $out, $err] = self::cli('reconn::runReconnect');
+		$this->assertSame(0, $code, "reconn::runReconnect failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from runReconnect: '.$out);
+		$this->assertSame(1, $r['ok'] ?? null, 'a "server has gone away" must drop the stale connection, reconnect and retry once, succeeding: '.$out);
+		$this->assertSame(1, $r['flakyCalls'] ?? null, 'the stale connection is hit exactly once; the retry runs on the rebuilt connection: '.$out);
+	}
+
+	public function testNormalSqlErrorIsNotRetried():void {
+		[$code, $out, $err] = self::cli('reconn::runNoRetry');
+		$this->assertSame(0, $code, "reconn::runNoRetry failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from runNoRetry: '.$out);
+		$this->assertTrue($r['threw'] ?? false, 'a normal SQL error must surface, not be swallowed by a retry: '.$out);
+		$this->assertSame(1, $r['flakyCalls'] ?? null, 'a normal SQL error must not re-run the query (no silent retry of a mutation): '.$out);
+	}
+
 	public function testCatalogHasNoUnresolvedRequires():void {
 		[$code, $out, $err] = self::cli('reflect::catalogGaps');
 		$this->assertSame(0, $code, $err);

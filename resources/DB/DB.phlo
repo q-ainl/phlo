@@ -26,7 +26,13 @@ method load(string $table, string $columns = '*', string $where = void, string $
 	return $this->query($query, ...array_values($args))
 }
 
-method query($query, ...$args){
+method query($query, ...$args) => $this->queryRun($query, $args, true)
+
+// A worker can hold a MySQL connection past its wait_timeout; the next request's first
+// query then throws "server has gone away". Retry once on a connection-loss error by
+// dropping the cached PDO (which reconnects on next access). Only connection errors are
+// retried, never a normal SQL failure, so a mutation is never silently re-run.
+method queryRun($query, $args, $retry){
 	try {
 		if (!$args) $stmt = $this->PDO->query($query)
 		else {
@@ -38,12 +44,16 @@ method query($query, ...$args){
 			$where = strtr(regex('/\bWHERE (\b.+)/is', $query)[1] ?? void, [' ORDER BY' => void])
 			$match && debug("Q: $match[1] $match[2]".strtr(rtrim(" $where "), [dq => void])." (".$stmt->rowCount().")")
 		}
+		return $stmt
 	}
 	catch (\PDOException $e){
-		error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
+		if (!$retry || !$this->goneAway($e)) error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
+		unset($this->PDO)
+		return $this->queryRun($query, $args, false)
 	}
-	return $stmt
 }
+
+method goneAway($e) => in_array((int)($e->errorInfo[1] ?? 0), [2006, 2013], true) || stripos($e->getMessage(), 'gone away') !== false || stripos($e->getMessage(), 'lost connection') !== false
 
 method column(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_COLUMN)
 method item(...$args) => $this->load(...$args)->fetch(\PDO::FETCH_COLUMN) ?: null

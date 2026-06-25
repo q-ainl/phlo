@@ -5,32 +5,71 @@ default. There are three additional opt-in features.
 
 ## 1. Audit log
 
-Add `static objAudit = true` to a model. From then on:
-- `Class::create(...)`: on success, `%audit->log($record, 'create', [], (array)$record)`.
-- `Class::delete($where, ...)`: per affected record, `%audit->log($record, 'delete', (array)$record, [])`.
-- `$record->objSave()`: on update, `%audit->log($saved, 'update', (array)$old, (array)$saved)`.
-- `Class::objLogChange($where, ...)`: an alternative update that pre-fetches and diffs for `%audit->log`. Use it instead of `Class::change()` when you want per-record auditing on a bulk update.
+Add `static objAudit = true` to a model. From then on every mutation is recorded in the `audit_log` table:
+- `Class::create(...)`: on success, the new record is logged as a `create`.
+- `Class::change($where, ...)` (and its alias `Class::objLogChange($where, ...)`): each affected record is re-fetched and logged as an `update`, so the diff is exact even on a bulk change.
+- `Class::delete($where, ...)`: each affected record is logged as a `delete`.
+- `$record->objSave()`: a *new* record is logged as a `create`; for an audited update use `change`/`objLogChange`.
+
+The mutation and its audit row run in **one transaction** (nested via a savepoint when you are already in one), so a failed audit insert rolls the mutation back: a row is never left changed-but-unaudited.
 
 Requirements:
 - Add `security/audit` to the `data/app.json` resources.
-- Import `resources/security/audit.sql` (in the engine directory) into the app database once: `mysql <database> < <engine>/resources/security/audit.sql`.
+- Import the table once: `mysql <database> < <engine>/resources/security/audit.sql`.
 
-Exclude sensitive fields:
+### What is recorded
+
+| column | meaning |
+|---|---|
+| `ts` | unix timestamp of the mutation |
+| `user` | acting user id (`%session->user`), or `null` when there is no session |
+| `model` | model class name |
+| `record_id` | the record's primary-key value (stored as a string, so non-int PKs fit) |
+| `action` | `create` / `update` / `delete` |
+| `changes` | JSON (see below) |
+| `ip` | request `REMOTE_ADDR`, or `null` |
+
+The `changes` JSON depends on the action:
+- **create**: the full new row, `{"column": value, ...}`.
+- **update**: only what changed, `{"column": {"from": old, "to": new}, ...}` (computed by `audit::diff`).
+- **delete**: the full row as it was, `{"column": value, ...}`.
+
+### Querying the trail
+
+The query API lives on the `audit` resource; pass the model (class or instance) so the lookup runs on that model's own database:
+
+```phlo
+// every audit row for one record, newest first (limit defaults to 50)
+$rows = %audit->history(invoice::class, $id)
+foreach ($rows AS $row){
+    $action  = $row->action                       // 'create' | 'update' | 'delete'
+    $when    = $row->ts                            // unix timestamp
+    $who     = $row->user                          // acting user id, or null
+    $changes = json_decode($row->changes, true)    // the JSON above, decoded
+}
+
+// everything a user did in this model's table since a timestamp
+$rows = %audit->byUser(invoice::class, $userId, fromTs: 0, limit: 100)
+
+// retention: drop rows older than N seconds (default one year)
+%audit->purge(invoice::class, olderThanSeconds: 60 * 60 * 24 * 90)
+```
+
+`history`/`byUser` return objects (`PDO::FETCH_OBJ`); `changes` is a JSON string, so `json_decode` it.
+
+Exclude sensitive fields from the recorded `changes`:
 ```phlo
 method afterCreate => %audit->log($this, 'create', [], (array)$this, exclude: ['password_hash'])
 ```
 
-Dev/build mode only (off in release):
+Gate auditing by environment with the `debug` runtime constant (set by `phlo_app(debug: true|false)`) - dev/build only:
 ```phlo
 static objAudit => debug
 ```
-
-Release/production only (off in dev):
+or release/production only:
 ```phlo
 static objAudit => !debug
 ```
-
-(`debug` is a Phlo runtime constant set by `phlo_app(debug: true|false)`.)
 
 ## 2. Validation
 

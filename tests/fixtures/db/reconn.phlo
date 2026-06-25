@@ -1,0 +1,27 @@
+@ summary: Reconnect test: inject the flaky PDO stub, then run a query and confirm
+@          DB::query reconnects+retries once on a connection-loss error, but never
+@          retries a normal SQL error (so a mutation is not silently re-run).
+@ requires: flakypdo
+@ extends: model
+
+static table = 'reconn'
+
+static runReconnect {
+	flakypdo::$calls = 0
+	flakypdo::$info = ['HY000', 2006, 'MySQL server has gone away']
+	static::DB()->PDO = new flakypdo
+	return ['ok' => (int)static::DB()->query('SELECT 1')->fetchColumn(), 'flakyCalls' => flakypdo::$calls]
+}
+
+static runNoRetry {
+	flakypdo::$calls = 0
+	flakypdo::$info = ['42000', 1, 'near "x": syntax error']
+	static::DB()->PDO = new flakypdo
+	$threw = false
+	try {
+		static::DB()->query('SELECT 1')
+	} catch (\Throwable $e){
+		$threw = true
+	}
+	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
+}

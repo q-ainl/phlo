@@ -1,0 +1,16 @@
+@ summary: Test stub: a PDO-like object whose prepare()/query() throw a configurable
+@          PDOException, to exercise DB::query's connection-loss reconnect+retry. The
+@          reconnect drops this stub and rebuilds the real PDO, so the retry succeeds.
+
+static calls = 0
+static info = ['HY000', 2006, 'server has gone away']
+
+method prepare($q, $o = []) => static::boom()
+method query(...$a) => static::boom()
+
+static boom {
+	static::$calls++
+	$e = new \PDOException((string)static::$info[2])
+	$e->errorInfo = static::$info
+	throw $e
+}

@@ -1,5 +1,13 @@
 <?php
 
+// Stable short identifier for an error: the same host + origin + message (path-noise
+// stripped) always yields the same 8 hex chars, so occurrences dedupe and a user can
+// quote the reference from a production page for a dev to look up in errors.json.
+function phlo_error_id(string $host, string $path, string $msg):string {
+	$norm = preg_replace('/\s+/', void, trim(preg_replace('~(?:[A-Za-z]:)?[\\/](?:[^\s:/\\\\]+[\\/])*(?:([^\s:/\\\\]+\.[A-Za-z0-9]{1,8})|[^\s:/\\\\]+)(?::\d+)?~', '$1', $msg)));
+	return substr(md5($host.$path.$norm), 0, 8);
+}
+
 function phlo_error_handle(Throwable $e):void {
 	$req  = phlo('req');
 	$res  = phlo('res');
@@ -11,12 +19,14 @@ function phlo_error_handle(Throwable $e):void {
 	$source  = phlo_error_sourcemap($file, $line);
 	$srcFile = $source['file'] ?? $file;
 	$srcLine = $source['line'] ?? $line;
-	phlo_error_log(shortpath($srcFile).colon.$srcLine, $message);
+	$path    = shortpath($srcFile).colon.$srcLine;
+	$id      = phlo_error_id((string)$req->host, $path, $message);
+	phlo_error_log($id, $path, $message);
 	if ($req->cli || $req->async || $res->streaming){
 		$error = (debug)
 			? $type.":\n".$message."\n\nFile:\n".shortpath($srcFile).':'.$srcLine
 			: 'Error';
-		$cmds = ['error' => $error];
+		$cmds = ['error' => $error, 'id' => $id];
 		if ($res->dump)  $cmds['dump']  = $res->dump;
 		if ($res->debug) $cmds['debug'] = $res->debug;
 		if ($req->cli){
@@ -32,7 +42,7 @@ function phlo_error_handle(Throwable $e):void {
 	# JSON error body instead of an HTML page. Client errors (<500) keep their message; server errors stay
 	# generic unless debug is on, so uncaught-exception internals are not exposed by default.
 	if ($res->api || $res->type === 'application/json' || str_contains((string)$req->accept, 'application/json')){
-		$payload = ['error' => (debug || $code < 500) ? $message : 'Error'];
+		$payload = ['error' => (debug || $code < 500) ? $message : 'Error', 'id' => $id];
 		if (debug){
 			$payload['type'] = $type;
 			$payload['file'] = shortpath($srcFile).colon.$srcLine;
@@ -44,19 +54,27 @@ function phlo_error_handle(Throwable $e):void {
 		$res->render($code);
 		return;
 	}
-	$html = debug
-		? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace())
-		: phlo_error_render_minimal($code);
+	# Build the HTML page: a custom app errorPage if one is declared, else the engine page. PHP does not
+	# re-enter the exception handler when it throws, so an error *inside* rendering (a broken errorPage, a
+	# failed source read) would surface as a raw PHP fatal; the try/catch degrades it to a dependency-free
+	# page instead. The original error is already logged above; this fallback neither logs nor re-renders.
+	try {
+		$html = debug
+			? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace(), $id)
+			: (phlo_error_app_html($code, $id) ?? phlo_error_render_minimal($code, $id));
+	}
+	catch (Throwable){
+		$html = phlo_error_bare_html($code, $id);
+	}
 	$res->type = 'text/html; charset=UTF-8';
 	$res->body = $html;
 	$res->render($code);
 }
 
-function phlo_error_log(string $path, string $msg):int|false {
+function phlo_error_log(string $id, string $path, string $msg):int|false {
 	$file = data.'errors.json';
 	$now  = date('j-n-Y G:i:s');
 	$host = (string)phlo('req')->host;
-	$id   = md5($host.$path.preg_replace('/\s+/', void, trim(preg_replace('~(?:[A-Za-z]:)?[\\/](?:[^\s:/\\\\]+[\\/])*(?:([^\s:/\\\\]+\.[A-Za-z0-9]{1,8})|[^\s:/\\\\]+)(?::\d+)?~', '$1', $msg))));
 	$fh = fopen($file, 'c+');
 	if ($fh === false) return false;
 	if (!flock($fh, LOCK_EX)){ fclose($fh); return false; }
@@ -109,11 +127,30 @@ function phlo_error_sourcemap(string $phpFile, int $phpLine):?array {
 function phlo_error_head(string $title):string { return "<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<title>$title</title>\n<style>".phlo_error_css()."</style>\n"; }
 function phlo_error_foot():string { return "<footer class=\"foot\"><span>Phlo ".phlo."</span><span>Memory: ".size_human(memory_get_peak_usage())."</span><span>Time: ".duration(4)."</span></footer>"; }
 
-function phlo_error_render_minimal(int $code):string {
-	return DOM("<main class=\"wrap\"><header class=\"hero\"><div class=\"badge\">Error</div><h1>Error $code</h1><p>An unexpected error occurred.</p></header></main>", phlo_error_head("Error $code"));
+function phlo_error_render_minimal(int $code, string $id):string {
+	return DOM("<main class=\"wrap\"><header class=\"hero\"><div class=\"badge\">Error</div><h1>Error $code</h1><p>An unexpected error occurred.</p><p class=\"ref\">Reference: <code>".esc($id)."</code></p></header></main>", phlo_error_head("Error $code"));
 }
 
-function phlo_error_render_debug(string $type, string $message, int $code, string $file, int $line, array $trace):string {
+// A production app can render its own error page by declaring a static `errorPage(int $code, string $id): string`
+// on its app class. It is called statically (never phlo('app'), which would re-run the failing controller) and
+// receives only the http code and the opaque error id, never the message or trace, so it cannot leak internals
+// regardless of debug. A hook that throws or returns nothing falls back to the engine's minimal page.
+function phlo_error_app_html(int $code, string $id):?string {
+	if (!class_exists('app', false) || !method_exists('app', 'errorPage')) return null;
+	try {
+		$html = app::errorPage($code, $id);
+		return is_string($html) && $html !== void ? $html : null;
+	}
+	catch (Throwable){ return null; }
+}
+
+// Dependency-free last resort, used when the normal renderer (or a custom app errorPage) itself throws,
+// so a fault inside error rendering still yields a clean page instead of a raw PHP fatal.
+function phlo_error_bare_html(int $code, string $id):string {
+	return '<!doctype html><meta charset="utf-8"><title>Error '.$code.'</title><h1>Error '.$code.'</h1><p>An unexpected error occurred.</p><p>Reference: <code>'.$id.'</code></p>';
+}
+
+function phlo_error_render_debug(string $type, string $message, int $code, string $file, int $line, array $trace, string $id):string {
 	$fileEsc   = phlo_error_location_html($file, $line);
 	$srcHtml   = void;
 	foreach (phlo_error_source_context($file, $line) as $ctx){
@@ -127,7 +164,7 @@ function phlo_error_render_debug(string $type, string $message, int $code, strin
 		$traceHtml .= '<tr class="row"><td class="loc">'.$loc.'</td><td class="call">'.$call.'</td></tr>';
 	}
 	$body = "<main class=\"wrap\">"
-		."<header class=\"hero\"><div class=\"badge\">".esc($type)."</div><h1>".esc($message)."</h1><p>$fileEsc</p></header>"
+		."<header class=\"hero\"><div class=\"badge\">".esc($type)."</div><h1>".esc($message)."</h1><p>$fileEsc</p><p class=\"ref\">Reference: <code>".esc($id)."</code></p></header>"
 		."<section class=\"grid\">"
 		."<article class=\"panel\"><h2>Trace</h2><table><tbody>$traceHtml</tbody></table></article>"
 		."<article class=\"panel\"><h2>Origin</h2><table><tbody>$srcHtml</tbody></table></article>"
@@ -297,6 +334,7 @@ function phlo_error_css():string {
 	if ($css !== null) return $css;
 	$path = defined('engine') ? engine.'assets/error.css' : __DIR__.'/assets/error.css';
 	$extra = 'a.file-link{color:#bef264;text-decoration:none;border-bottom:1px dotted #bef264}a.file-link:hover{opacity:.9}'
+		.'.ref{margin-top:.75rem;opacity:.85}.ref code{color:#67e8f9}'
 		.'.hl-string{color:#c5e388}.hl-var{color:#82ff9f}.hl-obj{color:#ffd100}.hl-number{color:#67e8f9}'
 		.'.hl-node{color:#bef264}.hl-key{color:#c084fc}.hl-operator{color:#ff8bd6}';
 	return $css = (is_file($path) ? (string)file_get_contents($path) : void).$extra;

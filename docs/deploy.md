@@ -180,8 +180,10 @@ load balancer, with a shared data tier (database, cache) between them.
    (Redis, Memcached, or a database) in `php.ini`, or enable sticky sessions on
    the load balancer so a visitor keeps hitting the same node.
 4. **Keep state shareable.** Follow the worker-safe rules: per-request data in
-   `%req`/`%session`, `objPers` only for connections, never request- or
-   user-state in statics. Note that `apcu` is per-node memory, not shared, so
+   `%req`/`%session`, never request- or user-state in statics. DB
+   connections are transient by default; opt one into worker reuse with
+   `prop %MySQL.objPers = true` (safe: `DB::query` reconnects and retries
+   once on a dropped connection). Note that `apcu` is per-node memory, not shared, so
    anything that must be visible across nodes belongs in the database.
 5. **The database is the real work.** The application tier is cheap to add to;
    the data tier is where scaling effort goes (read replicas, connection

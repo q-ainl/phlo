@@ -401,7 +401,7 @@ method objSet($key, $value) => $key === 'readonly' ? true : null
 
 **Computed prop caching.** `prop x => ...` compiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. Statics differ: a bare `static x => ...` compiles to a plain method and is recomputed on every call; only the underscore form `_x()` (reached as `x()` via `__callStatic`) caches per class in `obj::$classProps`. For per-request static state cache it on `%req` (`static state => %req->model ??= ...`), which resets each request.
 
-**Worker persistence.** Set `$this->objPers = true` (or `prop objPers = true`) and the instance survives between worker-mode requests: `phlo()`'s internal registry only keeps `objPers` instances on the per-request reset. Use it for DB connections and parsed config; never for request- or user-scoped state.
+**Worker persistence.** Set `$this->objPers = true` (or `prop objPers = true`) and the instance survives between worker-mode requests: `phlo()`'s internal registry only keeps `objPers` instances on the per-request reset. Use it for parsed config and other expensive, request-independent state; never for request- or user-scoped state. DB connections are **transient by default** (a fresh connection each request) so an idle worker never hands a stale connection to the next request; an app that wants to reuse one opts in with `prop %MySQL.objPers = true`, which is safe because `DB::query` drops a connection that has gone away and retries once.
 
 ### Cross-resource node modifiers
 
@@ -559,6 +559,12 @@ Call `output()` directly; do not wrap it in a per-app `jsonOut()`/`respond()` he
 - otherwise -> the HTML error page (full debug page when `debug`, minimal otherwise).
 
 Client errors (`$code < 500`) keep their message in the JSON/async output; server errors (`>= 500`) stay generic (`"Error"`) unless `debug` is on, so uncaught-exception internals are not exposed by default. `error()` throws, so no `return` is needed (a leading `return` is harmless).
+
+**Error reference + custom page.** Every error is recorded in `data/errors.json` under a short 8-character id (host + origin + path-noise-stripped message). It is shown on the minimal page as a `Reference:` line and included as `id` in the JSON/async payload, so a user can quote it for a developer to look up. An app may render its own production error page by declaring a static `errorPage(int $code, string $id): string` on its app class:
+```phlo
+static errorPage($code, $id) => DOM('<main class="oops"><h1>Something went wrong</h1><p>Reference: '.$id.'</p></main>')
+```
+It runs only on the non-debug HTML path, is called statically (so it never re-runs the failing controller), and receives only the code and the opaque id, never the message or trace, so it cannot leak internals regardless of `debug`. If it throws or returns nothing the engine's own minimal page is used, and an error raised *while* rendering degrades to a dependency-free page rather than a PHP fatal.
 
 **Which to use.** HTML page route: `view(body, code)` for a custom page, or `error('msg', code)` to abort to the standard error page. Async/SPA route: `apply(error: 'msg')` for an inline message. JSON API / webhook: `output($data, code)` for success and `error('msg', code)` for errors. For a deliberate non-standard JSON error shape (such as an `{ok, error}` webhook contract) use `output(['ok' => false, 'error' => '...'], code: 400)` directly. A redirect is `location($url)`, which defaults to 302; pass a code for a permanent redirect, `location($url, 301)`.
 
@@ -811,6 +817,8 @@ phlo_app (
 
 WebSocket support is optional and provided by Phlo Realtime, the WebSocket layer built into the Phlo Daemon (one process, no separate repository). Each runtime points at the daemon's port via `daemon:`; Phlo Realtime serves multiple hosts on one port and routes by `Host` header. See `docs/websocket-contract.md`.
 
+Real-time and cross-component communication run over Phlo Realtime (WebSockets); Phlo does not use browser `postMessage`. The niche cases it would serve (handing an OAuth popup's result back to the opener, embedding a Phlo app in a cross-origin iframe) are deliberately left out until a concrete need arises.
+
 **Worker mode:**
 ```php
 phlo_app(
@@ -823,7 +831,7 @@ phlo_app(
 
 `thread: true` means unlimited requests per worker. Use an integer to cap the number of requests per worker.
 
-Worker-safe code rules: no `die()` or `exit()` in the HTTP path; no static properties holding per-request state; use `$this->objPers = true` on objects that should survive between requests (e.g. DB connections).
+Worker-safe code rules: no `die()` or `exit()` in the HTTP path; no static properties holding per-request state; use `$this->objPers = true` on objects that should survive between requests (parsed config; a reused connection). DB connections are transient by default; opt one into reuse with `prop %MySQL.objPers = true` (safe: `DB::query` reconnects and retries once if the connection has gone away).
 
 `obj` uses static structure lookup caches for `method_exists()` and computed prop method detection. These caches may store class/method structure only. Do not use static caches for request-, session-, user-, payload-, DB-, or time-dependent values unless the cache key and lifecycle are explicitly worker-safe.
 

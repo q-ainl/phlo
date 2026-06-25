@@ -9,5 +9,4 @@
 @ tags:     mysql pdo database sql
 
 prop PDO => new \PDO('mysql:host='.%creds->mysql->host.';dbname='.%creds->mysql->database, %creds->mysql->user, %creds->mysql->password)
-prop objPers = true
 
