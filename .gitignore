@@ -47,6 +47,12 @@ tests/fixtures/dom/www/app.css
 tests/fixtures/dom/www/app.js
 tests/fixtures/dom/data/errors.json
 
+# Pentest fixture build output
+tests/fixtures/pentest/php/
+tests/fixtures/pentest/www/app.css
+tests/fixtures/pentest/www/app.js
+tests/fixtures/pentest/data/errors.json
+
 # E2E fixture build output
 tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css
