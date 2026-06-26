@@ -1,0 +1,47 @@
+@ summary: File-format test probe. Round-trips the CSV, INI and JSON resources against temp
+@          files: write a file, read it through the resource, and for INI/JSON write it back
+@          and re-read to confirm the serialized form.
+
+static csvCases {
+	$dir = sys_get_temp_dir().slash
+	$a = uniqid('phlo-csv-a-')
+	$b = uniqid('phlo-csv-b-')
+	file_put_contents($dir.$a.'.csv', implode(nl, ['name,age', 'Ann,30', 'Bob,25']).nl)
+	file_put_contents($dir.$b.'.csv', implode(nl, ['name;age', 'Cleo;40']).nl)
+	$comma = new CSV($a, path: $dir)
+	$semi = new CSV($b, path: $dir)
+	$out = [
+		'count' => count($comma->objData),
+		'firstName' => $comma->objData[0]['name'] ?? null,
+		'secondAge' => $comma->objData[1]['age'] ?? null,
+		'semiName' => $semi->objData[0]['name'] ?? null,
+	]
+	unlink($dir.$a.'.csv')
+	unlink($dir.$b.'.csv')
+	return $out
+}
+
+static iniCases {
+	$dir = sys_get_temp_dir().slash
+	$f = uniqid('phlo-ini-')
+	file_put_contents($dir.$f.'.ini', implode(nl, ['name = "Ann"', 'age = 30', 'active = true']).nl)
+	$ini = new INI($f, path: $dir)
+	$out = ['name' => $ini->name, 'age' => $ini->age, 'active' => $ini->active]
+	$ini->city = 'Delft'
+	$ini->objWrite()
+	$out['wroteCity'] = str_contains(file_get_contents($dir.$f.'.ini'), 'city')
+	unlink($dir.$f.'.ini')
+	return $out
+}
+
+static jsonCases {
+	$dir = sys_get_temp_dir().slash
+	$f = uniqid('phlo-json-')
+	file_put_contents($dir.$f.'.json', '{"name":"Ann","tags":["a","b"]}')
+	$json = new JSON($f, path: $dir, assoc: true)
+	$out = ['name' => $json->objData['name'] ?? null, 'tagCount' => count($json->objData['tags'] ?? [])]
+	$json->objWrite(['name' => 'Bob', 'n' => 2])
+	$out['wroteBob'] = str_contains(file_get_contents($dir.$f.'.json'), 'Bob')
+	unlink($dir.$f.'.json')
+	return $out
+}

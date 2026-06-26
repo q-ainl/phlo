@@ -1,0 +1,7 @@
+{
+    "resources": [
+        "files/CSV",
+        "files/INI",
+        "files/JSON"
+    ]
+}

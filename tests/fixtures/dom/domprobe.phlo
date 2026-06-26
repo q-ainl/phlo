@@ -1,0 +1,15 @@
+@ summary: DOM tag-builder test probe. Renders the backend HTML helpers (tag/input/select) to
+@          check attribute handling: escaping, boolean attrs, null omission, and us->dash keys.
+@          (markdown and form are client-side <script> resources, exercised in the browser.)
+
+static tagCases => [
+	'simple' => tag('p', inner: 'Hello'),
+	'selfClose' => tag('br'),
+	'attr' => tag('a', href: 'https://x.test', inner: 'link'),
+	'boolAttr' => tag('input', type: 'checkbox', checked: true),
+	'nullOmitted' => tag('input', type: 'text', value: null),
+	'escaped' => tag('div', title: '<b>"x"</b>', inner: 'y'),
+	'usToDash' => tag('div', data_id: 5, inner: 'y'),
+	'input' => input(type: 'email', name: 'mail'),
+	'select' => select(name: 'pick'),
+]

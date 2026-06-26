@@ -35,6 +35,18 @@ tests/fixtures/security/www/app.css
 tests/fixtures/security/www/app.js
 tests/fixtures/security/data/errors.json
 
+# Files fixture build output
+tests/fixtures/files/php/
+tests/fixtures/files/www/app.css
+tests/fixtures/files/www/app.js
+tests/fixtures/files/data/errors.json
+
+# DOM fixture build output
+tests/fixtures/dom/php/
+tests/fixtures/dom/www/app.css
+tests/fixtures/dom/www/app.js
+tests/fixtures/dom/data/errors.json
+
 # E2E fixture build output
 tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css
