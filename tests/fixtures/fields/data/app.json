@@ -1,0 +1,20 @@
+{
+    "resources": [
+        "tag",
+        "tags.form",
+        "fields/field",
+        "fields/text",
+        "fields/wysiwyg",
+        "fields/number",
+        "fields/price",
+        "fields/email",
+        "fields/bool",
+        "fields/date",
+        "fields/datetime",
+        "fields/password",
+        "fields/select",
+        "fields/multiselect",
+        "fields/token",
+        "fields/virtual"
+    ]
+}

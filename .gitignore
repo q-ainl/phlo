@@ -23,6 +23,12 @@ tests/fixtures/ai/www/app.css
 tests/fixtures/ai/www/app.js
 tests/fixtures/ai/data/errors.json
 
+# Fields fixture build output
+tests/fixtures/fields/php/
+tests/fixtures/fields/www/app.css
+tests/fixtures/fields/www/app.js
+tests/fixtures/fields/data/errors.json
+
 # E2E fixture build output
 tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css

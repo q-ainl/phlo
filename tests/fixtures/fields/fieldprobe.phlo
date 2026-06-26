@@ -1,0 +1,26 @@
+@ summary: Field-type test probe. Instantiates fields directly (no database) and exercises the
+@          shared validation rules (required/length/pattern/enum) and the per-type rendering of
+@          a value, so each field type is covered without a model or storage.
+
+static validation => [
+	'reqEmpty' => field(type: 'text', name: 'name', required: true)->objValidate(null),
+	'reqOk' => field(type: 'text', name: 'name', required: true)->objValidate('Ann'),
+	'tooLong' => field(type: 'text', name: 'name', length: 3)->objValidate('abcde'),
+	'lenOk' => field(type: 'text', name: 'name', length: 5)->objValidate('abc'),
+	'patBad' => field(type: 'text', name: 'slug', pattern: '^[a-z]+$')->objValidate('Nope!'),
+	'patOk' => field(type: 'text', name: 'slug', pattern: '^[a-z]+$')->objValidate('ok'),
+	'enumBad' => field(type: 'select', name: 'status', enum: ['draft', 'live'])->objValidate('boom'),
+	'enumOk' => field(type: 'select', name: 'status', enum: ['draft', 'live'])->objValidate('live'),
+	'optionalNull' => field(type: 'text', name: 'bio')->objValidate(null),
+]
+
+static rendering => [
+	'boolOn' => field(type: 'bool', name: 'active')->label(new obj(active: 1)),
+	'boolOff' => field(type: 'bool', name: 'active')->label(new obj(active: 0)),
+	'boolInput' => field(type: 'bool', name: 'active')->input(new obj(active: 1)),
+	'selectInput' => field(type: 'select', name: 'status', options: ['draft', 'live'])->input(new obj(status: 'live')),
+	'emailLabel' => field(type: 'email', name: 'email')->label(new obj(email: 'a@b.com')),
+	'numberInput' => field(type: 'number', name: 'qty')->input(new obj(qty: 5)),
+	'passwordLabel' => field(type: 'password', name: 'pass')->label(new obj(pass: 'secret')),
+	'dateLabel' => field(type: 'date', name: 'created')->label(new obj(created: '2025-09-01')),
+]
