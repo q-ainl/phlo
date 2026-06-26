@@ -10,7 +10,7 @@
 static __handle => "JSON/$path$filename".(is_bool($assoc) ? slash.(int)$assoc : void)
 method __construct(string $filename, ?string $path = null, $assoc = null){
 	$path ??= data
-	$this->objFile = "$path$filename.json"
+	$this->objFile = $path.strtr($filename, [slash => dot]).'.json'
 	if (is_readable($this->objFile)) $this->objRead($assoc)
 }
 

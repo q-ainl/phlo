@@ -493,6 +493,16 @@ view card($item):
 <p>{( $item->note ?? dash )}</p>
 ```
 
+**Output is raw - escape untrusted data yourself.** `{{ }}` and `{( )}` emit their value verbatim; Phlo does not auto-escape. This is deliberate: a view *is* HTML, and escaping every value for you would make it impossible to emit the markup you do mean. For values that come from users, wrap them in `esc()`:
+
+```phlo
+view comment($c):
+<p>{{ esc($c->body) }}</p>                 <- user text: escape it
+<div>{{ $this->renderMarkup($c) }}</div>   <- you own the HTML: leave it raw
+```
+
+In strict security mode the nonce-based CSP is a second line of defense - an injected `<script>` lacks the per-request nonce and will not execute - but that only limits the blast radius; escaping is still yours to do. The same applies to `location($url)`: it redirects anywhere by design, so when the target is user-supplied (a `?next=` parameter), verify it is a local path first to avoid an open redirect.
+
 **HTML shorthand:**
 ```
 <p#id.class1.class2/>    -> <p id="id" class="class1 class2"></p>
