@@ -29,6 +29,12 @@ tests/fixtures/fields/www/app.css
 tests/fixtures/fields/www/app.js
 tests/fixtures/fields/data/errors.json
 
+# Security fixture build output
+tests/fixtures/security/php/
+tests/fixtures/security/www/app.css
+tests/fixtures/security/www/app.js
+tests/fixtures/security/data/errors.json
+
 # E2E fixture build output
 tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css

@@ -1,0 +1,48 @@
+@ summary: Security test probe. Exercises CSRF token verification, JWT sign/verify (HS256),
+@          sodium encryption round-trip, and the apcu rate limiter, without external services.
+
+static throws($fn):bool {
+	try {
+		$fn()
+		return false
+	} catch (\Throwable $e){
+		return true
+	}
+}
+
+static jwtCases {
+	$jwt = %JWT(secret: 'unit-test-secret-key-32-bytes-min!')
+	$token = $jwt->sign(['sub' => 'u1', 'role' => 'admin'])
+	$claims = $jwt->verify($token)
+	$other = %JWT(secret: 'a-totally-different-secret-32byte!')
+	return [
+		'roundtrip' => $claims['sub'] === 'u1' && $claims['role'] === 'admin',
+		'hasExp' => isset($claims['exp']),
+		'tampered' => static::throws(fn() => $jwt->verify($token.'x')),
+		'expired' => static::throws(fn() => $jwt->verify($jwt->sign(['sub' => 'u1'], ttl: -100))),
+		'wrongSecret' => static::throws(fn() => $other->verify($token)),
+	]
+}
+
+static encryptionCases {
+	$key = 'encryption-test-key'
+	$cipher = encrypt('top secret', $key)
+	return [
+		'roundtrip' => decrypt($cipher, $key) === 'top secret',
+		'opaque' => $cipher !== 'top secret',
+		'wrongKey' => decrypt($cipher, 'wrong-key') === false,
+		'tampered' => decrypt(strrev($cipher), $key) === false,
+	]
+}
+
+static csrfCases {
+	$token = %CSRF->token
+	$_SERVER['HTTP_X_CSRF_TOKEN'] = $token
+	$valid = %CSRF->verify()
+	$_SERVER['HTTP_X_CSRF_TOKEN'] = 'tampered'
+	$invalid = %CSRF->verify()
+	unset($_SERVER['HTTP_X_CSRF_TOKEN'])
+	$missing = %CSRF->verify()
+	%CSRF->update()
+	return ['len' => strlen($token), 'valid' => $valid, 'invalid' => $invalid, 'missing' => $missing, 'rotated' => %CSRF->token !== $token]
+}

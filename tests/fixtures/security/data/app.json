@@ -1,0 +1,10 @@
+{
+    "resources": [
+        "session",
+        "security/token",
+        "payload",
+        "security/CSRF",
+        "security/JWT",
+        "security/encryption"
+    ]
+}
