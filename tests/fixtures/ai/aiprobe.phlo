@@ -1,0 +1,35 @@
+@ summary: AI test probe. Replaces AI::http with a stub that records the outgoing request and
+@          returns a canned per-provider response, so each model's request-building and
+@          response-parsing is testable without API credentials. Also exposes the resolver.
+
+static %AI.last = []
+
+static %AI.http(string $url, array $headers, bool $json = true, mixed $post = null):string {
+	static::$last = ['url' => $url, 'post' => $post]
+	if (str_contains($url, 'anthropic')) return json_encode(['content' => [['type' => 'text', 'text' => 'Claude reply']], 'model' => 'claude-test', 'stop_reason' => 'end_turn', 'usage' => ['input_tokens' => 11, 'output_tokens' => 7]])
+	if (str_contains($url, 'googleapis')) return json_encode(['candidates' => [['content' => ['parts' => [['text' => 'Gemini reply']]], 'finishReason' => 'STOP']], 'usageMetadata' => ['promptTokenCount' => 13, 'candidatesTokenCount' => 9]])
+	return json_encode(['choices' => [['message' => ['content' => 'OpenAI reply'], 'finish_reason' => 'stop']], 'model' => 'gpt-test', 'usage' => ['total_tokens' => 22, 'prompt_tokens' => 13, 'completion_tokens' => 9]])
+}
+
+static probe($result) => [
+	'url' => AI::$last['url'] ?? null,
+	'post' => json_encode(AI::$last['post'] ?? []),
+	'answer' => $result->answer,
+	'model' => $result->model,
+	'finish' => $result->finish,
+	'in' => $result->tokens_in,
+	'out' => $result->tokens_out,
+]
+
+static runClaude => static::probe(%Claude->chat(user: 'Hello Claude'))
+static runOpenAI => static::probe(%OpenAI->chat(user: 'Hello OpenAI'))
+static runGemini => static::probe(%Gemini->chat(user: 'Hello Gemini'))
+
+static resolveCases => [
+	'claude' => %AI->resolve(model: 'claude-opus-4-8')[0],
+	'gpt' => %AI->resolve(model: 'gpt-5.4-mini')[0],
+	'gemini' => %AI->resolve(model: 'gemini-2.0-flash')[0],
+	'deepseek' => %AI->resolve(model: 'deepseek-chat')[0],
+	'grok' => %AI->resolve(model: 'grok-2-latest')[0],
+	'fallback' => %AI->resolve(model: 'mystery-9')[0],
+]

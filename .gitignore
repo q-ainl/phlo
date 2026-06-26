@@ -17,6 +17,12 @@ composer.lock
 .phpunit.cache/
 tests/.tmp/
 
+# AI fixture build output
+tests/fixtures/ai/php/
+tests/fixtures/ai/www/app.css
+tests/fixtures/ai/www/app.js
+tests/fixtures/ai/data/errors.json
+
 # E2E fixture build output
 tests/fixtures/e2e/php/
 tests/fixtures/e2e/www/app.css

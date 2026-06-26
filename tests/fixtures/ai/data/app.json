@@ -1,0 +1,12 @@
+{
+    "resources": [
+        "security/creds",
+        "HTTP",
+        "AI/AI",
+        "AI/Claude",
+        "AI/OpenAI",
+        "AI/Gemini",
+        "AI/DeepSeek",
+        "AI/Grok"
+    ]
+}
