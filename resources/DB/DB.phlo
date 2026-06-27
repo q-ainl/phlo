@@ -16,7 +16,7 @@ prop insertOnConflict = void
 
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	$table = strpos($table, space) || strpos($table, dot) ? $table : "$this->fieldQuotes$table$this->fieldQuotes"
-	$args && $where = ($where ? "$where AND " : void).loop(array_keys($args), fn($column) => "$table.$column=?", ' AND ')
+	$args && $where = ($where ? "$where AND " : void).loop(array_keys($args), fn($column) => $table.dot.$this->quoteId($column).'=?', ' AND ')
 	$joins && $joins = " $joins"
 	$where && $where = " WHERE $where"
 	$group && $group = " GROUP BY $group"
@@ -47,7 +47,9 @@ method queryRun($query, $args, $retry){
 		return $stmt
 	}
 	catch (\PDOException $e){
-		if (!$retry || !$this->goneAway($e)) error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
+		# Retry only idempotent reads outside a transaction: a mutation may already have run before the
+		# connection dropped (error 2013), and a reconnect would start a fresh, transaction-less session.
+		if (!$retry || !$this->goneAway($e) || $this->PDO->inTransaction() || !preg_match('/^\s*\(*\s*(SELECT|SHOW|EXPLAIN|DESCRIBE|DESC|WITH)\b/i', $query)) error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
 		unset($this->PDO)
 		return $this->queryRun($query, $args, false)
 	}

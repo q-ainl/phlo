@@ -9,7 +9,7 @@ Add `static objAudit = true` to a model. From then on every mutation is recorded
 - `Class::create(...)`: on success, the new record is logged as a `create`.
 - `Class::change($where, ...)` (and its alias `Class::objLogChange($where, ...)`): each affected record is re-fetched and logged as an `update`, so the diff is exact even on a bulk change.
 - `Class::delete($where, ...)`: each affected record is logged as a `delete`.
-- `$record->objSave()`: a *new* record is logged as a `create`; for an audited update use `change`/`objLogChange`.
+- `$record->objSave()`: a new record is logged as a `create`; an existing record is saved through `change()`, so it is audited as an `update` as well.
 
 The mutation and its audit row run in **one transaction** (nested via a savepoint when you are already in one), so a failed audit insert rolls the mutation back: a row is never left changed-but-unaudited.
 
