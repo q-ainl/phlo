@@ -64,9 +64,13 @@ method rows(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS, obj:
 method record(...$args) => $this->load(...$args)->fetchObject(obj::class) ?: null
 method quoteList(array $ids) => loop($ids, fn($id) => $this->PDO->quote((string)$id), comma)
 
+// Safely quote a SQL identifier (column/table): wrap in the connector's quote char and double any embedded
+// quote, so an attacker-controlled array key cannot break out of the identifier (values are always ?-bound).
+method quoteId($id) => $this->fieldQuotes.str_replace($this->fieldQuotes, $this->fieldQuotes.$this->fieldQuotes, (string)$id).$this->fieldQuotes
+
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
-	$columns = $this->fieldQuotes.implode($this->fieldQuotes.comma.$this->fieldQuotes, array_keys($data)).$this->fieldQuotes
+	$columns = implode(comma, loop(array_keys($data), fn($k) => $this->quoteId($k)))
 	$values = implode(comma, array_fill(0, count($data), qm))
 	$query = "INSERT".($ignore ? $this->insertIgnore : void)." INTO $table ($columns) VALUES ($values)".($ignore ? $this->insertOnConflict : void)
 	$this->query($query, ...array_values(loop($data, fn($value) => is_a($value, obj::class) ? $value->id : $value)))
@@ -77,7 +81,7 @@ method change(string $table, string $where, ...$data){
 	$whereCount = substr_count($where, qm)
 	$updates = isset($data['updates']) ? $data['updates'] : void
 	unset($data['updates'])
-	$updates .= (($wheres = array_slice(array_keys($data), $whereCount)) && $updates ? comma : void).loop($wheres, fn($key) => $key.'=?', comma)
+	$updates .= (($wheres = array_slice(array_keys($data), $whereCount)) && $updates ? comma : void).loop($wheres, fn($key) => $this->quoteId($key).'=?', comma)
 	$query = "UPDATE $table SET $updates WHERE $where"
 	$args = array_values([...array_slice($data, $whereCount), ...array_slice($data, 0, $whereCount)])
 	return $this->query($query, ...$args)->rowCount()
