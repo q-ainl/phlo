@@ -21,6 +21,6 @@
         "CMS.dashboard.bi"
     ],
     "paths": {
-        "resources": ["/srv/control/CMS/"]
+        "resources": ["__CMS_PATH__"]
     }
 }

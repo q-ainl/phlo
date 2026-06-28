@@ -26,10 +26,15 @@ final class CmsBiTest extends TestCase {
 		return $r;
 	}
 
+	// The CMS is a separate repo; PHLO_CMS_PATH overrides its location (default /srv/control/CMS),
+	// so this integration test runs from any checkout, not only this server. The fixture entry
+	// reads the same variable, and the subprocess inherits it.
+	private static function cmsPath():string {
+		return rtrim(getenv('PHLO_CMS_PATH') ?: '/srv/control/CMS', '/').'/';
+	}
+
 	public static function setUpBeforeClass():void {
-		// The fixture mounts the real CMS (a separate repo) from /srv/control/CMS; skip where it is
-		// absent (e.g. a CI runner that only checked out the engine) instead of failing the build.
-		if (!is_dir('/srv/control/CMS')) self::markTestSkipped('this CMS integration test needs the phlo-cms checkout at /srv/control/CMS');
+		if (!is_dir(self::cmsPath())) self::markTestSkipped('this CMS integration test needs a phlo-cms checkout - set PHLO_CMS_PATH or clone it to /srv/control/CMS');
 		[$code, $out, $err] = self::cli('build::run');
 		self::assertSame(0, $code, "build::run failed:\n$out$err");
 	}
