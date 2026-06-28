@@ -38,13 +38,15 @@ jobs:
             php -l "$f"
           done
 
-      # The BI integration test mounts the CMS (a separate repo). Best-effort checkout so it runs in
-      # CI; if it fails (e.g. private repo), CmsBiTest skips itself rather than failing the build.
+      # The BI integration test mounts the CMS (a separate, public repo). Pinned to a known commit so
+      # the test is deterministic - bump when the CMS<->engine contract changes. The checkout is
+      # mandatory: a fetch failure is a real CI failure, not a silent skip. (CmsBiTest still skips
+      # when the checkout is absent, for local runs that did not clone the CMS.)
       - name: Check out the CMS for the BI integration test
-        continue-on-error: true
         run: |
           sudo mkdir -p /srv/control
-          sudo git clone --depth 1 https://github.com/q-ainl/phlo-cms.git /srv/control/CMS
+          sudo git clone https://github.com/q-ainl/phlo-cms.git /srv/control/CMS
+          sudo git -C /srv/control/CMS checkout 5c4d10df1ffb10216c1356300e64823f7639b951
 
       - name: Run tests
         run: vendor/bin/phpunit

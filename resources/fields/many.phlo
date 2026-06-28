@@ -27,7 +27,7 @@ method input($record){
 
 method sync($model, $parentId){
 	$rel = $model::objMany()[$this->name]
-	$ids = array_values(array_unique(array_filter((array)(%payload->{$this->name} ?? []))))
+	$ids = array_values(array_unique(array_filter((array)(%payload->{$this->name} ?? []), fn($id) => (string)$id !== '')))
 	$db = $model::DB()
 	$db->delete($rel['table'], $rel['localKey'].'=?', $parentId)
 	foreach ($ids AS $id) $db->create($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $id])

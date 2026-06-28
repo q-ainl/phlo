@@ -847,7 +847,7 @@ Worker-safe code rules: no `die()` or `exit()` in the HTTP path; no static prope
 
 `model` keeps ORM runtime state request-local in `%req->model`. `fields()` caches only `schema()`-derived fields there; legacy `static::$fields` and explicit `static::$columns` remain live overrides. `columns()` is cached per request with a DB-aware key because it depends on field quotes/table context. `objRecords`, `objLoaded`, relation metadata, and `objIncludeDeleted` must not be used as worker-persistent state; keep identity-map and relation preload state scoped to `%req`.
 
-Current ORM model helpers assume an `id` column for identity-map and relation tracking. Tables with a non-`id` primary key, such as `barcode` or `sku`, should use direct `%MySQL->query()` calls for record lookup until the model layer explicitly supports an id-column override. If a model extends `model`, prefer an integer `id` primary key unless you have a documented workaround.
+The ORM resolves the primary key through `static idColumn` (default `'id'`), so a non-`id` primary key such as `sku` or `barcode` works across the identity map, record lookup, and the `child`/`many` relations (see [model-opt-in.md](model-opt-in.md), "Non-int / non-'id' primary key"). An auto-increment integer `id` remains the simplest default.
 
 ### Phlo Control Center
 

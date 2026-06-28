@@ -84,4 +84,10 @@ final class CmsBiTest extends TestCase {
 		$this->assertTrue($r['cachedBefore'], 'the structure is in the cache before the query runs');
 		$this->assertTrue($r['evictedAfter'], 'a valid-model-but-bad-structure entry is dropped from the cache when buildQuery fails, so the deterministic token does not fail forever');
 	}
+
+	public function testSyncKeepsZeroStringPrimaryKey():void {
+		$r = self::fetch('biprobe::syncCases');
+		$this->assertTrue($r['keptZero'], "a string primary key '0' survives the sync filter");
+		$this->assertTrue($r['droppedEmpty'], 'an empty submitted value is still dropped');
+	}
 }

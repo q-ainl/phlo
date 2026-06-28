@@ -88,3 +88,14 @@ static cacheCases {
 	ob_end_clean()
 	return ['cachedBefore' => $cachedBefore, 'evictedAfter' => !isset($bi->searches->badtoken)]
 }
+
+static syncCases {
+	tag::prepareTable()
+	%payload->tags = ['0', 'red', '']
+	thing::fields()['tags']->sync('thing', 99)
+	$db = thing::DB()
+	return [
+		'keptZero' => (bool)$db->record('thing_tags', ...['thing' => 99, 'tag' => '0']),
+		'droppedEmpty' => !(bool)$db->record('thing_tags', ...['thing' => 99, 'tag' => '']),
+	]
+}
