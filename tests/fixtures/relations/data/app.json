@@ -10,17 +10,8 @@
         "fields/many",
         "fields/token",
         "fields/datetime",
-        "files/JSON",
-        "HTTP",
-        "AI/AI",
-        "AI/OpenAI",
         "security/token",
         "tag",
-        "payload",
-        "session",
-        "CMS.dashboard.bi"
-    ],
-    "paths": {
-        "resources": ["__CMS_PATH__"]
-    }
+        "payload"
+    ]
 }

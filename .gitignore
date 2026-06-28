@@ -53,14 +53,11 @@ tests/fixtures/pentest/www/app.css
 tests/fixtures/pentest/www/app.js
 tests/fixtures/pentest/data/errors.json
 
-# CMS BI fixture build output + runtime SQLite file
-tests/fixtures/cms/php/
-tests/fixtures/cms/www/app.css
-tests/fixtures/cms/www/app.js
-tests/fixtures/cms/data/errors.json
-tests/fixtures/cms/data/test.db
-tests/fixtures/cms/data/bi.json
-tests/fixtures/cms/data/app.json
+# Relation/field fixture build output
+tests/fixtures/relations/php/
+tests/fixtures/relations/www/app.css
+tests/fixtures/relations/www/app.js
+tests/fixtures/relations/data/errors.json
 
 # E2E fixture build output
 tests/fixtures/e2e/php/

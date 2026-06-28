@@ -1,0 +1,60 @@
+@ summary: Relation/field test probe (pure engine, no CMS). Exercises the relation fields'
+@          ownership + key resolution, the auto-generating parsers, the sync filter, and the
+@          per-model permission hooks.
+
+static parseCases {
+	$token = field(type: 'token', name: 'tok')
+	$rec1 = new obj
+	$token->parse($rec1)
+	$dt = field(type: 'datetime', name: 'created')
+	$rec2 = new obj
+	$dt->parse($rec2)
+	return [
+		'tokenHandle' => $token->handle,
+		'tokenGenerated' => strlen((string)($rec1->tok ?? '')) > 0,
+		'datetimeHandle' => $dt->handle,
+		'createdGenerated' => ($rec2->created ?? 0) > 0,
+	]
+}
+
+static authzHooks => [
+	'thingView' => thing::canView(),
+	'lockedView' => locked::canView(),
+	'thingChange' => thing::canChange(),
+	'lockedChange' => locked::canChange(),
+	'thingDelete' => thing::canDelete(),
+	'lockedDelete' => locked::canDelete(),
+]
+
+static childOwnsCases {
+	gadget::prepareTable()
+	$childField = field(type: 'child', obj: 'gadget')
+	$g1 = gadget::record(thing: 1)
+	return [
+		'key' => $childField->objKey('thing'),
+		'ownsCorrect' => $childField->objOwns($g1, 1, 'thing'),
+		'ownsWrong' => $childField->objOwns($g1, 2, 'thing'),
+	]
+}
+
+static manyOwnsCases {
+	tag::prepareTable()
+	$manyField = thing::fields()['tags']
+	$tagRed = tag::record(code: 'red')
+	return [
+		'ownsCorrect' => $manyField->objOwns($tagRed, 1, 'thing'),
+		'ownsWrong' => $manyField->objOwns($tagRed, 2, 'thing'),
+		'linkHasPk' => str_contains((string)$manyField->link($tagRed), '/red'),
+	]
+}
+
+static syncCases {
+	tag::prepareTable()
+	%payload->tags = ['0', 'red', '']
+	thing::fields()['tags']->sync('thing', 99)
+	$db = thing::DB()
+	return [
+		'keptZero' => (bool)$db->record('thing_tags', ...['thing' => 99, 'tag' => '0']),
+		'droppedEmpty' => !(bool)$db->record('thing_tags', ...['thing' => 99, 'tag' => '']),
+	]
+}

@@ -38,20 +38,7 @@ jobs:
             php -l "$f"
           done
 
-      # The BI integration test mounts the CMS (a separate, public repo). It is checked out into the
-      # workspace (no /srv assumption) and pinned to a commit so the test is deterministic - bump when
-      # the CMS<->engine contract changes. The checkout is mandatory (actions/checkout fails the job if
-      # it cannot fetch), so the integration cannot be silently skipped in CI.
-      - name: Check out the CMS for the BI integration test
-        uses: actions/checkout@v4
-        with:
-          repository: q-ainl/phlo-cms
-          ref: 5c4d10df1ffb10216c1356300e64823f7639b951
-          path: phlo-cms
-
       - name: Run tests
-        env:
-          PHLO_CMS_PATH: ${{ github.workspace }}/phlo-cms
         run: vendor/bin/phpunit
 
   docker:

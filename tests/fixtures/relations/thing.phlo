@@ -13,10 +13,3 @@ static schema => arr(
 	secret: field(type: 'text', title: 'Secret'),
 	tags: field(type: 'many', obj: 'tag', table: 'thing_tags', localKey: 'thing', foreignKey: 'tag'),
 )
-
-static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS things (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, secret TEXT)')
-	static::DB()->query('DELETE FROM things')
-	static::create(name: 'alice', secret: 'topsecret')
-	static::create(name: 'bob', secret: 'hunter2')
-}
