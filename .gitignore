@@ -59,6 +59,7 @@ tests/fixtures/cms/www/app.css
 tests/fixtures/cms/www/app.js
 tests/fixtures/cms/data/errors.json
 tests/fixtures/cms/data/test.db
+tests/fixtures/cms/data/bi.json
 
 # E2E fixture build output
 tests/fixtures/e2e/php/

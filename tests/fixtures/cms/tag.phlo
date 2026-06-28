@@ -2,20 +2,22 @@
 @ extends: model
 
 static table = 'tags'
+static idColumn = 'code'
 
 static schema => arr(
-	id: field(type: 'number', title: 'ID'),
+	code: field(type: 'text', title: 'Code'),
 	name: field(type: 'text', title: 'Name'),
 )
 
+# A string (non-'id') primary key, to prove field_many resolves the foreign key via idColumn().
 static prepareTable {
 	$db = static::DB()
-	$db->query('CREATE TABLE IF NOT EXISTS tags (id INTEGER PRIMARY KEY, name TEXT)')
+	$db->query('CREATE TABLE IF NOT EXISTS tags (code TEXT PRIMARY KEY, name TEXT)')
 	$db->query('DELETE FROM tags')
-	$db->query('CREATE TABLE IF NOT EXISTS thing_tags (thing INTEGER, tag INTEGER)')
+	$db->query('CREATE TABLE IF NOT EXISTS thing_tags (thing INTEGER, tag TEXT)')
 	$db->query('DELETE FROM thing_tags')
-	$db->query('INSERT INTO tags (id, name) VALUES (5, ?)', 'red')
-	$db->query('INSERT INTO tags (id, name) VALUES (6, ?)', 'blue')
-	$db->query('INSERT INTO thing_tags (thing, tag) VALUES (1, 5)')
-	$db->query('INSERT INTO thing_tags (thing, tag) VALUES (2, 6)')
+	$db->query('INSERT INTO tags (code, name) VALUES (?, ?)', 'red', 'Red')
+	$db->query('INSERT INTO tags (code, name) VALUES (?, ?)', 'blue', 'Blue')
+	$db->query('INSERT INTO thing_tags (thing, tag) VALUES (1, ?)', 'red')
+	$db->query('INSERT INTO thing_tags (thing, tag) VALUES (2, ?)', 'blue')
 }

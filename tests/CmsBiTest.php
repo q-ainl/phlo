@@ -77,4 +77,10 @@ final class CmsBiTest extends TestCase {
 		$this->assertTrue($r['ownsCorrect'], 'a record linked to the parent in the pivot table is owned');
 		$this->assertFalse($r['ownsWrong'], 'a record not linked to that parent is rejected');
 	}
+
+	public function testInvalidBiStructureIsEvictedFromCache():void {
+		$r = self::fetch('biprobe::cacheCases');
+		$this->assertTrue($r['cachedBefore'], 'the structure is in the cache before the query runs');
+		$this->assertTrue($r['evictedAfter'], 'a valid-model-but-bad-structure entry is dropped from the cache when buildQuery fails, so the deterministic token does not fail forever');
+	}
 }

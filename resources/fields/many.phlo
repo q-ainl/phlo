@@ -19,14 +19,15 @@ method label($record) => loop($record->{$this->name}, fn($relation) => $this->li
 method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
 
 method input($record){
+	$pk = $this->obj::idColumn()
 	$current = array_keys($record->{$this->name} ?: [])
-	$boxes = loop($this->obj::records(), fn($o) => tag('label', tag('input', type: 'checkbox', name: $this->name.'[]', value: $o->id, checked: in_array($o->id, $current) ? true : null).esc((string)$o), class: 'ms-opt'), void)
+	$boxes = loop($this->obj::records(), fn($o) => tag('label', tag('input', type: 'checkbox', name: $this->name.'[]', value: $o->$pk, checked: in_array($o->$pk, $current) ? true : null).esc((string)$o), class: 'ms-opt'), void)
 	return tag('div', $boxes ?: tag('span', 'no options', class: 'muted'), class: 'ms-grid')
 }
 
 method sync($model, $parentId){
 	$rel = $model::objMany()[$this->name]
-	$ids = array_values(array_unique(array_filter(array_map('intval', (array)(%payload->{$this->name} ?? [])))))
+	$ids = array_values(array_unique(array_filter((array)(%payload->{$this->name} ?? []))))
 	$db = $model::DB()
 	$db->delete($rel['table'], $rel['localKey'].'=?', $parentId)
 	foreach ($ids AS $id) $db->create($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $id])
@@ -35,7 +36,7 @@ method sync($model, $parentId){
 # Does $record belong to parent $parentId via this relation? (a row in the pivot table links them).
 method objOwns($record, $parentId, $parentModel):bool {
 	$rel = $parentModel::objMany()[$this->name]
-	return (bool)$parentModel::DB()->record($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $record->id])
+	return (bool)$parentModel::DB()->record($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $record->{$record::idColumn()}])
 }
 
 prop objColumns => []
