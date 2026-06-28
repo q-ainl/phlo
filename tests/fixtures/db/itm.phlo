@@ -6,6 +6,6 @@ static table = 'items'
 static columns = 'id,list_id,label'
 
 static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS items (id INTEGER PRIMARY KEY AUTOINCREMENT, list_id INTEGER, label TEXT)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS items (id '.app::autoId(static::DB()).', list_id INTEGER, label TEXT)')
 	static::DB()->query('DELETE FROM items')
 }

@@ -3,8 +3,10 @@
         "DB/DB",
         "DB/model",
         "DB/SQLite",
+        "DB/MySQL",
         "DB/JSONDB",
         "DB/JSON.result",
+        "security/creds",
         "security/audit",
         "await",
         "connectors/TokenStore"

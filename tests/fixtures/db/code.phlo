@@ -7,7 +7,7 @@ static idColumn = 'slug'
 static columns = 'slug,label'
 
 static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS codes (slug TEXT PRIMARY KEY, label TEXT)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS codes (slug '.app::textId(static::DB()).', label TEXT)')
 	static::DB()->query('DELETE FROM codes')
 }
 

@@ -9,7 +9,7 @@ static columns = 'id,name'
 static objChildren = ['items' => ['obj' => 'itm', 'key' => 'list_id']]
 
 static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS lists (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS lists (id '.app::autoId(static::DB()).', name TEXT)')
 	static::DB()->query('DELETE FROM lists')
 }
 

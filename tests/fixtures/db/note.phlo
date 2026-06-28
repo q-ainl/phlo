@@ -5,8 +5,10 @@ static table = 'notes'
 static columns = 'id,title,done,created'
 
 static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS notes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, done INTEGER DEFAULT 0, created INTEGER)')
-	static::DB()->query('DELETE FROM notes')
+	# DROP+CREATE (not DELETE) so the AUTO_INCREMENT counter resets on MySQL too - DELETE leaves it,
+	# and the test asserts the ids start at 1. SQLite starts fresh because DbTest unlinks the db file.
+	static::DB()->query('DROP TABLE IF EXISTS notes')
+	static::DB()->query('CREATE TABLE notes (id '.app::autoId(static::DB()).', title TEXT, done INTEGER DEFAULT 0, created INTEGER)')
 }
 
 static runTests {

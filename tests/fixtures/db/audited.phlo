@@ -11,13 +11,13 @@ static objAudit = true
 static columns = 'ref,status,amount'
 
 static prepareTable {
-	static::DB()->query('CREATE TABLE IF NOT EXISTS audited (ref TEXT PRIMARY KEY, status TEXT, amount INTEGER)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS audited (ref '.app::textId(static::DB()).', status TEXT, amount INTEGER)')
 	static::DB()->query('DELETE FROM audited')
 }
 
 static runTests {
 	static::prepareTable()
-	static::DB()->query('CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, user INTEGER, model TEXT, record_id TEXT, action TEXT, changes TEXT, ip TEXT)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS audit_log (id '.app::autoId(static::DB()).', ts INTEGER, user INTEGER, model TEXT, record_id TEXT, action TEXT, changes TEXT, ip TEXT)')
 	static::DB()->query('DELETE FROM audit_log')
 	static::DB()->query("INSERT INTO audited (ref, status, amount) VALUES ('A', 'open', 1)")
 	static::change('ref=? AND status=?', 'A', 'open', amount: 9)
@@ -64,7 +64,7 @@ static runNestedRollback {
 
 static runSaveCreate {
 	static::prepareTable()
-	static::DB()->query('CREATE TABLE IF NOT EXISTS audit_log (id INTEGER PRIMARY KEY AUTOINCREMENT, ts INTEGER, user INTEGER, model TEXT, record_id TEXT, action TEXT, changes TEXT, ip TEXT)')
+	static::DB()->query('CREATE TABLE IF NOT EXISTS audit_log (id '.app::autoId(static::DB()).', ts INTEGER, user INTEGER, model TEXT, record_id TEXT, action TEXT, changes TEXT, ip TEXT)')
 	static::DB()->query('DELETE FROM audit_log')
 	(new static(ref: 'B', status: 'new', amount: 5))->objSave()
 	return ['logged' => (int)static::DB()->query("SELECT COUNT(*) FROM audit_log WHERE model='audited' AND action='create' AND record_id='B'")->fetchColumn()]
