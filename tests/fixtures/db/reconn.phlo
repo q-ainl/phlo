@@ -54,3 +54,17 @@ static runNoRetryTransaction {
 	flakypdo::$inTx = false
 	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
 }
+
+static runNoRetryCTE {
+	flakypdo::$calls = 0
+	flakypdo::$info = ['HY000', 2006, 'MySQL server has gone away']
+	flakypdo::$inTx = false
+	static::DB()->PDO = new flakypdo
+	$threw = false
+	try {
+		static::DB()->query('WITH doomed AS (SELECT id FROM reconn) DELETE FROM reconn WHERE id IN (SELECT id FROM doomed)')
+	} catch (\Throwable $e){
+		$threw = true
+	}
+	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
+}

@@ -38,6 +38,14 @@ jobs:
             php -l "$f"
           done
 
+      # The BI integration test mounts the CMS (a separate repo). Best-effort checkout so it runs in
+      # CI; if it fails (e.g. private repo), CmsBiTest skips itself rather than failing the build.
+      - name: Check out the CMS for the BI integration test
+        continue-on-error: true
+        run: |
+          sudo mkdir -p /srv/control
+          sudo git clone --depth 1 https://github.com/q-ainl/phlo-cms.git /srv/control/CMS
+
       - name: Run tests
         run: vendor/bin/phpunit
 

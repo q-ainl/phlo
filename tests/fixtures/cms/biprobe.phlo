@@ -25,6 +25,7 @@ static sqliCases {
 		'unknownColumn' => static::throws(fn() => $bi->probeBuild('thing', ['filters' => [['column' => 'secret; DROP TABLE things', 'op' => '=', 'value' => 'x']]])),
 		'unknownOperator' => static::throws(fn() => $bi->probeBuild('thing', ['filters' => [['column' => 'name', 'op' => 'union', 'value' => 'x']]])),
 		'badOrderIgnored' => count($bi->probeBuild('thing', ['filters' => [], 'order' => ['column' => 'name); DROP TABLE things --', 'dir' => 'asc']])),
+		'keys' => array_keys($bi->probeBuild('thing', ['filters' => []])),
 	]
 }
 

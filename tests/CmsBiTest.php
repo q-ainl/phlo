@@ -27,6 +27,9 @@ final class CmsBiTest extends TestCase {
 	}
 
 	public static function setUpBeforeClass():void {
+		// The fixture mounts the real CMS (a separate repo) from /srv/control/CMS; skip where it is
+		// absent (e.g. a CI runner that only checked out the engine) instead of failing the build.
+		if (!is_dir('/srv/control/CMS')) self::markTestSkipped('this CMS integration test needs the phlo-cms checkout at /srv/control/CMS');
 		[$code, $out, $err] = self::cli('build::run');
 		self::assertSame(0, $code, "build::run failed:\n$out$err");
 	}
@@ -40,6 +43,7 @@ final class CmsBiTest extends TestCase {
 		$this->assertTrue($r['unknownColumn'], 'a column outside the model is rejected');
 		$this->assertTrue($r['unknownOperator'], 'an operator outside the allowlist is rejected');
 		$this->assertSame(2, $r['badOrderIgnored'], 'a malicious ORDER BY column is ignored, not injected');
+		$this->assertSame([1, 2], $r['keys'], 'rows are keyed by their real primary key (FETCH_UNIQUE), not 0,1,2 - the CMS uses the array key as the record data-id');
 	}
 
 	public function testModelAuthzHooksGate():void {

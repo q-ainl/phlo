@@ -106,6 +106,15 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['flakyCalls'] ?? null, 'the query is attempted exactly once inside a transaction, with no retry: '.$out);
 	}
 
+	public function testGoneAwayDoesNotRetryDataModifyingCte():void {
+		[$code, $out, $err] = self::cli('reconn::runNoRetryCTE');
+		$this->assertSame(0, $code, "reconn::runNoRetryCTE failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from runNoRetryCTE: '.$out);
+		$this->assertTrue($r['threw'] ?? false, 'a gone-away on a WITH ... DELETE must surface: a CTE can mutate, so it is never auto-retried: '.$out);
+		$this->assertSame(1, $r['flakyCalls'] ?? null, 'the data-modifying CTE is attempted exactly once: '.$out);
+	}
+
 	public function testCatalogHasNoUnresolvedRequires():void {
 		[$code, $out, $err] = self::cli('reflect::catalogGaps');
 		$this->assertSame(0, $code, $err);
