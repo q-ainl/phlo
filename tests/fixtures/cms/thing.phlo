@@ -1,0 +1,21 @@
+@ class:   thing
+@ extends: model
+
+static table = 'things'
+
+static canView => true
+static canChange => true
+static canDelete => true
+
+static schema => arr(
+	id: field(type: 'number', title: 'ID'),
+	name: field(type: 'text', title: 'Name'),
+	secret: field(type: 'text', title: 'Secret'),
+)
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS things (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, secret TEXT)')
+	static::DB()->query('DELETE FROM things')
+	static::create(name: 'alice', secret: 'topsecret')
+	static::create(name: 'bob', secret: 'hunter2')
+}

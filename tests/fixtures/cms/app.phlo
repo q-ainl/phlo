@@ -1,0 +1,4 @@
+static %model.DB => %SQLite(data.'test.db')
+
+prop title = 'CMS BI test fixture'
+prop models = ['thing', 'locked']

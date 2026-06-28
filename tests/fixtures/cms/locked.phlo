@@ -1,0 +1,13 @@
+@ class:   locked
+@ extends: model
+
+static table = 'locked'
+
+static canView => false
+static canChange => false
+static canDelete => false
+
+static schema => arr(
+	id: field(type: 'number', title: 'ID'),
+	name: field(type: 'text', title: 'Name'),
+)

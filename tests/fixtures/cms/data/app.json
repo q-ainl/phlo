@@ -1,0 +1,22 @@
+{
+    "resources": [
+        "DB/DB",
+        "DB/SQLite",
+        "DB/model",
+        "fields/field",
+        "fields/text",
+        "fields/number",
+        "files/JSON",
+        "HTTP",
+        "AI/AI",
+        "AI/OpenAI",
+        "security/token",
+        "tag",
+        "payload",
+        "session",
+        "CMS.dashboard.bi"
+    ],
+    "paths": {
+        "resources": ["/srv/control/CMS/"]
+    }
+}
