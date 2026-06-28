@@ -10,6 +10,25 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- A custom production error page hook, `app::errorPage($code, $id)`, plus short
+  8-character error reference ids: the id is shown on the error page and in the
+  JSON/async payload and logged in `data/errors.json`, so a user can quote it and
+  the developer can find the entry. The error pipeline is recursion-guarded - a
+  throw from the renderer or a custom `errorPage` falls back to a dependency-free
+  bare page instead of looping.
+- Field-agnostic `objOwns()` on the relation fields (`child`, `many`): the CMS
+  routes delegate record-ownership checks to the field instead of inlining
+  relationship semantics, and relation links/counts resolve through the model's
+  `idColumn`, so a non-`id` primary key works end to end.
+- Expanded test coverage: the AI layer (no credentials), the ORM field types (no
+  database), the security primitives, the file-format resources, the DOM
+  tag-builders, a penetration-test round against the framework defenses, and the
+  safe-DB-reconnect rules. The ORM suite also runs against a real MySQL in CI (a
+  MySQL service job): CRUD and the INSERT-IGNORE path, a custom string primary
+  key, relations, and the audit transaction/savepoint rollback, alongside the
+  SQLite run.
+- `docs/versioning.md`: the Semantic Versioning compatibility, deprecation and
+  support policy, and the upgrade process.
 - API connectors under `resources/connectors/`: a `Connector` base class
   (credential resolution from a `creds.ini` section, JSON request helpers built
   on `HTTP()`, opt-in idempotent retry, pagination and a normalized
@@ -61,6 +80,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   and WebSocket notes.
 
 ### Changed
+- `%MySQL` connections are transient by default (the `objPers` marker is gone),
+  so an idle FrankenPHP worker no longer reuses a connection MySQL has already
+  closed ("server has gone away"). An app that wants a persistent connection opts
+  in with `prop %MySQL.objPers = true`.
 - SKILL.md: full-line `//` comments are documented as officially supported
   (the parser always accepted and forwarded them); `<script>`/`<style>`
   block termination is documented as the literal closing tag, matching
@@ -73,6 +96,13 @@ tagged release onward. The engine version constant lives in `phlo.php`
   removed from SKILL.md; WebSocket support is documented as optional.
 
 ### Security
+- The `JSON` file resource maps slashes in a filename to dots (like `CSV`/`INI`),
+  so a `../` in a name can no longer escape the data directory; the
+  penetration-test round asserts all three file resources are safe.
+- `debug` mode no longer relaxes the script Content-Security-Policy - the strict
+  nonce policy holds in debug too. Raw view output (`{{ }}` / `{( )}`) is
+  documented as intentionally unescaped: the app owns output escaping, with the
+  strict CSP as a backstop.
 - Removed the dashboard `inspect` section. It read any file resolvable on
   disk (including `data/auth.ini` / `data/creds.ini`) for an authenticated
   dashboard user. Nothing linked to it; the Source, Build and Release
@@ -81,6 +111,13 @@ tagged release onward. The engine version constant lives in `phlo.php`
   reader.
 
 ### Fixed
+- Safe DB reconnect: a "server has gone away" / lost-connection error on a read
+  transparently reconnects and retries once; a mutation, a statement inside a
+  transaction, and a data-modifying CTE (`WITH ... DELETE/UPDATE/INSERT`) are
+  never auto-retried, so a write is never silently run twice. DB identifier
+  quoting is hardened across the driver layer.
+- View compilation of bare constants, and the source line reported for an error
+  raised inside a view body.
 - `phlo_error_log()` now wraps the whole read-modify-write of
   `data/errors.json` in a single `flock(LOCK_EX)`, so concurrent errors no
   longer overwrite each other's updates, and caps the log at the newest 200
