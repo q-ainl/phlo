@@ -72,6 +72,7 @@ static manyOwnsCases {
 	return [
 		'ownsCorrect' => $manyField->objOwns($tagRed, 1, 'thing'),
 		'ownsWrong' => $manyField->objOwns($tagRed, 2, 'thing'),
+		'linkHasPk' => str_contains((string)$manyField->link($tagRed), '/red'),
 	]
 }
 

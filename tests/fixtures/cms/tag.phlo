@@ -4,6 +4,8 @@
 static table = 'tags'
 static idColumn = 'code'
 
+view: $this->name
+
 static schema => arr(
 	code: field(type: 'text', title: 'Code'),
 	name: field(type: 'text', title: 'Name'),

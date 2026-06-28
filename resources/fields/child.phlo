@@ -13,11 +13,11 @@ prop change = false
 prop create = false
 prop record = 'list'
 
-method count($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id.slash.$this->name, class: 'async', inner: $record->getCount($this->name).space.$this->title)
+method count($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}.slash.$this->name, class: 'async', inner: $record->getCount($this->name).space.$this->title)
 method last($record) => $record->getLast($this->name)
 method label($record) => implode(loop($record->{$this->name}, fn($child) => $this->link($child))) ?: dash
 method input($record) => $this->label($record)
-method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
+method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}, class: 'async', inner: $record)
 
 # The foreign-key column on the child that points back to its parent; defaults to the parent model name.
 method objKey($parentModel) => $this->key ?? $parentModel

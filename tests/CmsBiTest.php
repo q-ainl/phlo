@@ -76,6 +76,7 @@ final class CmsBiTest extends TestCase {
 		$r = self::fetch('biprobe::manyOwnsCases');
 		$this->assertTrue($r['ownsCorrect'], 'a record linked to the parent in the pivot table is owned');
 		$this->assertFalse($r['ownsWrong'], 'a record not linked to that parent is rejected');
+		$this->assertTrue($r['linkHasPk'], 'the relation link href uses the string primary key (idColumn), not a missing id');
 	}
 
 	public function testInvalidBiStructureIsEvictedFromCache():void {

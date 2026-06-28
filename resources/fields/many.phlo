@@ -16,7 +16,7 @@ prop change = false
 
 method count($record) => $record->getCount($this->name)
 method label($record) => loop($record->{$this->name}, fn($relation) => $this->link($relation), lf) ?: dash
-method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
+method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}, class: 'async', inner: $record)
 
 method input($record){
 	$pk = $this->obj::idColumn()
