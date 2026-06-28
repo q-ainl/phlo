@@ -13,6 +13,7 @@ prop default => token($this->length)
 prop create = false
 prop change = false
 prop search = true
+prop handle = true
 
 method label($record) => tag('div', inner: esc($record->{$this->name}))
 method parse($record) => $record->{$this->name} ??= $this->default

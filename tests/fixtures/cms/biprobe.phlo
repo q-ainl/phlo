@@ -26,6 +26,22 @@ static sqliCases {
 		'unknownOperator' => static::throws(fn() => $bi->probeBuild('thing', ['filters' => [['column' => 'name', 'op' => 'union', 'value' => 'x']]])),
 		'badOrderIgnored' => count($bi->probeBuild('thing', ['filters' => [], 'order' => ['column' => 'name); DROP TABLE things --', 'dir' => 'asc']])),
 		'keys' => array_keys($bi->probeBuild('thing', ['filters' => []])),
+		'firstId' => (array_values($bi->probeBuild('thing', ['filters' => []]))[0]->id ?? null),
+	]
+}
+
+static parseCases {
+	$token = field(type: 'token', name: 'tok')
+	$rec1 = new obj
+	$token->parse($rec1)
+	$dt = field(type: 'datetime', name: 'created')
+	$rec2 = new obj
+	$dt->parse($rec2)
+	return [
+		'tokenHandle' => $token->handle,
+		'tokenGenerated' => strlen((string)($rec1->tok ?? '')) > 0,
+		'datetimeHandle' => $dt->handle,
+		'createdGenerated' => ($rec2->created ?? 0) > 0,
 	]
 }
 
@@ -46,5 +62,15 @@ static childOwnsCases {
 		'key' => $childField->objKey('thing'),
 		'ownsCorrect' => $childField->objOwns($g1, 1, 'thing'),
 		'ownsWrong' => $childField->objOwns($g1, 2, 'thing'),
+	]
+}
+
+static manyOwnsCases {
+	tag::prepareTable()
+	$manyField = thing::fields()['tags']
+	$t5 = tag::record(id: 5)
+	return [
+		'ownsCorrect' => $manyField->objOwns($t5, 1, 'thing'),
+		'ownsWrong' => $manyField->objOwns($t5, 2, 'thing'),
 	]
 }

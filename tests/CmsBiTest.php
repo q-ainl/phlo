@@ -44,6 +44,15 @@ final class CmsBiTest extends TestCase {
 		$this->assertTrue($r['unknownOperator'], 'an operator outside the allowlist is rejected');
 		$this->assertSame(2, $r['badOrderIgnored'], 'a malicious ORDER BY column is ignored, not injected');
 		$this->assertSame([1, 2], $r['keys'], 'rows are keyed by their real primary key (FETCH_UNIQUE), not 0,1,2 - the CMS uses the array key as the record data-id');
+		$this->assertSame(1, $r['firstId'], 'the primary key is selected as a throwaway _ so FETCH_UNIQUE keeps the real id on the record object, not consumed off table.*');
+	}
+
+	public function testAutoGeneratingParsersStillRun():void {
+		$r = self::fetch('biprobe::parseCases');
+		$this->assertTrue($r['tokenHandle'], 'a token field is handle (auto-managed)');
+		$this->assertTrue($r['tokenGenerated'], 'a non-writable token still auto-generates via parse()');
+		$this->assertTrue($r['datetimeHandle'], 'a datetime field is handle');
+		$this->assertTrue($r['createdGenerated'], "a non-writable 'created' timestamp is still set by parse()");
 	}
 
 	public function testModelAuthzHooksGate():void {
@@ -61,5 +70,11 @@ final class CmsBiTest extends TestCase {
 		$this->assertSame('thing', $r['key'], 'the child field resolves its own foreign-key column (default: the parent model name)');
 		$this->assertTrue($r['ownsCorrect'], 'a child whose foreign key matches the parent is owned');
 		$this->assertFalse($r['ownsWrong'], 'a child of another parent is rejected - the routes delegate this to the field, not inline it');
+	}
+
+	public function testManyFieldOwnershipViaPivot():void {
+		$r = self::fetch('biprobe::manyOwnsCases');
+		$this->assertTrue($r['ownsCorrect'], 'a record linked to the parent in the pivot table is owned');
+		$this->assertFalse($r['ownsWrong'], 'a record not linked to that parent is rejected');
 	}
 }

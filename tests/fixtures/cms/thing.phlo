@@ -11,6 +11,7 @@ static schema => arr(
 	id: field(type: 'number', title: 'ID'),
 	name: field(type: 'text', title: 'Name'),
 	secret: field(type: 'text', title: 'Secret'),
+	tags: field(type: 'many', obj: 'tag', table: 'thing_tags', localKey: 'thing', foreignKey: 'tag'),
 )
 
 static prepareTable {
