@@ -18,3 +18,8 @@ method last($record) => $record->getLast($this->name)
 method label($record) => implode(loop($record->{$this->name}, fn($child) => $this->link($child))) ?: dash
 method input($record) => $this->label($record)
 method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->id, class: 'async', inner: $record)
+
+# The foreign-key column on the child that points back to its parent; defaults to the parent model name.
+method objKey($parentModel) => $this->key ?? $parentModel
+# Does $record belong to parent $parentId via this relation? (direct foreign key).
+method objOwns($record, $parentId, $parentModel):bool => (string)$record->{$this->objKey($parentModel)} === (string)$parentId

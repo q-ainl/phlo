@@ -37,3 +37,14 @@ static authzHooks => [
 	'thingDelete' => thing::canDelete(),
 	'lockedDelete' => locked::canDelete(),
 ]
+
+static childOwnsCases {
+	gadget::prepareTable()
+	$childField = field(type: 'child', obj: 'gadget')
+	$g1 = gadget::record(thing: 1)
+	return [
+		'key' => $childField->objKey('thing'),
+		'ownsCorrect' => $childField->objOwns($g1, 1, 'thing'),
+		'ownsWrong' => $childField->objOwns($g1, 2, 'thing'),
+	]
+}

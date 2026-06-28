@@ -55,4 +55,11 @@ final class CmsBiTest extends TestCase {
 		$this->assertTrue($r['thingDelete']);
 		$this->assertFalse($r['lockedDelete'], 'a model can deny delete');
 	}
+
+	public function testChildFieldOwnershipIsFieldAgnostic():void {
+		$r = self::fetch('biprobe::childOwnsCases');
+		$this->assertSame('thing', $r['key'], 'the child field resolves its own foreign-key column (default: the parent model name)');
+		$this->assertTrue($r['ownsCorrect'], 'a child whose foreign key matches the parent is owned');
+		$this->assertFalse($r['ownsWrong'], 'a child of another parent is rejected - the routes delegate this to the field, not inline it');
+	}
 }

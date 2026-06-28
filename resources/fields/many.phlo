@@ -32,4 +32,10 @@ method sync($model, $parentId){
 	foreach ($ids AS $id) $db->create($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $id])
 }
 
+# Does $record belong to parent $parentId via this relation? (a row in the pivot table links them).
+method objOwns($record, $parentId, $parentModel):bool {
+	$rel = $parentModel::objMany()[$this->name]
+	return (bool)$parentModel::DB()->record($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $record->id])
+}
+
 prop objColumns => []

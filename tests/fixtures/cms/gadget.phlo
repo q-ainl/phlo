@@ -1,0 +1,17 @@
+@ class:   gadget
+@ extends: model
+
+static table = 'gadgets'
+
+static schema => arr(
+	id: field(type: 'number', title: 'ID'),
+	thing: field(type: 'number', title: 'Thing'),
+	name: field(type: 'text', title: 'Name'),
+)
+
+static prepareTable {
+	static::DB()->query('CREATE TABLE IF NOT EXISTS gadgets (id INTEGER PRIMARY KEY AUTOINCREMENT, thing INTEGER, name TEXT)')
+	static::DB()->query('DELETE FROM gadgets')
+	static::create(thing: 1, name: 'widget')
+	static::create(thing: 2, name: 'sprocket')
+}
