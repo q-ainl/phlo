@@ -4,9 +4,11 @@
 
 static calls = 0
 static info = ['HY000', 2006, 'server has gone away']
+static inTx = false
 
 method prepare($q, $o = []) => static::boom()
 method query(...$a) => static::boom()
+method inTransaction => static::$inTx
 
 static boom {
 	static::$calls++

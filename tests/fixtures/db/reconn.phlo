@@ -25,3 +25,32 @@ static runNoRetry {
 	}
 	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
 }
+
+static runNoRetryMutation {
+	flakypdo::$calls = 0
+	flakypdo::$info = ['HY000', 2006, 'MySQL server has gone away']
+	flakypdo::$inTx = false
+	static::DB()->PDO = new flakypdo
+	$threw = false
+	try {
+		static::DB()->query('INSERT INTO reconn (val) VALUES (1)')
+	} catch (\Throwable $e){
+		$threw = true
+	}
+	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
+}
+
+static runNoRetryTransaction {
+	flakypdo::$calls = 0
+	flakypdo::$info = ['HY000', 2006, 'MySQL server has gone away']
+	flakypdo::$inTx = true
+	static::DB()->PDO = new flakypdo
+	$threw = false
+	try {
+		static::DB()->query('SELECT 1')
+	} catch (\Throwable $e){
+		$threw = true
+	}
+	flakypdo::$inTx = false
+	return ['threw' => $threw, 'flakyCalls' => flakypdo::$calls]
+}

@@ -88,6 +88,24 @@ final class DbTest extends TestCase {
 		$this->assertSame(1, $r['flakyCalls'] ?? null, 'a normal SQL error must not re-run the query (no silent retry of a mutation): '.$out);
 	}
 
+	public function testGoneAwayDoesNotRetryMutation():void {
+		[$code, $out, $err] = self::cli('reconn::runNoRetryMutation');
+		$this->assertSame(0, $code, "reconn::runNoRetryMutation failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from runNoRetryMutation: '.$out);
+		$this->assertTrue($r['threw'] ?? false, 'a gone-away on an INSERT must surface, never silently retry: the mutation may already have run before the connection dropped: '.$out);
+		$this->assertSame(1, $r['flakyCalls'] ?? null, 'the mutation is attempted exactly once, with no reconnect+retry: '.$out);
+	}
+
+	public function testGoneAwayDoesNotRetryInTransaction():void {
+		[$code, $out, $err] = self::cli('reconn::runNoRetryTransaction');
+		$this->assertSame(0, $code, "reconn::runNoRetryTransaction failed:\n$out$err");
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, 'No JSON from runNoRetryTransaction: '.$out);
+		$this->assertTrue($r['threw'] ?? false, 'a gone-away inside a transaction must surface: a reconnect would start a fresh, transaction-less session: '.$out);
+		$this->assertSame(1, $r['flakyCalls'] ?? null, 'the query is attempted exactly once inside a transaction, with no retry: '.$out);
+	}
+
 	public function testCatalogHasNoUnresolvedRequires():void {
 		[$code, $out, $err] = self::cli('reflect::catalogGaps');
 		$this->assertSame(0, $code, $err);
