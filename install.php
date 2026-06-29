@@ -1,5 +1,5 @@
 <?php
-if (PHP_SAPI !== 'cli') exit("Run install.php from the command line.\n");
+if (PHP_SAPI !== 'cli' && !defined('PHLO_INSTALL_LIB')) exit("Run install.php from the command line.\n");
 
 function ask(string $question, string $default = ''):string {
 	$suffix = $default !== '' ? " [$default]" : '';
