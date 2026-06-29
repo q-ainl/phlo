@@ -136,6 +136,9 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends git unzip
           install-php-extensions pdo_sqlite sodium @composer
+          # Under ZTS the engine shells out to `php-zts` for build/lint subprocesses; the FrankenPHP
+          # image ships that interpreter as `php`, so expose it under the name the engine expects.
+          ln -sf "$(command -v php)" /usr/local/bin/php-zts
 
       - uses: actions/checkout@v4
 
