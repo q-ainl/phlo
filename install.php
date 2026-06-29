@@ -228,7 +228,7 @@ if ($code !== 0 || trim(implode('', $lint)) !== '[]') fail("Lint failed:\n".impl
 
 fwrite(STDOUT, "Build clean.\n\nNext steps:\n");
 fwrite(STDOUT, "  - Serve $target/www/ for host $host (FrankenPHP/Caddy), e.g.:\n");
-fwrite(STDOUT, "      $host {\n          root * $target/www\n          php_server\n      }\n");
+fwrite(STDOUT, "      $host {\n          root * $target/www\n          @notStatic not file\n          rewrite @notStatic /app.php\n          php_server\n      }\n");
 fwrite(STDOUT, "  - Quick check without a server: php $target/www/app.php reflect::context\n");
 fwrite(STDOUT, "  - App notes for agents live in data/app.md\n");
 

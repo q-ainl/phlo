@@ -5,5 +5,7 @@
 {$SERVER_NAME::80} {
 	root * /app/www
 	encode zstd gzip
+	@notStatic not file
+	rewrite @notStatic /app.php
 	php_server
 }
