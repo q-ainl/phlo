@@ -4,7 +4,7 @@
 @ package:  security
 @ frontend: true
 @ backend:  true
-@ requires: @session lang php-ext:gd
+@ requires: @session lang DOM/exists php-ext:gd
 @ tags:     captcha spam bot human-verification security
 
 static W = 300
@@ -162,6 +162,7 @@ view field($bg, $piece, $gapY, $w, $h, $p):
 	padding: 0
 	position: absolute
 	top: 0
+	touch-action: none
 	width: 42px
 }
 #captcha .thumb:active: cursor: grabbing
@@ -174,79 +175,75 @@ view field($bg, $piece, $gapY, $w, $h, $p):
 </style>
 
 <script>
-onExist('#captcha', cap => {
-	if (cap.dataset.ready) return
-	cap.dataset.ready = '1'
-	const Wn = +cap.dataset.w
-	const Pn = +cap.dataset.p
-	const gapY = +cap.dataset.gapy
-	const bg = cap.querySelector('.bg')
-	const piece = cap.querySelector('.piece')
-	const track = cap.querySelector('.track')
-	const thumb = cap.querySelector('.thumb')
-	const fill = cap.querySelector('.fill')
-	const xField = cap.querySelector('[name=captcha_x]')
-	const tField = cap.querySelector('[name=captcha_t]')
-	const btn = obj('#registerSubmit')
-	if (btn) btn.disabled = true
-	let scale = 1
-	let startCss = 6
-	let travelMax = 0
-	let maxThumb = 0
-	let dragging = false
-	let t0 = 0
-	let samples = []
-	function layout(){
-		const Wr = bg.clientWidth || Wn
-		scale = Wr / Wn
-		const pieceCss = Pn * scale
-		piece.style.width = pieceCss + 'px'
-		piece.style.height = pieceCss + 'px'
-		piece.style.top = (gapY * scale) + 'px'
-		startCss = 6 * scale
-		piece.style.left = startCss + 'px'
-		travelMax = Wr - pieceCss - startCss
-		maxThumb = track.clientWidth - thumb.clientWidth
-	}
-	function setFromThumb(tx){
-		tx = Math.max(0, Math.min(maxThumb, tx))
-		thumb.style.left = tx + 'px'
-		fill.style.width = (tx + thumb.clientWidth) + 'px'
-		const frac = maxThumb > 0 ? tx / maxThumb : 0
-		const pl = startCss + frac * (travelMax - startCss)
-		piece.style.left = pl + 'px'
-		return pl / scale
-	}
-	function down(e){
-		dragging = true
-		t0 = performance.now()
-		samples = []
+const captcha = {
+	scale: 1, startCss: 6, travelMax: 0, maxThumb: 0,
+	dragging: false, t0: 0, samples: [],
+	cap: null, bg: null, piece: null, thumb: null, track: null, fill: null, xField: null, tField: null, submit: null,
+	grab(){
+		this.cap = obj('#captcha')
+		if (!this.cap) return false
+		this.bg = obj('.bg', this.cap)
+		this.piece = obj('.piece', this.cap)
+		this.thumb = obj('.thumb', this.cap)
+		this.track = obj('.track', this.cap)
+		this.fill = obj('.fill', this.cap)
+		this.xField = obj('[name=captcha_x]', this.cap)
+		this.tField = obj('[name=captcha_t]', this.cap)
+		this.submit = obj('#registerSubmit')
+		return true
+	},
+	layout(){
+		if (!this.grab()) return
+		const Wr = this.bg.clientWidth || +this.cap.dataset.w
+		this.scale = Wr / +this.cap.dataset.w
+		const pieceCss = +this.cap.dataset.p * this.scale
+		this.piece.style.width = pieceCss + 'px'
+		this.piece.style.height = pieceCss + 'px'
+		this.piece.style.top = (+this.cap.dataset.gapy * this.scale) + 'px'
+		this.startCss = 6 * this.scale
+		this.piece.style.left = this.startCss + 'px'
+		this.travelMax = Wr - pieceCss - this.startCss
+		this.maxThumb = this.track.clientWidth - this.thumb.clientWidth
+		if (this.submit) this.submit.disabled = true
+	},
+	set(tx){
+		tx = Math.max(0, Math.min(this.maxThumb, tx))
+		this.thumb.style.left = tx + 'px'
+		this.fill.style.width = (tx + this.thumb.clientWidth) + 'px'
+		const frac = this.maxThumb > 0 ? tx / this.maxThumb : 0
+		const pl = this.startCss + frac * (this.travelMax - this.startCss)
+		this.piece.style.left = pl + 'px'
+		return pl / this.scale
+	},
+	down(e){
+		if (!this.grab()) return
+		this.dragging = true
+		this.t0 = performance.now()
+		this.samples = []
 		e.preventDefault()
-	}
-	function move(e){
-		if (!dragging) return
+	},
+	move(e){
+		if (!this.dragging) return
 		const px = e.touches ? e.touches[0].clientX : e.clientX
-		const rect = track.getBoundingClientRect()
-		const nx = setFromThumb(px - rect.left - thumb.clientWidth / 2)
-		samples.push({x: nx, t: performance.now() - t0})
-	}
-	function up(){
-		if (!dragging) return
-		dragging = false
-		const xs = samples.map(s => Math.round(s.x))
-		xField.value = xs.length ? xs[xs.length - 1] : 0
+		const rect = this.track.getBoundingClientRect()
+		const nx = this.set(px - rect.left - this.thumb.clientWidth / 2)
+		this.samples.push({x: nx, t: performance.now() - this.t0})
+	},
+	up(){
+		if (!this.dragging) return
+		this.dragging = false
+		const xs = this.samples.map(s => Math.round(s.x))
+		this.xField.value = xs.length ? xs[xs.length - 1] : 0
 		const step = Math.max(1, Math.ceil(xs.length / 24))
-		tField.value = JSON.stringify({d: Math.round(samples.length ? samples[samples.length - 1].t : 0), n: samples.length, x: xs.filter((_, i) => i % step === 0)})
-		if (btn) btn.disabled = false
+		this.tField.value = JSON.stringify({d: Math.round(this.samples.length ? this.samples[this.samples.length - 1].t : 0), n: this.samples.length, x: xs.filter((_, i) => i % step === 0)})
+		if (this.submit) this.submit.disabled = false
 	}
-	if (bg.complete) layout()
-	else bg.addEventListener('load', layout)
-	window.addEventListener('resize', layout)
-	thumb.addEventListener('mousedown', down)
-	thumb.addEventListener('touchstart', down, {passive: false})
-	window.addEventListener('mousemove', move)
-	window.addEventListener('touchmove', move, {passive: false})
-	window.addEventListener('mouseup', up)
-	window.addEventListener('touchend', up)
-})
+}
+
+onExist('#captcha', () => captcha.layout())
+on('load', '#captcha .bg', () => captcha.layout())
+on('resize', window, () => captcha.layout())
+on('mousedown touchstart', '#captcha .thumb', (el, e) => captcha.down(e))
+on('mousemove touchmove', window, (el, e) => captcha.move(e))
+on('mouseup touchend', window, (el, e) => captcha.up())
 </script>
