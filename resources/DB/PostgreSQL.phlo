@@ -12,3 +12,15 @@ prop PDO => new PDO('pgsql:host='.%creds->postgresql->host.';dbname='.%creds->po
 prop fieldQuotes = dq
 prop insertIgnore = void
 prop insertOnConflict = ' ON CONFLICT DO NOTHING'
+
+method lastId {
+	$savepoint = $this->PDO->inTransaction()
+	$savepoint && $this->PDO->exec('SAVEPOINT phlo_lastid')
+	try {
+		$id = $this->PDO->lastInsertId()
+	} catch (\Throwable $e){
+		$id = false
+	}
+	if ($savepoint) $this->PDO->exec($id === false ? 'ROLLBACK TO SAVEPOINT phlo_lastid' : 'RELEASE SAVEPOINT phlo_lastid')
+	return $id
+}

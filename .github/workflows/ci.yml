@@ -83,6 +83,49 @@ jobs:
           PHLO__mysql__password: phlo
         run: vendor/bin/phpunit --filter MySqlTest
 
+  pgsql:
+    name: PostgreSQL parity
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: phlo_test
+          POSTGRES_USER: phlo
+          POSTGRES_PASSWORD: phlo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U phlo"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_pgsql, sodium
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      # The same ORM/audit probes DbTest runs on SQLite, but against a real PostgreSQL: CRUD + the
+      # ON CONFLICT DO NOTHING insert-ignore, a custom string primary key (its insert touches no
+      # sequence, so lastId() guards the lastval() call with a SAVEPOINT), relation loading, and the
+      # audit transaction + savepoint rollback with a quoted reserved "user" column. The fixture
+      # switches engine on PHLO_TEST_DB=pgsql.
+      - name: Run the PostgreSQL parity suite
+        env:
+          PHLO_TEST_DB: pgsql
+          PHLO__postgresql__host: 127.0.0.1
+          PHLO__postgresql__database: phlo_test
+          PHLO__postgresql__user: phlo
+          PHLO__postgresql__password: phlo
+        run: vendor/bin/phpunit --filter PostgreSqlTest
+
   docker:
     name: Docker image
     runs-on: ubuntu-latest

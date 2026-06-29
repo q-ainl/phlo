@@ -1,14 +1,20 @@
 @ summary: DB-agnostic ORM test fixture. The default engine is injected the same way apps do it,
-@          defaulting to a dependency-free SQLite file; PHLO_TEST_DB=mysql switches it to %MySQL
-@          (creds via PHLO__mysql__* env), so the same ORM suite runs against a real MySQL in CI.
+@          defaulting to a dependency-free SQLite file; PHLO_TEST_DB=mysql/pgsql switches it to
+@          %MySQL / %PostgreSQL (creds via PHLO__mysql__* / PHLO__postgresql__* env), so the same
+@          ORM suite runs against a real MySQL and PostgreSQL in CI.
 
-static %model.DB => getenv('PHLO_TEST_DB') === 'mysql' ? %MySQL : %SQLite(data.'test.db')
+static %model.DB => getenv('PHLO_TEST_DB') === 'mysql' ? %MySQL : (getenv('PHLO_TEST_DB') === 'pgsql' ? %PostgreSQL : %SQLite(data.'test.db'))
 
 static %jdoc.DB => %JSONDB(data.'jdocs.json')
 
-# Test-only DDL helpers so one model schema builds on both SQLite and MySQL.
-static autoId($db) => $db->PDO->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql' ? 'INTEGER AUTO_INCREMENT PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT'
-static textId($db) => $db->PDO->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql' ? 'VARCHAR(64) PRIMARY KEY' : 'TEXT PRIMARY KEY'
+# Test-only DDL helpers so one model schema builds on SQLite, MySQL and PostgreSQL.
+static autoId($db){
+	$driver = $db->PDO->getAttribute(\PDO::ATTR_DRIVER_NAME)
+	if ($driver === 'mysql') return 'INTEGER AUTO_INCREMENT PRIMARY KEY'
+	if ($driver === 'pgsql') return 'SERIAL PRIMARY KEY'
+	return 'INTEGER PRIMARY KEY AUTOINCREMENT'
+}
+static textId($db) => $db->PDO->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite' ? 'TEXT PRIMARY KEY' : 'VARCHAR(64) PRIMARY KEY'
 
 app::route()
 

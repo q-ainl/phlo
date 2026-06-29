@@ -77,8 +77,10 @@ method create(string $table, ...$data){
 	$values = implode(comma, array_fill(0, count($data), qm))
 	$query = "INSERT".($ignore ? $this->insertIgnore : void)." INTO $table ($columns) VALUES ($values)".($ignore ? $this->insertOnConflict : void)
 	$this->query($query, ...array_values(loop($data, fn($value) => is_a($value, obj::class) ? $value->id : $value)))
-	return $this->PDO->lastInsertId() ?: ($data['id'] ?? null)
+	return $this->lastId() ?: ($data['id'] ?? null)
 }
+
+method lastId => $this->PDO->lastInsertId()
 
 method change(string $table, string $where, ...$data){
 	$whereCount = substr_count($where, qm)

@@ -16,7 +16,7 @@ static log($model, $action, $before = [], $after = [], $exclude = []){
 	foreach ($exclude AS $col) unset($before[$col], $after[$col])
 	$changes = $action === 'update' ? static::diff($before, $after) : ($action === 'create' ? $after : $before)
 	$class::DB()->query(
-		'INSERT INTO audit_log (ts, user, model, record_id, action, changes, ip) VALUES (?, ?, ?, ?, ?, ?, ?)',
+		'INSERT INTO audit_log (ts, '.$class::DB()->quoteId('user').', model, record_id, action, changes, ip) VALUES (?, ?, ?, ?, ?, ?, ?)',
 		time(),
 		class_exists('session') && isset(%session->user) ? (int)%session->user : null,
 		$class,
@@ -46,7 +46,7 @@ static history($model, $recordId, $limit = 50){
 
 static byUser($model, $userId, $fromTs = 0, $limit = 100){
 	return $model::DB()->query(
-		'SELECT * FROM audit_log WHERE user=? AND ts >= ? ORDER BY ts DESC LIMIT ?',
+		'SELECT * FROM audit_log WHERE '.$model::DB()->quoteId('user').'=? AND ts >= ? ORDER BY ts DESC LIMIT ?',
 		(int)$userId, (int)$fromTs, (int)$limit,
 	)->fetchAll(\PDO::FETCH_OBJ)
 }

@@ -4,6 +4,7 @@
         "DB/model",
         "DB/SQLite",
         "DB/MySQL",
+        "DB/PostgreSQL",
         "DB/JSONDB",
         "DB/JSON.result",
         "security/creds",
