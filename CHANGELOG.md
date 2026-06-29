@@ -103,10 +103,8 @@ tagged release onward. The engine version constant lives in `phlo.php`
 - The `JSON` file resource maps slashes in a filename to dots (like `CSV`/`INI`),
   so a `../` in a name can no longer escape the data directory; the
   penetration-test round asserts all three file resources are safe.
-- `debug` mode no longer relaxes the script Content-Security-Policy - the strict
-  nonce policy holds in debug too. Raw view output (`{{ }}` / `{( )}`) is
-  documented as intentionally unescaped: the app owns output escaping, with the
-  strict CSP as a backstop.
+- Raw view output (`{{ }}` / `{( )}`) is documented as intentionally unescaped: the
+  app owns output escaping, with the strict CSP as a backstop.
 - Removed the dashboard `inspect` section. It read any file resolvable on
   disk (including `data/auth.ini` / `data/creds.ini`) for an authenticated
   dashboard user. Nothing linked to it; the Source, Build and Release
