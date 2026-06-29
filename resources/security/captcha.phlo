@@ -1,0 +1,252 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Self-contained interactive slider-puzzle captcha (no external service). The server picks a secret gap position and renders the background plus a loose piece with GD; the client drags the piece into place. verify() checks the end position plus human drag behaviour (time, path, variation). Single-use and session-bound; the gap position never leaves the server.
+@ package:  security
+@ frontend: true
+@ backend:  true
+@ requires: @session lang php-ext:gd
+@ tags:     captcha spam bot human-verification security
+
+static W = 300
+static H = 180
+static P = 56
+static tol = 8
+static ttl = 600
+
+static issue(){
+	$gapX = random_int(static::$P + 14, static::$W - static::$P - 6)
+	$gapY = random_int(12, static::$H - static::$P - 12)
+	%session->captcha = arr(gap: $gapX, exp: time() + static::$ttl)
+	return arr(gapX: $gapX, gapY: $gapY)
+}
+
+static images($gapX, $gapY){
+	$w = static::$W
+	$h = static::$H
+	$p = static::$P
+	$bg = imagecreatetruecolor($w, $h)
+	$r0 = random_int(50, 170)
+	$g0 = random_int(50, 170)
+	$b0 = random_int(50, 170)
+	for ($x = 0; $x < $w; $x++){
+		$col = imagecolorallocate($bg, (int)($r0 + $x * 0.5) % 256, (int)($g0 + $x * 0.2 + 30) % 256, (int)($b0 + ($w - $x) * 0.4) % 256)
+		imagefilledrectangle($bg, $x, 0, $x, $h, $col)
+	}
+	imagealphablending($bg, true)
+	for ($i = 0; $i < 7; $i++){
+		$col = imagecolorallocatealpha($bg, random_int(0, 255), random_int(0, 255), random_int(0, 255), random_int(55, 95))
+		imagefilledellipse($bg, random_int(0, $w), random_int(0, $h), random_int(50, 130), random_int(50, 130), $col)
+	}
+	$piece = imagecreatetruecolor($p, $p)
+	imagecopy($piece, $bg, 0, 0, $gapX, $gapY, $p, $p)
+	imagerectangle($piece, 0, 0, $p - 1, $p - 1, imagecolorallocate($piece, 245, 245, 245))
+	imagefilledrectangle($bg, $gapX, $gapY, $gapX + $p - 1, $gapY + $p - 1, imagecolorallocatealpha($bg, 0, 0, 0, 95))
+	imagerectangle($bg, $gapX, $gapY, $gapX + $p - 1, $gapY + $p - 1, imagecolorallocate($bg, 255, 255, 255))
+	ob_start()
+	imagepng($bg)
+	$bgData = base64_encode(ob_get_clean())
+	ob_start()
+	imagepng($piece)
+	$pieceData = base64_encode(ob_get_clean())
+	return arr(bg: 'data:image/png;base64,'.$bgData, piece: 'data:image/png;base64,'.$pieceData)
+}
+
+@ advice: verify() does not consume the captcha; call consume() only on success.
+static verify($x, $telemetry){
+	$c = %session->captcha ?? null
+	if (!$c || time() > (int)($c['exp'] ?? 0)) return false
+	if (abs((int)round((float)$x) - (int)($c['gap'] ?? -999)) > static::$tol) return false
+	$t = json_decode((string)$telemetry, true)
+	if (!is_array($t)) return false
+	$d = (int)($t['d'] ?? 0)
+	$n = (int)($t['n'] ?? 0)
+	$xs = is_array($t['x'] ?? null) ? array_values($t['x']) : []
+	if ($d < 200 || $d > 60000) return false
+	if ($n < 5 || count($xs) < 4) return false
+	$deltas = []
+	for ($i = 1; $i < count($xs); $i++) $deltas[] = (float)$xs[$i] - (float)$xs[$i - 1]
+	if (array_sum(array_map('abs', $deltas)) < 30) return false
+	$mean = array_sum($deltas) / count($deltas)
+	$var = 0
+	foreach ($deltas AS $dd) $var += ($dd - $mean) ** 2
+	if (sqrt($var / count($deltas)) < 0.5) return false
+	return true
+}
+
+static consume(){
+	unset(%session->captcha)
+}
+
+method widget {
+	$ch = static::issue()
+	$img = static::images($ch['gapX'], $ch['gapY'])
+	return (string)$this->field($img['bg'], $img['piece'], $ch['gapY'], static::$W, static::$H, static::$P)
+}
+
+view field($bg, $piece, $gapY, $w, $h, $p):
+<div#captcha data-w="$w" data-h="$h" data-p="$p" data-gapy="$gapY">
+	<div.stage>
+		<img.bg src="{{ $bg }}" alt="">
+		<img.piece src="{{ $piece }}" alt="" draggable="false">
+	</div>
+	<div.track>
+		<div.fill></div>
+		<button.thumb type="button" tabindex="-1" aria-label="{{ en('Drag the slider until the piece fits') }}">&#8250;&#8250;</button>
+	</div>
+	<p.hint>{en: Drag the slider until the piece snaps into place}</p>
+	<input type=hidden name=captcha_x>
+	<input type=hidden name=captcha_t>
+</div>
+
+<style>
+#captcha {
+	margin: 14px 0 4px
+	max-width: 300px
+}
+#captcha .stage {
+	border-radius: 8px
+	line-height: 0
+	overflow: hidden
+	position: relative
+	touch-action: none
+	user-select: none
+	width: 100%
+}
+#captcha .bg {
+	display: block
+	height: auto
+	pointer-events: none
+	width: 100%
+}
+#captcha .piece {
+	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.4)
+	left: 6px
+	pointer-events: none
+	position: absolute
+	top: 0
+}
+#captcha .track {
+	background: #e7e5e4
+	border-radius: 8px
+	height: 42px
+	margin-top: 10px
+	position: relative
+	touch-action: none
+}
+#captcha .fill {
+	background: #fed7aa
+	border-radius: 8px
+	height: 100%
+	left: 0
+	position: absolute
+	top: 0
+	width: 0
+}
+#captcha .thumb {
+	align-items: center
+	appearance: none
+	background: #ea580c
+	border: 0
+	border-radius: 8px
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3)
+	color: #fff
+	cursor: grab
+	display: flex
+	font-family: inherit
+	font-size: 18px
+	font-weight: 700
+	height: 42px
+	justify-content: center
+	left: 0
+	margin: 0
+	padding: 0
+	position: absolute
+	top: 0
+	width: 42px
+}
+#captcha .thumb:active: cursor: grabbing
+#captcha .thumb:hover: background: #c2410c
+#captcha .hint {
+	color: #78716c
+	font-size: 12px
+	margin: 6px 0 0
+}
+</style>
+
+<script>
+onExist('#captcha', cap => {
+	if (cap.dataset.ready) return
+	cap.dataset.ready = '1'
+	const Wn = +cap.dataset.w
+	const Pn = +cap.dataset.p
+	const gapY = +cap.dataset.gapy
+	const bg = cap.querySelector('.bg')
+	const piece = cap.querySelector('.piece')
+	const track = cap.querySelector('.track')
+	const thumb = cap.querySelector('.thumb')
+	const fill = cap.querySelector('.fill')
+	const xField = cap.querySelector('[name=captcha_x]')
+	const tField = cap.querySelector('[name=captcha_t]')
+	const btn = obj('#registerSubmit')
+	if (btn) btn.disabled = true
+	let scale = 1
+	let startCss = 6
+	let travelMax = 0
+	let maxThumb = 0
+	let dragging = false
+	let t0 = 0
+	let samples = []
+	function layout(){
+		const Wr = bg.clientWidth || Wn
+		scale = Wr / Wn
+		const pieceCss = Pn * scale
+		piece.style.width = pieceCss + 'px'
+		piece.style.height = pieceCss + 'px'
+		piece.style.top = (gapY * scale) + 'px'
+		startCss = 6 * scale
+		piece.style.left = startCss + 'px'
+		travelMax = Wr - pieceCss - startCss
+		maxThumb = track.clientWidth - thumb.clientWidth
+	}
+	function setFromThumb(tx){
+		tx = Math.max(0, Math.min(maxThumb, tx))
+		thumb.style.left = tx + 'px'
+		fill.style.width = (tx + thumb.clientWidth) + 'px'
+		const frac = maxThumb > 0 ? tx / maxThumb : 0
+		const pl = startCss + frac * (travelMax - startCss)
+		piece.style.left = pl + 'px'
+		return pl / scale
+	}
+	function down(e){
+		dragging = true
+		t0 = performance.now()
+		samples = []
+		e.preventDefault()
+	}
+	function move(e){
+		if (!dragging) return
+		const px = e.touches ? e.touches[0].clientX : e.clientX
+		const rect = track.getBoundingClientRect()
+		const nx = setFromThumb(px - rect.left - thumb.clientWidth / 2)
+		samples.push({x: nx, t: performance.now() - t0})
+	}
+	function up(){
+		if (!dragging) return
+		dragging = false
+		const xs = samples.map(s => Math.round(s.x))
+		xField.value = xs.length ? xs[xs.length - 1] : 0
+		const step = Math.max(1, Math.ceil(xs.length / 24))
+		tField.value = JSON.stringify({d: Math.round(samples.length ? samples[samples.length - 1].t : 0), n: samples.length, x: xs.filter((_, i) => i % step === 0)})
+		if (btn) btn.disabled = false
+	}
+	if (bg.complete) layout()
+	else bg.addEventListener('load', layout)
+	window.addEventListener('resize', layout)
+	thumb.addEventListener('mousedown', down)
+	thumb.addEventListener('touchstart', down, {passive: false})
+	window.addEventListener('mousemove', move)
+	window.addEventListener('touchmove', move, {passive: false})
+	window.addEventListener('mouseup', up)
+	window.addEventListener('touchend', up)
+})
+</script>

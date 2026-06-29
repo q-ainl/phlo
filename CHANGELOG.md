@@ -10,6 +10,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- A `security/captcha` resource: a self-contained slider-puzzle captcha (GD-rendered,
+  session-bound, single-use) with server-side human-behaviour checks (drag time, path and
+  variation) and no external service. `%captcha->widget()` renders it; `captcha::verify()`
+  then `captcha::consume()` gate a form submit such as sign-up.
 - A custom production error page hook, `app::errorPage($code, $id)`, plus short
   8-character error reference ids: the id is shown on the error page and in the
   JSON/async payload and logged in `data/errors.json`, so a user can quote it and
