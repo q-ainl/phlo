@@ -1,0 +1,10 @@
+@ summary: A trivial stateful resource for the worker soak test. A fresh instance reads 'fresh' and
+@          flips itself to 'visited', so a leaked instance across worker requests would read 'visited'.
+
+prop seen = 'fresh'
+
+method visit {
+	$was = $this->seen
+	$this->seen = 'visited'
+	return $was
+}

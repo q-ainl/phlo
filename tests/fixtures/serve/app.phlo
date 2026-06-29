@@ -1,0 +1,9 @@
+@ summary: phlo_serve worker-mode soak fixture. mirror() echoes its args (correct dispatch under
+@          load); probe() calls a resource object twice so the test can assert both within-request
+@          object identity ('fresh' then 'visited') and that phlo('tech/reset') gives each request a
+@          clean object again ('fresh') - the state isolation the worker loop must keep between
+@          requests, on ZTS as well as NTS.
+
+static mirror(...$args) => $args
+
+static probe => [%box->visit(), %box->visit()]

@@ -101,3 +101,9 @@ tests/fixtures/output/php/
 tests/fixtures/output/www/app.css
 tests/fixtures/output/www/app.js
 tests/fixtures/output/data/errors.json
+
+# Serve (worker soak) fixture build output
+tests/fixtures/serve/php/
+tests/fixtures/serve/www/app.css
+tests/fixtures/serve/www/app.js
+tests/fixtures/serve/data/errors.json

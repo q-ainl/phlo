@@ -13,9 +13,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # NTS builds; production worker mode runs on ZTS (FrankenPHP), which
-        # setup-php does not provide; the engine itself is SAPI-agnostic and
-        # detects ZTS at runtime (phlo.php: ZEND_THREAD_SAFE).
+        # NTS builds (setup-php provides no ZTS). The thread-safe SAPI that
+        # production runs on (FrankenPHP/ZTS) is covered by the zts job below;
+        # the engine is SAPI-agnostic and detects ZTS at runtime (ZEND_THREAD_SAFE).
         php: ['8.3', '8.4', '8.5']
     steps:
       - uses: actions/checkout@v4
@@ -125,6 +125,31 @@ jobs:
           PHLO__postgresql__user: phlo
           PHLO__postgresql__password: phlo
         run: vendor/bin/phpunit --filter PostgreSqlTest
+
+  zts:
+    name: ZTS worker mode (FrankenPHP)
+    runs-on: ubuntu-latest
+    container: dunglas/frankenphp:1-php8.5
+    steps:
+      - name: System deps (git/unzip for checkout + composer, pdo_sqlite/sodium, composer)
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends git unzip
+          install-php-extensions pdo_sqlite sodium @composer
+
+      - uses: actions/checkout@v4
+
+      - name: Assert the runtime is thread-safe (ZTS)
+        run: php -r 'exit(ZEND_THREAD_SAFE ? 0 : 1);'
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      # The full suite on the thread-safe SAPI production runs on (FrankenPHP/ZTS), which setup-php
+      # cannot provide. ServeTest drives the phlo_serve worker loop over many requests here, so the
+      # worker lifecycle (per-request reset, state isolation) is proven on ZTS, not only NTS.
+      - name: Run the suite on ZTS
+        run: vendor/bin/phpunit
 
   docker:
     name: Docker image
