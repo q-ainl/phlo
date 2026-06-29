@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Assert the runtime is thread-safe (ZTS)
-        run: php -r 'exit(ZEND_THREAD_SAFE ? 0 : 1);'
+        run: "php -r 'exit(ZEND_THREAD_SAFE ? 0 : 1);'"
 
       - name: Install dependencies
         run: composer install --no-interaction --no-progress
