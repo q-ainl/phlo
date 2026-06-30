@@ -2,7 +2,8 @@
 
 Thanks for your interest in Phlo. Before you open a PR, please read this:
 Phlo is deliberately small and opinionated, and contributions are judged
-against that philosophy.
+against that philosophy. How the project is governed (who decides, and the line
+between the core and the ecosystem) is written down in [GOVERNANCE.md](GOVERNANCE.md).
 
 ## The philosophy (what PRs are measured against)
 
