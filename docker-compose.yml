@@ -1,0 +1,12 @@
+# Run any Phlo app with the prebuilt engine image; nothing to install.
+# Put your app in ./app (its entry is ./app/www/app.php), or scaffold a fresh one:
+#   docker compose run --rm app php /phlo/install.php /app
+# Then start it:
+#   docker compose up   ->   http://localhost:8080
+services:
+  app:
+    image: ghcr.io/q-ainl/phlo
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app:/app
