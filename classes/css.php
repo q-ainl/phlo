@@ -195,8 +195,31 @@ class build_css {
 			$selector = preg_replace('/(^|\\s|,)\\\\#/', '$1&#', $selector);
 		}
 		$selector = self::unescape_selector($selector);
-		$parts    = array_map('trim', explode(comma, $selector));
+		$parts    = array_map('trim', self::split_commas($selector));
 		return array_values(array_filter($parts, static fn($p) => $p !== void));
+	}
+
+	private static function split_commas(string $selector):array {
+		$parts  = [];
+		$buffer = void;
+		$depth  = 0;
+		$quote  = void;
+		for ($i = 0, $len = strlen($selector); $i < $len; ++$i){
+			$c = $selector[$i];
+			if ($quote !== void){
+				if ($c === bs){ $buffer .= $c.($selector[$i + 1] ?? void); ++$i; continue; }
+				if ($c === $quote) $quote = void;
+				$buffer .= $c;
+				continue;
+			}
+			if ($c === dq || $c === sq){ $quote = $c; $buffer .= $c; continue; }
+			if ($c === '(') ++$depth;
+			elseif ($c === ')' && $depth > 0) --$depth;
+			if ($c === comma && $depth === 0){ $parts[] = $buffer; $buffer = void; continue; }
+			$buffer .= $c;
+		}
+		$parts[] = $buffer;
+		return $parts;
 	}
 
 	private static function unescape_selector(string $selector):string {

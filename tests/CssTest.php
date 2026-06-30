@@ -89,4 +89,27 @@ final class CssTest extends TestCase {
 			$this->assertSame($css, build_css::decode(build_css::encode($css)), 'Round trip drifted for: '.$phlo);
 		}
 	}
+
+	/** Functional pseudo-classes (:is/:not/:where) carry commas inside their parens; the nesting
+	 *  combiner must not split on those commas (it would prepend the parent to the post-comma part). */
+	public function testFunctionalPseudoCommaSurvivesNesting():void {
+		$this->assertSame('.nav a:is(.x, .y){color:red}', build_css::decode(".nav {\n\ta:is(.x, .y): color: red\n}"));
+		$this->assertSame('.box:where(.x, .y){color:red}', build_css::decode(".box {\n\t:where(.x, .y): color: red\n}"));
+		$this->assertSame('.a .b c:not(.x, .y){color:red}', build_css::decode(".a {\n\t.b {\n\t\tc:not(.x, .y): color: red\n\t}\n}"));
+	}
+
+	public function testFunctionalPseudoCommaSurvivesFlat():void {
+		$this->assertSame(':is(.a, .b){color:red}', build_css::decode(":is(.a, .b) {\n\tcolor: red\n}"));
+		$this->assertSame('.card:is(.a, .b){color:red}', build_css::decode(".card:is(.a, .b) {\n\tcolor: red\n}"));
+		$this->assertSame(':not(h1, h2){margin:0}', build_css::decode(":not(h1, h2) {\n\tmargin: 0\n}"));
+	}
+
+	public function testGroupedSelectorWithFunctionalPseudo():void {
+		$this->assertSame('.card, :is(.a, .b){color:red}', build_css::decode(".card, :is(.a, .b) {\n\tcolor: red\n}"));
+	}
+
+	/** A comma inside a quoted attribute value must not split the selector either. */
+	public function testCommaInQuotedAttributePreserved():void {
+		$this->assertSame('.a b[data-x="p, q"]{color:red}', build_css::decode(".a {\n\tb[data-x=\"p, q\"]: color: red\n}"));
+	}
 }

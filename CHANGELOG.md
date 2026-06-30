@@ -130,6 +130,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   the output; it now inherits the surrounding selector and hoists correctly,
   as documented in SKILL.md. This also restores the missing
   `@media(min-width: 600px): right: auto` rule from the cookiewall resource.
+- CSS transpiler: a comma inside a functional pseudo-class (`:is()`, `:not()`,
+  `:where()`) on a nested selector was treated as a selector-group separator, so
+  the parent was prepended to the part after the comma (`.nav a:is(.x, .y)`
+  became `.nav a:is(.x, .nav .y)`). Commas are now split only at the top level,
+  respecting parentheses and quoted strings.
 
 ## Baseline
 
