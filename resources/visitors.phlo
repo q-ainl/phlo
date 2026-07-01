@@ -75,15 +75,7 @@ const accrue = () => {
 const flush = beacon => {
 	accrue()
 	const consent = document.cookie.includes('cookieChoice=all')
-	if (consent){
-		const m = document.cookie.match(/phlo_visitor=([a-z0-9]{8})/)
-		if (m) window.name = m[1]
-		else {
-			window.name ||= phlo.token(8)
-			document.cookie = `phlo_visitor=${window.name};path=/;max-age=${365 * 86400};SameSite=Lax`
-		}
-	}
-	else window.name ||= phlo.token(8)
+	window.name ||= phlo.token(8)
 	const s = Math.floor(activeMs / 1000)
 	activeMs -= s * 1000
 	const body = JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: pv, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0, s})

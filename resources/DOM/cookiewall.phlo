@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Subtle GDPR cookie-consent banner (English-only). For multilingual sites: DOM/cookiewall.translated.
+@ summary:  Subtle GDPR cookie-consent banner. English by default; auto-translates when the lang system (en()) is loaded. Override prop labels for a fixed language, or prop translate to force it on/off.
 @ package:  privacy
 @ frontend: true
 @ backend:  true
@@ -14,6 +14,15 @@ method hasChosen => $this->choice !== null
 method canTrack => $this->choice === 'all'
 method canAnalytics => $this->choice === 'all'
 
+prop translate => function_exists('en')
+prop labels => arr(
+	region:    'Cookie choice',
+	body:      'We use essential cookies to make this site work. With your permission we also use analytics to improve the site.',
+	essential: 'Essential only',
+	accept:    'Accept',
+)
+method label($key) => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
+
 route async POST cookiewall accept all {
 	%cookies->objSet('cookieChoice', 'all', ['expires' => time() + 60 * 60 * 24 * 365, 'httponly' => false])
 	apply(remove: '#cookiewall')
@@ -26,14 +35,14 @@ route async POST cookiewall accept essential {
 
 view banner:
 <if !$this->hasChosen()>
-	<div#cookiewall role=region aria-label="Cookie choice">
-		<p>We use essential cookies to make this site work. With your permission we also use analytics to improve the site.</p>
+	<div#cookiewall role=region aria-label="{{ $this->label('region') }}">
+		<p>{{ $this->label('body') }}</p>
 		<div.actions>
 			<form.async method=post action=/cookiewall/accept/essential>
-				<button.ghost type=submit>Essential only</button>
+				<button.ghost type=submit>{{ $this->label('essential') }}</button>
 			</form>
 			<form.async method=post action=/cookiewall/accept/all>
-				<button.primary type=submit>Accept</button>
+				<button.primary type=submit>{{ $this->label('accept') }}</button>
 			</form>
 		</div>
 	</div>

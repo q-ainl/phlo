@@ -84,6 +84,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   and WebSocket notes.
 
 ### Changed
+- `DOM/cookiewall` serves both English-only and multilingual sites from one
+  resource: English by default, auto-translating when the lang system (`en()`) is
+  loaded, with overridable `labels` and `translate` props. `DOM/cookiewall.translated`
+  is removed (merged in).
 - `%MySQL` connections are transient by default (the `objPers` marker is gone),
   so an idle FrankenPHP worker no longer reuses a connection MySQL has already
   closed ("server has gone away"). An app that wants a persistent connection opts
@@ -113,6 +117,9 @@ tagged release onward. The engine version constant lives in `phlo.php`
   reader.
 
 ### Fixed
+- Visitor tracking keys each record per browser window instead of per persistent
+  cookie, so `active_seconds` and the dashboard's session duration reflect a single
+  window's visible time, not the visitor's whole history.
 - `field_child::objOwns()` resolves an object-valued back-reference to its id before
   comparing, so a nested child record (a comment under its article) matches its parent
   instead of returning a 404, while non-owners are still rejected.
