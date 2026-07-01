@@ -21,8 +21,8 @@ method strict {
 	$nonce = $this->setNonce
 	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$nonce'; worker-src 'self'; style-src 'self' 'nonce-$nonce'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
-# Under debug, basic/marketing relax script-src to 'unsafe-inline' so the inline debug console runs.
-# Whether debug is on in production is the app's own responsibility, so this is tied to debug by design.
+// Under debug, basic/marketing relax script-src to 'unsafe-inline' so the inline debug console runs.
+// Whether debug is on in production is the app's own responsibility, so this is tied to debug by design.
 method basic {
 	$this->base
 	if (%req->async) return

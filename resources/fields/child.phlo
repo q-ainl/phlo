@@ -19,9 +19,9 @@ method label($record) => implode(loop($record->{$this->name}, fn($child) => $thi
 method input($record) => $this->label($record)
 method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}, class: 'async', inner: $record)
 
-# The foreign-key column on the child that points back to its parent; defaults to the parent model name.
+// The foreign-key column on the child that points back to its parent; defaults to the parent model name.
 method objKey($parentModel) => $this->key ?? $parentModel
-# Does $record belong to parent $parentId via this relation? (direct foreign key).
+// Does $record belong to parent $parentId via this relation? (direct foreign key).
 method objOwns($record, $parentId, $parentModel):bool {
 	$value = $record->{$this->objKey($parentModel)};
 	is_object($value) && $value = $value->{$value::idColumn()};

@@ -47,9 +47,9 @@ method queryRun($query, $args, $retry){
 		return $stmt
 	}
 	catch (\PDOException $e){
-		# Retry only idempotent read statements outside a transaction. WITH is excluded: a `WITH ... UPDATE`
-		# or `WITH ... DELETE` CTE is a mutation that may already have run before the connection dropped
-		# (error 2013), and a reconnect would start a fresh, transaction-less session.
+		// Retry only idempotent read statements outside a transaction. WITH is excluded: a `WITH ... UPDATE`
+		// or `WITH ... DELETE` CTE is a mutation that may already have run before the connection dropped
+		// (error 2013), and a reconnect would start a fresh, transaction-less session.
 		if (!$retry || !$this->goneAway($e) || $this->PDO->inTransaction() || !preg_match('/^\s*\(*\s*(SELECT|SHOW|EXPLAIN|DESCRIBE|DESC)\b/i', $query)) error('Database error'.colon.lf.$query.lf.lf.$e->getMessage())
 		unset($this->PDO)
 		return $this->queryRun($query, $args, false)
