@@ -113,6 +113,9 @@ tagged release onward. The engine version constant lives in `phlo.php`
   reader.
 
 ### Fixed
+- `field_child::objOwns()` resolves an object-valued back-reference to its id before
+  comparing, so a nested child record (a comment under its article) matches its parent
+  instead of returning a 404, while non-owners are still rejected.
 - Safe DB reconnect: a "server has gone away" / lost-connection error on a read
   transparently reconnects and retries once; a mutation, a statement inside a
   transaction, and a data-modifying CTE (`WITH ... DELETE/UPDATE/INSERT`) are
