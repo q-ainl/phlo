@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Stateless OAuth2 client: build the authorize URL and exchange/refresh tokens. Token storage and config are the caller's responsibility.
+@ summary:  Stateless OAuth2 client: build the authorize URL and exchange/refresh tokens. Token storage and config are the caller's responsibility. The protocol primitive under TokenStore and OAuthConnector.
 @ package:  security
 @ frontend: false
 @ backend:  true

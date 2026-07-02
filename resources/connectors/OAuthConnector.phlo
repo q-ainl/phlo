@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Base class for OAuth2 connectors: stored, auto-refreshed bearer access tokens
+@ summary:  Base class for OAuth2 connectors: stored, auto-refreshed bearer access tokens via TokenStore, on the OAuth2 primitive
 @ extends:  Connector
 @ package:  connectors
 @ frontend: false
