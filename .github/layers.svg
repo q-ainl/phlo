@@ -4,7 +4,7 @@
 	<g>
 		<rect x="60" y="328" width="640" height="64" rx="8" fill="#101c16" stroke="#16c784" stroke-width="2"/>
 		<text x="84" y="355" fill="#16c784" font-size="15" font-weight="bold">01 Language</text>
-		<text x="84" y="377" fill="#9da7b3" font-size="13">.phlo source compiles to readable PHP, CSS and JS</text>
+		<text x="84" y="377" fill="#9da7b3" font-size="13">.phlo source transpiles to readable PHP, CSS and JS</text>
 	</g>
 	<g>
 		<rect x="60" y="244" width="640" height="64" rx="8" fill="#11241b" stroke="#16c784" stroke-width="2" stroke-opacity="0.8"/>

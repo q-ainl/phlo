@@ -1,6 +1,6 @@
 # Phlo
 
-A compile-to-PHP web framework with its own `.phlo` language, a built-in
+A transpile-to-PHP web framework with its own `.phlo` language, a built-in
 SPA runtime, the Phlo Control Center (built-in dev panel), and first-class introspection for AI
 agents. Zero runtime dependencies.
 
@@ -16,7 +16,7 @@ view main:
 <p>{{ date('Y') }}</p>
 ```
 
-That file compiles to a PHP class, a route, an HTML page, and (with a
+That file transpiles to a PHP class, a route, an HTML page, and (with a
 `<style>`/`<script>` block) a CSS and JS bundle. One `.phlo` file is one
 class; the build writes plain PHP you can read, lint and source-map back to
 the line you wrote.
@@ -25,7 +25,7 @@ the line you wrote.
 
 Phlo is opinionated on purpose. The bets it makes:
 
-- **Compile, don't interpret.** `.phlo` is transformed to readable PHP at
+- **Transpile, don't interpret.** `.phlo` is transformed to readable PHP at
   build time. Errors at runtime map back to your `.phlo` line, not to
   generated soup.
 - **One closed loop.** Source to build to lint to sourcemap to error page to
@@ -51,7 +51,7 @@ Phlo is for you.
 The language is the bottom layer of one continuous system; each layer is
 built with the previous one, in the same syntax:
 
-1. **Language**: `.phlo` source compiles to readable PHP, CSS and JS.
+1. **Language**: `.phlo` source transpiles to readable PHP, CSS and JS.
 2. **Application**: backend resources (ORM, sessions, security, AI) plus the
    phlo.js SPA engine and the `apply()` protocol;
    [Phlo CMS](https://github.com/q-ainl/phlo-cms) adds a schema-driven CRUD
@@ -97,7 +97,7 @@ With `build: true` set in `www/app.php`, the app rebuilds changed `.phlo`
 files on request. Two CLI namespaces drive everything:
 
 ```bash
-php www/app.php build::run      # compile changed sources, returns changed files
+php www/app.php build::run      # transpile changed sources, returns changed files
 php www/app.php build::lint     # parse-check the generated PHP, [] means clean
 php www/app.php reflect::context   # app identity, routes, views, recent errors
 php www/app.php reflect::routes    # full route map
