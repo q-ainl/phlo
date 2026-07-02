@@ -155,7 +155,7 @@ const apply = (cmds, trans = false, state = true) => {
 		VT.updateCallbackDone.then(app.update)
 		VT.finished.catch(() => {}).then(() => active.remove(...trans.split(' ')))
 	}
-	else [execute(), app.update()]
+	else Promise.resolve(execute()).then(app.update)
 }
 
 const delay = (id, delay, cb, ...args) => first(exists = !!phlo.delays[id], exists && clearTimeout(phlo.delays[id]), phlo.delays[id] = setTimeout((cb, ...args) => [delete phlo.delays[id], cb && cb(...args)], delay, cb, ...args))
