@@ -27,12 +27,13 @@ static parseReferrer(string $url):string {
 	return $host ?: substr($url, 0, 100)
 }
 
-route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s {
+route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s,pp,ps {
 	if (static::isBot(%useragent->source)) return
 	$consent = (bool)%payload->c
 	$n = strlen(%payload->n) === 8 ? %payload->n : date('Ymd')
 	$id = $consent ? token(20, $n.space.%cookies->token.space.%useragent->source) : token(20, $n.space.date('Ymd').space.%cookies->token.space.%req->ip)
 	$delta = max(0, min(120, (int)%payload->s))
+	$prevDelta = max(0, min(120, (int)%payload->ps))
 	$lang = strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en'
 	$record = static::record(id: $id, columns: 'id,page,referrer,active_seconds')
 	$data = arr (
@@ -44,7 +45,7 @@ route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s {
 		browser: $consent ? %useragent->full.(%payload->a ? ' App' : void) : substr(md5((string)%useragent->source), 0, 8),
 		os: $consent ? %useragent->osFull : void,
 		device: $consent ? %useragent->device : void,
-		active_seconds: ($record->active_seconds ?? 0) + $delta,
+		active_seconds: ($record->active_seconds ?? 0) + $delta + $prevDelta,
 		state: %payload->v,
 		width: %payload->w,
 		height: %payload->h,
@@ -53,19 +54,24 @@ route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s {
 	if (($referrer = %payload->r) && !$record?->referrer && !str_contains($referrer, host)) $data['referrer'] = static::parseReferrer($referrer)
 	if ($record) static::change('id=?', $id, ...$data)
 	else static::create(...$data, id: $id, created: time())
+	$pages = preg_replace('/visitors$/', 'visitor_pages', (string)static::$table)
 	if (strlen((string)%payload->p) >= 8){
-		$pages = preg_replace('/visitors$/', 'visitor_pages', (string)static::$table)
 		$pv = token(20, $id.space.%payload->p)
 		$visit = static::DB()->record(table: $pages, columns: 'active_seconds,beats', where: "id='$pv'")
 		if ($visit) static::DB()->change(table: $pages, where: "id='$pv'", active_seconds: $visit->active_seconds + $delta, beats: $visit->beats + 1, changed: time())
 		else static::DB()->create(table: $pages, id: $pv, visitor: $id, host: host, page: %payload->u, lang: $lang, active_seconds: $delta, beats: 1, created: time(), changed: time())
+	}
+	if (strlen((string)%payload->pp) >= 8){
+		$ppv = token(20, $id.space.%payload->pp)
+		$visit = static::DB()->record(table: $pages, columns: 'active_seconds,beats', where: "id='$ppv'")
+		if ($visit) static::DB()->change(table: $pages, where: "id='$ppv'", active_seconds: $visit->active_seconds + $prevDelta, beats: $visit->beats + 1, changed: time())
 	}
 }
 
 <script>
 let curpath = app.path
 let pv = phlo.token(12)
-let hbTimer, activeMs = 0, activeAt = null
+let hbTimer, activeMs = 0, activeAt = null, prev = null
 const visible = () => document.visibilityState === 'visible'
 const accrue = () => {
 	if (activeAt === null) return
@@ -78,9 +84,9 @@ const flush = beacon => {
 	window.name ||= phlo.token(8)
 	const s = Math.floor(activeMs / 1000)
 	activeMs -= s * 1000
-	const body = JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: pv, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0, s})
-	if (beacon) navigator.sendBeacon('/heartbeat', new Blob([body], {type: 'application/json'}))
-	else fetch('/heartbeat', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body})
+	const body = JSON.stringify({n: window.name, v: app.state, l: obj('html').lang ?? 'en', u: app.path, w: innerWidth, h: innerHeight, a: app.mode, p: pv, r: (r = document.referrer) ? (r === `${location.origin}/` ? null : r) : null, c: consent ? 1 : 0, s, pp: prev ? prev.p : null, ps: prev ? prev.s : null})
+	prev = null
+	fetch('/heartbeat', {method: 'PUT', headers: {'Content-Type': 'application/json'}, body, keepalive: !!beacon})
 }
 const heartbeat = () => delay('heartbeat', 333, () => {
 	clearTimeout(hbTimer)
@@ -96,7 +102,9 @@ addEventListener('resize', heartbeat)
 addEventListener('pagehide', () => flush(true))
 app.updates.push(() => {
 	if (curpath === app.path) return
-	flush()
+	if (prev) flush()
+	accrue()
+	prev = {p: pv, s: Math.floor(activeMs / 1000)}
 	pv = phlo.token(12)
 	activeMs = 0
 	curpath = app.path
