@@ -6,12 +6,14 @@ services:
     build:
       context: ..
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "8080:80"
+      - "8443:443"
+      - "8443:443/udp"
     volumes:
       - ../app:/app
     environment:
-      # Set to your domain for automatic HTTPS; leave unset for plain HTTP on :80.
+      # Plain HTTP on http://localhost:8080 by default. Set SERVER_NAME=localhost for
+      # HTTPS on https://localhost:8443 (Caddy issues a local certificate), or set a
+      # real domain and map 80:80/443:443 for automatic public HTTPS.
       SERVER_NAME: ${SERVER_NAME:-:80}
     tty: true
