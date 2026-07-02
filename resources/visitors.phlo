@@ -35,36 +35,16 @@ route PUT heartbeat @n,v,l,u,w,h,a,p,r,c,s,pp,ps {
 	$delta = max(0, min(120, (int)%payload->s))
 	$prevDelta = max(0, min(120, (int)%payload->ps))
 	$lang = strlen(%payload->l) === 2 ? %payload->l : %app->lang ?? 'en'
-	$record = static::record(id: $id, columns: 'id,page,referrer,active_seconds')
-	$data = arr (
-		token: token(20, (string)(%cookies->token ?? %payload->n)),
-		host: host,
-		page: %payload->u,
-		lang: $lang,
-		IP: $consent ? %req->ip : void,
-		browser: $consent ? %useragent->full.(%payload->a ? ' App' : void) : substr(md5((string)%useragent->source), 0, 8),
-		os: $consent ? %useragent->osFull : void,
-		device: $consent ? %useragent->device : void,
-		active_seconds: ($record->active_seconds ?? 0) + $delta + $prevDelta,
-		state: %payload->v,
-		width: %payload->w,
-		height: %payload->h,
-		changed: time(),
-	)
-	if (($referrer = %payload->r) && !$record?->referrer && !str_contains($referrer, host)) $data['referrer'] = static::parseReferrer($referrer)
-	if ($record) static::change('id=?', $id, ...$data)
-	else static::create(...$data, id: $id, created: time())
+	$referrer = ($r = (string)%payload->r) && !str_contains($r, host) ? static::parseReferrer($r) : null
+	static::DB()->query('INSERT INTO '.static::$table.' (id, token, host, page, lang, IP, browser, os, device, active_seconds, state, width, height, referrer, created, changed) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE token = VALUES(token), host = VALUES(host), page = VALUES(page), lang = VALUES(lang), IP = VALUES(IP), browser = VALUES(browser), os = VALUES(os), device = VALUES(device), active_seconds = active_seconds + VALUES(active_seconds), state = VALUES(state), width = VALUES(width), height = VALUES(height), referrer = IF(referrer IS NULL OR referrer = '.sq.sq.', VALUES(referrer), referrer), changed = VALUES(changed)', $id, token(20, (string)(%cookies->token ?? %payload->n)), host, %payload->u, $lang, $consent ? %req->ip : void, $consent ? %useragent->full.(%payload->a ? ' App' : void) : substr(md5((string)%useragent->source), 0, 8), $consent ? %useragent->osFull : void, $consent ? %useragent->device : void, $delta + $prevDelta, %payload->v, %payload->w, %payload->h, $referrer, time(), time())
 	$pages = preg_replace('/visitors$/', 'visitor_pages', (string)static::$table)
 	if (strlen((string)%payload->p) >= 8){
 		$pv = token(20, $id.space.%payload->p)
-		$visit = static::DB()->record(table: $pages, columns: 'active_seconds,beats', where: "id='$pv'")
-		if ($visit) static::DB()->change(table: $pages, where: "id='$pv'", active_seconds: $visit->active_seconds + $delta, beats: $visit->beats + 1, changed: time())
-		else static::DB()->create(table: $pages, id: $pv, visitor: $id, host: host, page: %payload->u, lang: $lang, active_seconds: $delta, beats: 1, created: time(), changed: time())
+		static::DB()->query('INSERT INTO '.$pages.' (id, visitor, host, page, lang, active_seconds, beats, created, changed) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE active_seconds = active_seconds + VALUES(active_seconds), beats = beats + 1, changed = VALUES(changed)', $pv, $id, host, %payload->u, $lang, $delta, 1, time(), time())
 	}
 	if (strlen((string)%payload->pp) >= 8){
 		$ppv = token(20, $id.space.%payload->pp)
-		$visit = static::DB()->record(table: $pages, columns: 'active_seconds,beats', where: "id='$ppv'")
-		if ($visit) static::DB()->change(table: $pages, where: "id='$ppv'", active_seconds: $visit->active_seconds + $prevDelta, beats: $visit->beats + 1, changed: time())
+		static::DB()->query('UPDATE '.$pages.' SET active_seconds = active_seconds + ?, beats = beats + 1, changed = ? WHERE id = ?', $prevDelta, time(), $ppv)
 	}
 }
 
