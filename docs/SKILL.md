@@ -570,9 +570,9 @@ Call `output()` directly; do not wrap it in a per-app `jsonOut()`/`respond()` he
 
 Client errors (`$code < 500`) keep their message in the JSON/async output; server errors (`>= 500`) stay generic (`"Error"`) unless `debug` is on, so uncaught-exception internals are not exposed by default. `error()` throws, so no `return` is needed (a leading `return` is harmless).
 
-**Error reference + custom page.** Every error is recorded in `data/errors.json` under a short 8-character id (host + origin + path-noise-stripped message). It is shown on the minimal page as a `Reference:` line and included as `id` in the JSON/async payload, so a user can quote it for a developer to look up. An app may render its own production error page by declaring a static `errorPage(int $code, string $id): string` on its app class:
+**Error reference + custom page.** Every error is recorded in `data/errors.json` under a short 8-character id (host + origin + path-noise-stripped message). It is shown on the minimal page as a `Reference:` line and included as `id` in the JSON/async payload, so a user can quote it for a developer to look up. An app may render its own error page by declaring a static `errorPage(int $code, string $id, ?string $msg): string` on its app class. `$msg` carries the real message only under `debug` (`null` otherwise), so a styled debug page can show it while production cannot leak it:
 ```phlo
-static errorPage($code, $id) => DOM('<main class="oops"><h1>Something went wrong</h1><p>Reference: '.$id.'</p></main>')
+static errorPage($code, $id, $msg = null) => DOM('<main class="oops"><h1>Something went wrong</h1><p>Reference: '.$id.'</p></main>')
 ```
 It runs only on the non-debug HTML path, is called statically (so it never re-runs the failing controller), and receives only the code and the opaque id, never the message or trace, so it cannot leak internals regardless of `debug`. If it throws or returns nothing the engine's own minimal page is used, and an error raised *while* rendering degrades to a dependency-free page rather than a PHP fatal.
 

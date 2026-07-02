@@ -59,9 +59,10 @@ function phlo_error_handle(Throwable $e):void {
 	// failed source read) would surface as a raw PHP fatal; the try/catch degrades it to a dependency-free
 	// page instead. The original error is already logged above; this fallback neither logs nor re-renders.
 	try {
-		$html = debug
-			? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace(), $id)
-			: (phlo_error_app_html($code, $id) ?? phlo_error_render_minimal($code, $id));
+		$html = phlo_error_app_html($code, $id, debug ? $message : null)
+			?? (debug
+				? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace(), $id)
+				: phlo_error_render_minimal($code, $id));
 	}
 	catch (Throwable){
 		$html = phlo_error_bare_html($code, $id);
@@ -131,14 +132,15 @@ function phlo_error_render_minimal(int $code, string $id):string {
 	return DOM("<main class=\"wrap\"><header class=\"hero\"><div class=\"badge\">Error</div><h1>Error $code</h1><p>An unexpected error occurred.</p><p class=\"ref\">Reference: <code>".esc($id)."</code></p></header></main>", phlo_error_head("Error $code"));
 }
 
-// A production app can render its own error page by declaring a static `errorPage(int $code, string $id): string`
-// on its app class. It is called statically (never phlo('app'), which would re-run the failing controller) and
-// receives only the http code and the opaque error id, never the message or trace, so it cannot leak internals
-// regardless of debug. A hook that throws or returns nothing falls back to the engine's minimal page.
-function phlo_error_app_html(int $code, string $id):?string {
+// An app can render its own error page by declaring a static `errorPage(int $code, string $id, ?string $msg): string`
+// on its app class. It is called statically (never phlo('app'), which would re-run the failing controller). The
+// third argument carries the real error message ONLY under debug, so a styled debug environment can surface it;
+// under debug off it is null, so a production page cannot leak internals. A hook that throws or returns nothing
+// falls back to the engine page (the debug diagnostic under debug, the minimal page otherwise).
+function phlo_error_app_html(int $code, string $id, ?string $msg = null):?string {
 	if (!class_exists('app', false) || !method_exists('app', 'errorPage')) return null;
 	try {
-		$html = app::errorPage($code, $id);
+		$html = app::errorPage($code, $id, $msg);
 		return is_string($html) && $html !== void ? $html : null;
 	}
 	catch (Throwable){ return null; }
