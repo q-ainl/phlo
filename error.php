@@ -38,9 +38,9 @@ function phlo_error_handle(Throwable $e):void {
 		apply(...$cmds);
 		return;
 	}
-	# JSON context (an API route called %security->api, or the client/route asks for JSON): answer with a
-	# JSON error body instead of an HTML page. Client errors (<500) keep their message; server errors stay
-	# generic unless debug is on, so uncaught-exception internals are not exposed by default.
+	// JSON context (an API route called %security->api, or the client/route asks for JSON): answer with a
+	// JSON error body instead of an HTML page. Client errors (<500) keep their message; server errors stay
+	// generic unless debug is on, so uncaught-exception internals are not exposed by default.
 	if ($res->api || $res->type === 'application/json' || str_contains((string)$req->accept, 'application/json')){
 		$payload = ['error' => (debug || $code < 500) ? $message : 'Error', 'id' => $id];
 		if (debug){
@@ -54,10 +54,10 @@ function phlo_error_handle(Throwable $e):void {
 		$res->render($code);
 		return;
 	}
-	# Build the HTML page: a custom app errorPage if one is declared, else the engine page. PHP does not
-	# re-enter the exception handler when it throws, so an error *inside* rendering (a broken errorPage, a
-	# failed source read) would surface as a raw PHP fatal; the try/catch degrades it to a dependency-free
-	# page instead. The original error is already logged above; this fallback neither logs nor re-renders.
+	// Build the HTML page: a custom app errorPage if one is declared, else the engine page. PHP does not
+	// re-enter the exception handler when it throws, so an error *inside* rendering (a broken errorPage, a
+	// failed source read) would surface as a raw PHP fatal; the try/catch degrades it to a dependency-free
+	// page instead. The original error is already logged above; this fallback neither logs nor re-renders.
 	try {
 		$html = debug
 			? phlo_error_render_debug($type, $message, $code, $srcFile, $srcLine, $e->getTrace(), $id)

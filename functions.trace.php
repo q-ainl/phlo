@@ -294,7 +294,7 @@ function output(mixed $content = null, ?string $filename = null, ?bool $attachme
 	trace('output', compact('content', 'filename', 'attachment', 'file', 'code', 'type'));
 	$req  = phlo('req');
 	$res  = phlo('res');
-	# Arrays are unambiguously JSON; objects only when application/json is explicitly requested (obj is both Stringable and JsonSerializable, so the type cannot be inferred safely).
+	// Arrays are unambiguously JSON; objects only when application/json is explicitly requested (obj is both Stringable and JsonSerializable, so the type cannot be inferred safely).
 	if (is_array($content) || ($type === 'application/json' && !is_string($content) && !is_null($content))){
 		$content = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 		$type ??= 'application/json';

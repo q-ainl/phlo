@@ -102,6 +102,7 @@ wsCast('all', host, daemon, channel: 'inbox', type: 'message.new')
 - `all`: every client on this host
 - `token:<token>`: all connections of one token
 - `token:not:<token>`: everyone except one token (e.g. the sender)
+- `socket:<socket>`: one specific connection
 
 **No retry, no dead-letter, no ACK.** If the daemon is down the POST fails
 silently. For guaranteed delivery (financial events, etc) pair it with a
@@ -136,7 +137,7 @@ cookie, and exponential-backoff reconnect. The daemon itself never retries.
   timeout; keep genuinely long jobs off the receive path (trigger them in the
   background and stream results via `wsCast`).
 - **Resident workers hold old code until restarted**: after deploying new
-  handler code, restart the daemon (or its workers) so they reload — exactly
+  handler code, restart the daemon (or its workers) so they reload, exactly
   like FrankenPHP worker mode.
 - **Single process**: one daemon per runtime; if it crashes, realtime
   features are down until restart (run it under systemd/supervisor).

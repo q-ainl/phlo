@@ -1022,7 +1022,7 @@ class reflect {
 
 	/** Returns the runtime constants defined by phlo_app() for this app: host, paths, feature flags, and any custom parameters. */
 	public static function runtime():array {
-		$known = ['app', 'host', 'debug', 'build', 'auth', 'thread', 'data', 'php', 'www', 'cli', 'langs', 'composer', 'websocket'];
+		$known = ['app', 'host', 'debug', 'build', 'auth', 'thread', 'data', 'php', 'www', 'cli', 'langs', 'composer', 'daemon'];
 		$out   = [];
 		foreach ($known as $key){
 			if (defined($key)) $out[$key] = constant($key);

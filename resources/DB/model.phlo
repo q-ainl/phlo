@@ -54,12 +54,12 @@ static create(...$args){
 	method_exists(static::class, 'beforeSave') && $record->beforeSave()
 	method_exists(static::class, 'beforeCreate') && $record->beforeCreate()
 	$pk = static::idColumn()
-	return static::objAudit() ? static::transaction(fn() => static::objCreateCommit($args, $pk)) : static::objCreateCommit($args, $pk)
+	return static::objAudit() ? static::transaction(fn() => static::objCreateCommit($record, $pk)) : static::objCreateCommit($record, $pk)
 }
 
-static objCreateCommit($args, $pk){
-	$id = static::createRecord(...$args)
-	$record = static::record(...[$pk => $args[$pk] ?? $id])
+static objCreateCommit($record, $pk){
+	$id = static::createRecord(...$record)
+	$record = static::record(...[$pk => $record->$pk ?? $id])
 	method_exists(static::class, 'afterCreate') && $record->afterCreate()
 	method_exists(static::class, 'afterSave') && $record->afterSave()
 	static::objAudit() && audit::log($record, 'create', [], $record->objData)
