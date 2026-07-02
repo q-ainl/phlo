@@ -16,18 +16,6 @@ static detect($data){
 	if (substr($header, 0, 4) === "\x49\x49\x2A\x00" || substr($header, 0, 4) === "\x4D\x4D\x00\x2A") return 'tiff'
 }
 
-static search($search){
-	$q = strtr($search, [dash => '+'])
-	$DOM = HTTP("http://images.google.it/images?as_q=$q&hl=it&imgtbs=z&btnG=Cerca+con+Google&as_epq=&as_oq=&as_eq=&imgtype=&imgsz=m&imgw=&imgh=&imgar=&as_filetype=&imgc=&as_sitesearch=&as_rights=&safe=images&as_st=y", agent: true)
-	$sources = regex_all('/var s=\'data:image\/jpeg;base64,([^\']{1000,})/', $DOM)[1]
-	usort($sources, fn($a, $b) => strlen($b) <=> strlen($a))
-	$sources = array_slice($sources, 0, 5)
-	shuffle($sources)
-	$source = current($sources)
-	$source = base64_decode($source)
-	return $source
-}
-
 static __handle => "img/$file"
 method __construct(public string $file)
 
