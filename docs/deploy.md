@@ -99,7 +99,7 @@ server {
 For a quick look without any server:
 
 ```bash
-php -S 127.0.0.1:8000 /path/to/my-app/www/app.php
+php -S 127.0.0.1:80 /path/to/my-app/www/app.php   # then open http://localhost
 ```
 
 ## Releasing updates to production

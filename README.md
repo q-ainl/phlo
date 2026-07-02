@@ -85,7 +85,7 @@ Serve it with FrankenPHP, Docker, PHP-FPM or, for a quick look:
 
 ```bash
 php /path/to/my-app/www/app.php reflect::context   # inspect without a server
-php -S 127.0.0.1:8000 /path/to/my-app/www/app.php   # then open the host
+php -S 127.0.0.1:80 /path/to/my-app/www/app.php   # then open http://localhost
 ```
 
 See [docs/deploy.md](docs/deploy.md) for FrankenPHP (incl. worker mode),
