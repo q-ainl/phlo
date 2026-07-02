@@ -7,9 +7,9 @@ description: "Work with Phlo projects: write and edit source files, trigger buil
 
 ## Overview
 
-Phlo is a compile-to-PHP framework. Source files have the `.phlo` extension and compile to PHP, CSS, and JS. **Never edit generated files** in `php/`, `www/app.js`, `www/app.css`, or release output such as `release/php/`, `release/www/app.js`, and `release/www/app.css`.
+Phlo is a transpile-to-PHP framework. Source files have the `.phlo` extension and transpile to PHP, CSS, and JS. **Never edit generated files** in `php/`, `www/app.js`, `www/app.css`, or release output such as `release/php/`, `release/www/app.js`, and `release/www/app.css`.
 
-Each `.phlo` file compiles to exactly one PHP class. The class name is derived from the file name: dots become underscores (`page.home.phlo` -> class `page_home`). File names use dots as separators - **never underscores**.
+Each `.phlo` file transpiles to exactly one PHP class. The class name is derived from the file name: dots become underscores (`page.home.phlo` -> class `page_home`). File names use dots as separators - **never underscores**.
 
 ---
 
@@ -20,7 +20,7 @@ These rules are absolute. Violations produce parse errors or silently broken out
 ### 1. Comments on their own line only, no semicolons
 
 Statements are terminated by **line endings**, never by semicolons.
-Comments are allowed only as **full lines** starting with `//` or `#`. A comment line is attached to the node below it and emitted into the compiled output. Never place a comment after code on the same line, and never put comments inside view HTML (they would render as visible text).
+Comments are allowed only as **full lines** starting with `//` or `#`. A comment line is attached to the node below it and emitted into the transpiled output. Never place a comment after code on the same line, and never put comments inside view HTML (they would render as visible text).
 
 ```
 OK  $x = 1
@@ -32,7 +32,7 @@ NO  /* comment */      <- no block comments in .phlo code
 
 ### 2. The line parser: every line ends a statement, and how to continue one
 
-The compiler appends a `;` to **every** line, then removes it again where the line clearly continues. The complete rule set:
+The transpiler appends a `;` to **every** line, then removes it again where the line clearly continues. The complete rule set:
 
 - A `;` is appended at every line ending.
 - That `;` is removed when the line ends with `(`, `[`, `{`, `}`, `,` or `.`. These are **implicit continuations**: open delimiters, a trailing comma in an argument list, or a string concatenation broken after the `.`.
@@ -252,7 +252,7 @@ The Phlo Control Center shows `app.md` on the Home page and provides an editor u
 - `style.*.phlo` - CSS nodes only (no backend, no routes)
 - `script.*.phlo` - JS nodes only
 
-Remember that each `.phlo` file is its own class. `pos.view.phlo` compiles to class `pos_view`, not extra methods on class `pos`. Call views in separate files through `%pos_view->method(...)` or combine model/routes/views in one file when the methods must live on the same class.
+Remember that each `.phlo` file is its own class. `pos.view.phlo` transpiles to class `pos_view`, not extra methods on class `pos`. Call views in separate files through `%pos_view->method(...)` or combine model/routes/views in one file when the methods must live on the same class.
 
 ---
 
@@ -289,7 +289,7 @@ Prefer the constant over the raw literal in backend/DSL code: `implode(comma, $p
 %JSON('file')    -> phlo('JSON', 'file')
 ```
 
-**Lesson:** the compiler rewrites `%name` EVERYWHERE in a `.phlo` file, including inside string literals. A docs page that tried to print the literal text `%session` in example code shipped `phlo('session')` to visitors instead. Phlo example code that must stay verbatim belongs in external files (`.txt`, `.md`) loaded at runtime, never in `.phlo` string literals.
+**Lesson:** the transpiler rewrites `%name` EVERYWHERE in a `.phlo` file, including inside string literals. A docs page that tried to print the literal text `%session` in example code shipped `phlo('session')` to visitors instead. Phlo example code that must stay verbatim belongs in external files (`.txt`, `.md`) loaded at runtime, never in `.phlo` string literals.
 
 ### Metadata annotations
 
@@ -346,7 +346,7 @@ Usage: `$this->repeat(5)`. Results are cached per argument set; the no-argument 
 
 Props and methods **without arguments** are called without `()`. Static methods **always require `()`**.
 
-**Lesson:** a concrete prop in a parent class SHADOWS a computed prop in a child. `prop dir = void` in an abstract parent compiles to a real PHP property, so a child's `prop dir => guide` getter is never consulted: `$this->dir` reads the parent's `void`. When children must override a prop with a computed one, declare it computed in the parent too (`prop dir => void`).
+**Lesson:** a concrete prop in a parent class SHADOWS a computed prop in a child. `prop dir = void` in an abstract parent transpiles to a real PHP property, so a child's `prop dir => guide` getter is never consulted: `$this->dir` reads the parent's `void`. When children must override a prop with a computed one, declare it computed in the parent too (`prop dir => void`).
 
 ### Methods and statics
 
@@ -381,7 +381,7 @@ Call computed statics with `ClassName::cashCoupures()`. Primitive scalar `static
 
 ### The obj base class
 
-Every compiled class extends `obj` (classes/obj.php). Its powers go well beyond `__get`/`__set`:
+Every transpiled class extends `obj` (classes/obj.php). Its powers go well beyond `__get`/`__set`:
 
 **Interception hooks.** Implement any of these to trap the access chain; returning `null` falls through to the default behaviour, anything non-null short-circuits:
 
@@ -399,7 +399,7 @@ method objSet($key, $value) => $key === 'readonly' ? true : null
 
 **Data API.** `objImport(...$data)` bulk-assigns named values and returns `$this` (chainable; `new obj(name: 'x')` uses it). `objData` is the raw storage array; `objKeys()`/`objValues()`/`objLength()` inspect it; `objClear()` wipes it; iteration (`foreach $obj`) and `json_encode($obj)` expose exactly `objData`. Every write or unset flips `objChanged = true`, which is what the ORM uses as its dirty flag.
 
-**Computed prop caching.** `prop x => ...` compiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. Statics differ: a bare `static x => ...` compiles to a plain method and is recomputed on every call; only the underscore form `_x()` (reached as `x()` via `__callStatic`) caches per class in `obj::$classProps`. For per-request static state cache it on `%req` (`static state => %req->model ??= ...`), which resets each request.
+**Computed prop caching.** `prop x => ...` transpiles to `_x()`; results cache in `objProps`, keyed per serialized argument set. Statics differ: a bare `static x => ...` transpiles to a plain method and is recomputed on every call; only the underscore form `_x()` (reached as `x()` via `__callStatic`) caches per class in `obj::$classProps`. For per-request static state cache it on `%req` (`static state => %req->model ??= ...`), which resets each request.
 
 **Worker persistence.** Set `$this->objPers = true` (or `prop objPers = true`) and the instance survives between worker-mode requests: `phlo()`'s internal registry only keeps `objPers` instances on the per-request reset. Use it for parsed config and other expensive, request-independent state; never for request- or user-scoped state. DB connections are **transient by default** (a fresh connection each request) so an idle worker never hands a stale connection to the next request; an app that wants to reuse one opts in with `prop %MySQL.objPers = true`, which is safe because `DB::query` drops a connection that has gone away and retries once.
 
@@ -411,7 +411,7 @@ static %visitors.table = 'control.visitors'
 prop %visitors.db = 'control'
 method %model.greet => 'hi'
 ```
-The first line overrides the `visitors` model's `static $table`; the second adds or overrides a `db` prop on `visitors`; the third adds a `greet` method to the `model` class. At build the compiler strips the `%<class>.` prefix and writes the node into `<class>`, **overwriting** an existing node of that name (or adding a new one). The target class must be part of the current build (its resource loaded), otherwise the modifier is silently ignored. Match the node *type* you replace (override a `static` with `static`, a `prop` with `prop`); the whole node is swapped.
+The first line overrides the `visitors` model's `static $table`; the second adds or overrides a `db` prop on `visitors`; the third adds a `greet` method to the `model` class. At build the transpiler strips the `%<class>.` prefix and writes the node into `<class>`, **overwriting** an existing node of that name (or adding a new one). The target class must be part of the current build (its resource loaded), otherwise the modifier is silently ignored. Match the node *type* you replace (override a `static` with `static`, a `prop` with `prop`); the whole node is swapped.
 
 Use it to adapt an engine/shared resource per app without forking it, e.g. point the shared `visitors` model at a central analytics database while every other query stays on the app's own connection:
 ```phlo
@@ -738,13 +738,13 @@ On servers where `php` is not in PATH, use `/usr/bin/php-zts` for CLI checks and
 | Command | Returns |
 |---------|---------|
 | `build::run` | Triggers a build; returns changed file paths |
-| `build::lint` | PHP parse errors in compiled files - empty array = clean |
+| `build::lint` | PHP parse errors in transpiled files - empty array = clean |
 | `build::config` | Full build config from `data/app.json` |
 | `build::changed` | Source files changed since last build |
-| `build::buildFiles` | All compiled output file paths (`php/` + `www/`) |
-| `build::release` | Compiles a release build with release hooks; returns changed file paths |
-| `build::releaseFiles` | Compiled PHP and web output paths for the release build |
-| `build::flush` | Deletes all compiled files |
+| `build::buildFiles` | All transpiled output file paths (`php/` + `www/`) |
+| `build::release` | Transpiles a release build with release hooks; returns changed file paths |
+| `build::releaseFiles` | Transpiled PHP and web output paths for the release build |
+| `build::flush` | Deletes all transpiled files |
 | `build::traceShadow` | Regenerates the engine's `functions.trace.php` from `functions.php` |
 | `build::help` | All available methods with signatures and descriptions |
 
@@ -864,17 +864,17 @@ Current Control Center sections:
 | `home` | Compact app status, build status, source/build counts, recent errors |
 | `config` | Edit `data/app.json`; search and toggle available resources |
 | `source` | Browse app `.phlo` sources, loaded resource sources, or all available unloaded resources with client-side Phlo highlighting and search |
-| `build` | Run build, flush compiled files, inspect generated files, and search generated output |
+| `build` | Run build, flush transpiled files, inspect generated files, and search generated output |
 | `release` | Run release build and inspect/search release output when release config exists |
 | `errors` | Inspect and clear `data/errors.json` |
 
-Control Center file links resolve to app `.phlo` sources, resource `.phlo` files, and compiled `php/` and `www/` output, shown through the Source, Build and Release views. Links to files outside those known sets render as plain text rather than opening an arbitrary-file viewer.
+Control Center file links resolve to app `.phlo` sources, resource `.phlo` files, and transpiled `php/` and `www/` output, shown through the Source, Build and Release views. Links to files outside those known sets render as plain text rather than opening an arbitrary-file viewer.
 
 Control Center POST actions should use the Phlo SPA response protocol where practical. Avoid redirect-only mutations for toggles, builds, release actions, and config edits unless the whole page state truly needs to reset.
 
 There are no separate `nodes`, `api`, or `reflection` Control Center sections. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
 
-Debug error pages may link file locations back to Control Center source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or compiled `php/`/`www/` output.
+Debug error pages may link file locations back to Control Center source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or transpiled `php/`/`www/` output.
 
 ### Custom path constants
 
@@ -910,10 +910,10 @@ Build-only settings. Do **not** put `debug`, `host`, `cli`, or `websocket` here.
 
 | Key | Default | Notes |
 |-----|---------|-------|
-| `extends` | `"obj"` | Base class for all compiled files |
+| `extends` | `"obj"` | Base class for all transpiled files |
 | `routes` | `true` | Route discovery enabled |
-| `buildCSS` | `true` | CSS compilation enabled |
-| `buildJS` | `true` | JS compilation enabled |
+| `buildCSS` | `true` | CSS build enabled |
+| `buildJS` | `true` | JS build enabled |
 | `minifyCSS` | `false` (dev) / `true` (release) | Omit unless overriding |
 | `minifyJS` | `false` (dev) / `true` (release) | Omit unless overriding |
 | `minifyPHP` | `false` (dev) / `true` (release) | Omit unless overriding |
@@ -927,7 +927,7 @@ Build-only settings. Do **not** put `debug`, `host`, `cli`, or `websocket` here.
 
 ### Namespaces and bundles
 
-Every `<style>`/`<script>` block compiles into a per-namespace bundle: `ns=docs` goes into `www/docs.css`/`www/docs.js`, `ns=app,docs` into both, and blocks without `ns=` into `defaultNS`. A page selects its bundle with `view(..., ns: 'docs')`.
+Every `<style>`/`<script>` block transpiles into a per-namespace bundle: `ns=docs` goes into `www/docs.css`/`www/docs.js`, `ns=app,docs` into both, and blocks without `ns=` into `defaultNS`. A page selects its bundle with `view(..., ns: 'docs')`.
 
 Two rules keep multi-namespace apps working:
 
@@ -997,7 +997,7 @@ Three levels, one lifecycle: collect during the request, render into the browser
 In debug mode every sync page ends with an inline script (`debug_render`) that logs dumps, debug lines, memory, duration and trace metadata to the console; async responses carry the same data in the apply payload. Objects are unwrapped via `objInfo()` to a depth of 10.
 
 Notable natives that are **not** obvious from their names:
-- `indent(string, depth)` / `indentView(string, depth)` - string indentation helpers; `indentView` is also emitted by the compiler for `{{ expr }}` on its own line inside `<foreach>`/`<if>` blocks, so it must stay native
+- `indent(string, depth)` / `indentView(string, depth)` - string indentation helpers; `indentView` is also emitted by the transpiler for `{{ expr }}` on its own line inside `<foreach>`/`<if>` blocks, so it must stay native
 - `regex(pattern, subject, flags, offset)` / `regex_all(...)` - thin wrappers around `preg_match`/`preg_match_all`, used by core resources
 - `json_read(file, assoc)` / `json_write(file, data, flags)` - JSON file I/O, used by core resources
 - `duration(decimals, float)` - time elapsed since request start; used by debug output
@@ -1017,7 +1017,7 @@ Use these functions instead of calling the internal `build_css` class directly. 
 
 ### Translations (optional)
 
-The `lang` resource adds multilingual text: the `{nl: ...}` / `{en: ...}` view shorthand for static text (compiles to `{{ nl('...') }}`, so it has no argument syntax), the `nl()` / `en()` functions for text with `sprintf` arguments, an AI-backed per-language cache in `langs/<lang>.ini`, and a `%lang.instructions` prop to steer terminology and avoid forced translations. See [translations.md](translations.md).
+The `lang` resource adds multilingual text: the `{nl: ...}` / `{en: ...}` view shorthand for static text (transpiles to `{{ nl('...') }}`, so it has no argument syntax), the `nl()` / `en()` functions for text with `sprintf` arguments, an AI-backed per-language cache in `langs/<lang>.ini`, and a `%lang.instructions` prop to steer terminology and avoid forced translations. See [translations.md](translations.md).
 
 ---
 
@@ -1076,7 +1076,7 @@ Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syn
 | Underscores in `.phlo` file names | Dots as separators (`page.home.phlo`) |
 | Runtime values (`host`, `debug`, `cli`) in `data/app.json` | Put them in `www/app.php` |
 | Relative paths in `data/app.json` | Use `%app/` or `%phlo/` prefixes |
-| Literal `%name` in `.phlo` string literals | External `.txt`/`.md` files; the compiler rewrites `%name` even inside strings |
+| Literal `%name` in `.phlo` string literals | External `.txt`/`.md` files; the transpiler rewrites `%name` even inside strings |
 | `.class`/`#id` shorthand combined with a `class=`/`id=` attribute | One full attribute when any part is dynamic |
 | `{{ %x->prop }}` in view attributes | Direct interpolation: `href="%x->prop/suffix"` |
 | Multiline ternary without continuations | End each continued line with `\` |

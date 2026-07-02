@@ -15,7 +15,7 @@ view:
 ```
 
 The two-letter code before the colon is the **source** language of that text.
-The compiler rewrites `{nl: Hallo wereld}` to `{{ nl('Hallo wereld') }}`.
+The transpiler rewrites `{nl: Hallo wereld}` to `{{ nl('Hallo wereld') }}`.
 Everything between the colon and the closing `}` becomes a single string
 argument, so the shorthand has **no placeholder or argument syntax**. For
 dynamic values use the function form instead (see Helpers).

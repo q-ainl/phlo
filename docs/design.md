@@ -27,9 +27,9 @@ line that is not a declaration). Adding a real grammar to relax the rules
 would trade the parser's legibility for convenience, and that is not a trade
 Phlo makes.
 
-## 2. Compile to readable PHP, with a sourcemap
+## 2. Transpile to readable PHP, with a sourcemap
 
-`.phlo` compiles to plain PHP classes under `php/` (`build_builder`,
+`.phlo` transpiles to plain PHP classes under `php/` (`build_builder`,
 `build_node`). The output is meant to be read: one class per file, a header
 comment naming the source, optional inline comments. A per-class sourcemap
 (`php/sourcemap.php`) records PHP-line to `.phlo`-line.
@@ -46,7 +46,7 @@ rebuild-on-request (see 5); in production you build once.
 
 ## 3. The `obj` magic base class
 
-Every compiled class extends `obj` (`classes/obj.php`) unless told otherwise.
+Every transpiled class extends `obj` (`classes/obj.php`) unless told otherwise.
 `obj` is a magic container: arbitrary data via `__get`/`__set`, bound
 closures, and **computed properties** written as `_name()` methods that are
 called without parentheses and cached on first access (`$this->fullName`
@@ -55,7 +55,7 @@ set.
 
 **Why.** It collapses what would otherwise be boilerplate (getters, lazy
 init, value objects) into one consistent access model that the `.phlo`
-property syntax compiles onto directly: `prop now => time()` becomes a cached
+property syntax transpiles onto directly: `prop now => time()` becomes a cached
 `_now()`. The same object is the view model, the record, and the config bag.
 
 **The trade-off.** Magic access is less statically analysable than explicit
@@ -66,7 +66,7 @@ request- or user-dependent values, so the model stays safe under worker mode
 
 ## 4. `phlo()` as a tiny service registry
 
-`phlo('MySQL')` returns a shared instance; in `.phlo` source `%MySQL` compiles
+`phlo('MySQL')` returns a shared instance; in `.phlo` source `%MySQL` transpiles
 to exactly that call (`build_node::parseObjects`). Each class can implement
 `__handle()` to decide its own identity: singleton, multiton by argument, or
 always-new. Instances opt into surviving between worker requests with
@@ -84,13 +84,13 @@ is a dozen lines (`phlo()` in `phlo.php`).
 ## 5. Rebuild on request in development
 
 With `build: true`, `phlo_load()` checks whether any source changed since the
-last build and recompiles before handling the request (`build_base::changed()`
+last build and rebuilds before handling the request (`build_base::changed()`
 compares mtimes against `php/functions.php`, throttled to a 50/200ms window so
-it is cheap in a hot loop). With `build: false` the app runs the compiled
+it is cheap in a hot loop). With `build: false` the app runs the transpiled
 output as-is.
 
 **Why.** The edit-refresh loop feels interpreted while the runtime stays
-compiled. No watcher process, no manual build during development.
+transpiled. No watcher process, no manual build during development.
 
 **The trade-off.** `build: true` writes files during a request, which is
 unsafe in a long-running worker, so **`build` and `thread` are mutually

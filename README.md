@@ -31,7 +31,9 @@ Phlo is opinionated on purpose. The bets it makes:
 - **One closed loop.** Source to build to lint to sourcemap to error page to
   Control Center to CLI introspection. Every layer points back at the source.
 - **Small and dependency-free.** The engine ships its own CSS transpiler, JS
-  minifier and SPA runtime. No vendor tree to audit.
+  minifier and SPA runtime. No vendor tree to audit. The bet is proven server
+  tech: PHP still runs more than 70% of the web (W3Techs), and Phlo builds on
+  that instead of on a JavaScript build chain.
 - **Agent-first.** `docs/SKILL.md` is a complete language reference written
   for AI agents, and the `reflect::` CLI exposes routes, views, the parsed
   AST and dependency graphs as JSON. An agent can build, introspect and fix a

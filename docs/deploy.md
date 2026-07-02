@@ -73,7 +73,7 @@ docker run -v ./my-app:/app -p 80:80 -p 443:443 -p 443:443/udp \
 ```
 
 `docker/compose.yml` contains a Compose example. Note: with `build: true`
-the container writes compiled files into the mounted app directory; on Linux
+the container writes transpiled files into the mounted app directory; on Linux
 those files are owned by the container user (root by default). Use release
 builds or align the user (`--user $(id -u)`) if that matters to you.
 
@@ -110,11 +110,11 @@ forcing every app through one generic tool (and never shrink an app's config
 just to fit such a tool). Automate the repetitive, safe mechanics; keep the
 judgment with a person.
 
-A complete release has more parts than the compiled code:
+A complete release has more parts than the transpiled code:
 
 - **The build** (`release/`): run `build::lint` (expect `[]`) then
   `build::release` as the user the app runs as, and ship that tree. It is the
-  compiled code plus the `www/` assets.
+  transpiled code plus the `www/` assets.
 - **Runtime content** the app reads from disk: markdown, translations and data
   files. These live *outside* `release/`, so they are a separate copy step, not
   part of the build. Find every content directory by grepping the source for
