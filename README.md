@@ -57,8 +57,8 @@ built with the previous one, in the same syntax:
    [Phlo CMS](https://github.com/q-ainl/phlo-cms) adds a schema-driven CRUD
    and admin layer on top.
 3. **Server**: production on [FrankenPHP](https://frankenphp.dev) in worker
-   mode, with realtime and WhatsApp messaging built into the Phlo Daemon, and
-   mail.
+   mode, with the [Phlo Daemon](https://github.com/q-ainl/phlo-daemon) for
+   warm workers, realtime and scheduled tasks.
 4. **Operations**: the
    [Phlo Dashboard](https://github.com/q-ainl/phlo-dashboard) manages apps
    and servers as a fleet: uptime, domains, databases, notifications.
