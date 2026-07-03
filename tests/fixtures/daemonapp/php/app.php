@@ -12,4 +12,10 @@ class app extends obj {
 	protected function daemonLoaded(){
 		return class_exists('daemon') ? 'yes' : 'no';
 	}
+	// 2026-07-06 is a Monday: a 'monday 09:00' task must be due at 09:00, not midnight (the strtotime 'today' bug).
+	protected function dueWeekly(){
+		$monday = strtotime('2026-07-06');
+		$task = obj(weekly: 'monday 09:00');
+		return arr(at09: tasks::due('dueprobe', $task, $monday + 32400), at00: tasks::due('dueprobe', $task, $monday));
+	}
 }
