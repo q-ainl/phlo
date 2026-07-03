@@ -22,20 +22,19 @@ method robots {
 method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
 
 method locale {
-	$lang = (string)(%app->lang ?? 'en')
+	$lang = %app->lang ?? 'en'
 	$map = ['nl' => 'nl_NL', 'en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES', 'it' => 'it_IT', 'pt' => 'pt_PT', 'pl' => 'pl_PL', 'ru' => 'ru_RU', 'el' => 'el_GR', 'tr' => 'tr_TR', 'zh' => 'zh_CN']
 	return $map[$lang] ?? $lang
 }
 
 prop ogTitle => title()
-prop ogDescr => (string)(%app->description ?? void)
-prop ogImage => %req->base.slash.ltrim((string)(%app->image ?? 'icon.webp'), slash)
+prop ogDescr => %app->description ?? void
+prop ogImage => %req->base.slash.ltrim(%app->image ?? 'icon.webp', slash)
 prop canonical => %req->url
 prop ogType = 'website'
-prop siteName => id
-prop ogLocale => $this->locale()
+prop siteName => %app->title ?? id
 prop twitterCard = false
-prop noindex => (%app->noLink ?? %app->noindex ?? false)
+prop noIndex => %app->noLink ?? %app->noIndex ?? false
 
 view:
 <?xml version=1.0 encoding="UTF-8"?>
@@ -60,7 +59,7 @@ view xlink($lang, $uri): <xhtml:link rel=alternate hreflang="$lang" href="%req->
 view link($lang, $uri): <link rel=alternate hreflang="$lang" href="%req->base$uri">
 
 view head:
-<if $this->noindex>
+<if $this->noIndex>
 	<meta name=robots content=noindex,follow>
 </if>
 <if $this->ogDescr>
@@ -72,13 +71,13 @@ view head:
 <meta property=og:type content="$this->ogType">
 <meta property=og:url content="$this->canonical">
 <meta property=og:image content="$this->ogImage">
-<meta property=og:locale content="$this->ogLocale">
+<meta property=og:locale content="$this->locale">
 <if $this->twitterCard>
 	<meta name=twitter:card content=summary_large_image>
 	<meta name=twitter:title content="$this->ogTitle">
 	<meta name=twitter:description content="$this->ogDescr">
 	<meta name=twitter:image content="$this->ogImage">
 </if>
-<if !$this->noindex>
+<if !$this->noIndex>
 	<link rel=canonical href="$this->canonical">
 </if>

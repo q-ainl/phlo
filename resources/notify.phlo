@@ -8,14 +8,14 @@
 function notify(string $title, string $body = void, string $type = 'info', string $level = 'info', ?string $user = null): void {
 	$cfg = %creds->notify ?? null
 	if (!$cfg) return
-	$url = (string)($cfg->url ?? void)
-	$secret = (string)($cfg->secret ?? void)
+	$url = $cfg->url ?? void
+	$secret = $cfg->secret ?? void
 	if ($url === void || $secret === void) return
 	try {
 		HTTP($url, ['secret: '.$secret], true, [
 			'app' => (string)($cfg->app ?? (defined('id') ? id : 'app')),
-			'server' => (string)($cfg->server ?? 'local'),
-			'host' => (string)(%req->host ?? void),
+			'server' => $cfg->server ?? 'local',
+			'host' => %req->host ?? void,
 			'type' => $type,
 			'level' => $level,
 			'title' => $title,
