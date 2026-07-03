@@ -22,9 +22,6 @@
         "ext-sodium": "Required by the security/encryption resource",
         "ext-gd": "Required by the icon sprite builder (build config key: icons)"
     },
-    "autoload": {
-        "files": ["phlo.php"]
-    },
     "scripts": {
         "test": "phpunit"
     },

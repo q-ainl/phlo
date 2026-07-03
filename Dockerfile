@@ -7,7 +7,7 @@
 # Set SERVER_NAME=<host> for automatic HTTPS (defaults to :80, plain HTTP).
 FROM dunglas/frankenphp:1-php8.5
 
-RUN install-php-extensions gd pdo_mysql pdo_pgsql sqlite3 pdo_sqlite
+RUN install-php-extensions gd pdo_mysql pdo_pgsql sqlite3 pdo_sqlite apcu
 
 # The engine calls `php-zts` for CLI work (build, lint) under a thread-safe runtime.
 # The FrankenPHP image ships its ZTS php as `php`, so expose it under that name too.
