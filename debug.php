@@ -156,7 +156,7 @@ function debug_render(?int $contentLength = null):string {
 	if (class_exists('trace', false) && trace::$on && trace::$events){
 		$count   = count(trace::$events);
 		$traceMs = round((microtime(true) - trace::$t0) * 1000, 1);
-		$dashUrl = defined('dashboard') && dashboard ? '/'.ltrim(dashboard, '/').'/graph?trace='.trace::$id : void;
+		$dashUrl = control ? '/'.ltrim(control, '/').'/graph?trace='.trace::$id : void;
 		$out .= ";console.log('%c[trace ".trace::$id."] $count events, {$traceMs}ms".($dashUrl ? "  '+location.origin+'$dashUrl" : void)."','color:#c88a40')";
 	}
 	if ($c = count($d['phlo'])) $out .= ";console.log('%cphlo ($c)','font-weight:bold','\\n".strtr(implode(space, $d['phlo']), [sq => bs.sq])."')";

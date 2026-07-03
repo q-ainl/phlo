@@ -9,7 +9,6 @@ prop image = 'icon.webp'
 
 prop %seo.siteName = 'Rich Site'
 prop %seo.ogType = 'website'
-prop %seo.ogLocale = 'en_US'
 prop %seo.twitterCard = true
 
 app::route()
