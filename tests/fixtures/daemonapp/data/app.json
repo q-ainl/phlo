@@ -1,3 +1,9 @@
 {
-    "resources": ["phlo.sync", "await", "wsCast", "HTTP"]
+  "resources": [
+    "phlo.sync",
+    "await",
+    "wsCast",
+    "HTTP",
+    "tasks"
+  ]
 }

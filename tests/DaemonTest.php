@@ -40,6 +40,14 @@ final class DaemonTest extends TestCase {
 		$this->assertStringContainsString('yes', $out, 'daemon class must load when the daemon constant is set: '.$out);
 	}
 
+	public function testWeeklyTaskIsDueAtItsTimeNotMidnight():void {
+		[$code, $out, $err] = self::cli('app.php', 'app.dueWeekly');
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertTrue($r['at09'] ?? false, "a weekly 'monday 09:00' task is due at Monday 09:00: $out");
+		$this->assertFalse($r['at00'] ?? true, "a weekly 'monday 09:00' task is not due at Monday 00:00 (the strtotime 'today' bug collapsed it to midnight): $out");
+	}
+
 	public function testOneShotSyncWithoutDaemon():void {
 		[$code, $out, $err] = self::cli('app.php', 'phlo_sync', 'app.ping', 'hi');
 		$this->assertSame(0, $code, $err);

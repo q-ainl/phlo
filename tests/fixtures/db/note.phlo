@@ -32,5 +32,11 @@ static runTests {
 	static::delete('id=?', (int)$b->id)
 	$out['deleteGone'] = static::record(id: (int)$b->id) === null
 	$out['countAfterDelete'] = (int)static::recordCount()
+	static::delete('id=?', (int)$a->id)
+	// DB::item on an empty COUNT and on a real 0/'' value: these must survive, never fold to null.
+	$out['countEmpty'] = static::DB()->item('notes', 'COUNT(id)')
+	static::create(title: '', done: 0, created: 0)
+	$out['itemZero'] = static::DB()->item('notes', 'done')
+	$out['itemEmptyString'] = static::DB()->item('notes', 'title')
 	return $out
 }

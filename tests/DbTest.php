@@ -43,6 +43,9 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['cacheFresh'] ?? false, 'record cache reflects the update, not a stale copy');
 		$this->assertTrue($r['deleteGone'] ?? false, 'delete removes the row');
 		$this->assertSame(1, $r['countAfterDelete'] ?? null, 'count after delete');
+		$this->assertSame(0, $r['countEmpty'] ?? -1, 'DB::item returns 0 for an empty-table COUNT, not null');
+		$this->assertSame(0, $r['itemZero'] ?? -1, 'DB::item preserves a real 0 column value, not null');
+		$this->assertSame('', $r['itemEmptyString'] ?? 'x', 'DB::item preserves an empty-string column value, not null');
 	}
 
 	public function testCreateReloadsByCustomIdColumn():void {

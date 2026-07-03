@@ -37,7 +37,7 @@ static due($name, $task, $now){
 		return $last < strtotime('today 00:00', $now)
 	}
 	if (isset($task->weekly)){
-		if (date('D H:i', $now) !== date('D H:i', strtotime("$task->weekly today"))) return false
+		if (date('D H:i', $now) !== date('D H:i', strtotime($task->weekly, $now))) return false
 		return $last < strtotime('monday this week', $now)
 	}
 	return false
