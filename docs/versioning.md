@@ -65,5 +65,5 @@ across an upgrade.
 
 ### From a release candidate to 1.0.0
 
-`1.0.0` is `1.0.0-RC3` plus the fixes listed under that version in the changelog;
-there are no breaking changes from RC3. Update the engine and rebuild.
+`1.0.0` is the latest release candidate plus the fixes listed under that version in the
+changelog; there are no breaking changes from the last RC. Update the engine and rebuild.

@@ -963,18 +963,6 @@ class phlo_dashboard {
 			."</div>\n";
 	}
 
-	private static function fileApply(string $file, string $name, string $section, bool $php = false):void {
-		$sectionTitle = ucfirst($section);
-		$fname        = static::displayFileName($name);
-		apply(
-			path: ltrim(phlo('req')->path, slash),
-			pathReplace: true,
-			title: "$sectionTitle - $fname - Phlo Control",
-			inner: ['#file-content' => static::fileContent($file, $php)],
-			call: 'dashActiveFile',
-		);
-	}
-
 	private static function displayFileName(string $name):string {
 		return basename(str_replace(bs, slash, $name));
 	}

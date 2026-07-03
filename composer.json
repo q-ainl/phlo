@@ -1,9 +1,9 @@
 {
     "name": "phlo/tech",
-    "description": "Full-stack web framework with its own .phlo language: express backend logic, routing, HTML views, scoped CSS and single-page behavior in one concise file format that compiles to plain PHP, CSS and JS.",
+    "description": "Full-stack web framework with its own .phlo language: express backend logic, routing, HTML views, scoped CSS and single-page behavior in one concise file format that transpiles to plain PHP, CSS and JS.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["phlo", "framework", "full-stack", "php", "compiler", "spa"],
+    "keywords": ["phlo", "framework", "full-stack", "php", "transpiler", "spa"],
     "homepage": "https://github.com/q-ainl/phlo",
     "authors": [
         {

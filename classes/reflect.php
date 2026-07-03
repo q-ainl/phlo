@@ -421,11 +421,6 @@ class reflect {
 		return array_values(array_unique($out));
 	}
 
-	private static function subtypeFor(string $rtype, ?string $ext):string {
-		if (in_array($rtype, ['script', 'style', 'both'], true)) return $rtype;
-		return 'other';
-	}
-
 	private static function graphNode(array &$nodes, string $id, array $data):void {
 		if (isset($nodes[$id])){
 			$nodes[$id] = array_replace($nodes[$id], array_filter($data, static fn($v) => $v !== null));

@@ -105,7 +105,7 @@ static idType = 'string'
 From then on:
 - The identity map uses the `sku` value as key.
 - `Class::record(sku: 'ABC')` works (not `id:`).
-- `Class::recordCount()`, `Class::createTable()`, `Class::objSchemaDiff()`, `Class::objRestore()` work with `sku`.
+- `Class::recordCount()` works with `sku`.
 - `getParent`/`getChildren`/`getMany`/`getLast` lookups use `sku` for the target.
 
 Caller side:
