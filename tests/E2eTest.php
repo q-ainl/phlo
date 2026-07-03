@@ -1,10 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// End-to-end smoke: builds the fixture app in tests/fixtures/e2e/ through its
-// own CLI entry point (separate process, real constants), then serves it with
-// PHP's built-in server and checks one sync (HTML) and one async (apply JSON)
-// request.
+// End-to-end smoke: builds the e2e fixture through its own CLI entry, serves it with php -S,
+// and checks one sync (HTML) and one async (apply JSON) request.
 final class E2eTest extends TestCase {
 
 	private static string $appDir = __DIR__.'/fixtures/e2e/';
@@ -43,24 +41,19 @@ final class E2eTest extends TestCase {
 	}
 
 	public function testCliPhloEval():void {
-		// A single expression auto-returns, exactly like a => arrow body.
 		[$code, $out, $err] = self::cli('phlo_eval', '1 + 2 * 3');
 		$this->assertSame(0, $code, $err);
 		$this->assertSame('7', trim($out));
 
-		// Resource objects resolve: %app becomes phlo('app').
 		[, $out] = self::cli('phlo_eval', '%app->title');
 		$this->assertSame('"E2E"', trim($out));
 
-		// An explicit return is honoured and never doubled.
 		[, $out] = self::cli('phlo_eval', 'return 2 + 2');
 		$this->assertSame('4', trim($out));
 
-		// A multiline block requires its own return.
 		[, $out] = self::cli('phlo_eval', "\$x = 21\nreturn \$x * 2");
 		$this->assertSame('42', trim($out));
 
-		// echo controls its own output, so it is not given a return.
 		[, $out] = self::cli('phlo_eval', "echo 'hi'");
 		$this->assertSame('hi', trim($out));
 	}

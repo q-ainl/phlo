@@ -1,10 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// seo resource opt-in tags: og:site_name, og:type, og:locale and the twitter card are
-// emitted ONLY when the app injects the corresponding %seo.* prop (compile-time). The
-// default head (see SeoTest::testHeadShape) stays bare, so apps that do not opt in are
-// byte-identical. This fixture injects all four to lock the opt-in path.
+// og:site_name/type/locale and the twitter card are emitted only when the app injects the
+// matching %seo.* prop; this fixture injects all four to lock the opt-in path.
 final class SeoOptInTest extends TestCase {
 
 	private static function cli(string ...$args):array {
@@ -24,7 +22,6 @@ final class SeoOptInTest extends TestCase {
 		$this->assertSame(0, $code, $err);
 		$h = json_decode(trim($out), true);
 		$this->assertIsString($h, 'head output not a string: '.$out);
-		// injected %seo.* props -> tags present
 		$this->assertStringContainsString('og:site_name', $h);
 		$this->assertStringContainsString('Rich Site', $h);
 		$this->assertStringContainsString('og:type', $h);
@@ -33,7 +30,6 @@ final class SeoOptInTest extends TestCase {
 		$this->assertStringContainsString('en_US', $h);
 		$this->assertStringContainsString('twitter:card', $h);
 		$this->assertStringContainsString('summary_large_image', $h);
-		// the core block stays intact alongside the opt-in tags
 		$this->assertStringContainsString('og:title', $h);
 		$this->assertStringContainsString('canonical', $h);
 	}

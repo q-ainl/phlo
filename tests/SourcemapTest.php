@@ -25,11 +25,9 @@ final class SourcemapTest extends TestCase {
 			'app_source' => $src,
 		], true);
 
-		// Where each marker lives in the source...
 		foreach (file($src) as $i => $line){
 			if (preg_match('/MARK_\w+/', $line, $m)) self::$markers[$m[0]]['src'] = $i + 1;
 		}
-		// ...and where the compiler put it.
 		foreach (glob(php.'*.php') ?: [] as $file){
 			foreach (file($file) as $i => $line){
 				if (preg_match('/MARK_\w+/', $line, $m) && isset(self::$markers[$m[0]])){
