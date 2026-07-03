@@ -42,7 +42,7 @@ function await(...$jobs){
 				feof($stream) && $open = array_diff_key($open, [$key => 1]);
 				continue;
 			}
-			$i = (int)substr($key, 1);
+			$i = substr($key, 1);
 			if ($key[0] === 'o') $children[$i]->stdout .= $chunk;
 			else $children[$i]->stderr .= $chunk;
 		}

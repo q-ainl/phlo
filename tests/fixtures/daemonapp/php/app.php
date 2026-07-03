@@ -1,6 +1,6 @@
 <?php
 // source:  /srv/control/phlo/tests/fixtures/daemonapp/app.phlo
-// phlo:    1.0.0-RC3
+// phlo:    1.0.0-RC4
 // summary: daemon engine test fixture: gate + one-shot fallback
 class app extends obj {
 	public static function route():bool {
