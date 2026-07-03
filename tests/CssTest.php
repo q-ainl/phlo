@@ -76,7 +76,7 @@ final class CssTest extends TestCase {
 		$this->assertSame('body{color:red}', build_css::decode("/* note */\nbody {\n\tcolor: red\n}"));
 	}
 
-	/** decode(encode(decode($phlo))) must equal decode($phlo): CSS is a fixpoint of the round trip. */
+	// decode(encode(decode($phlo))) must equal decode($phlo): CSS is a fixpoint of the round trip.
 	public function testRoundTripFixpoint():void {
 		$samples = [
 			"body {\n\tbackground: #0d0d0d\n\tcolor: #fff\n}",
@@ -90,8 +90,8 @@ final class CssTest extends TestCase {
 		}
 	}
 
-	/** Functional pseudo-classes (:is/:not/:where) carry commas inside their parens; the nesting
-	 *  combiner must not split on those commas (it would prepend the parent to the post-comma part). */
+	// Functional pseudo-classes (:is/:not/:where) carry commas inside their parens; the nesting
+	// combiner must not split on those commas (it would prepend the parent to the post-comma part).
 	public function testFunctionalPseudoCommaSurvivesNesting():void {
 		$this->assertSame('.nav a:is(.x, .y){color:red}', build_css::decode(".nav {\n\ta:is(.x, .y): color: red\n}"));
 		$this->assertSame('.box:where(.x, .y){color:red}', build_css::decode(".box {\n\t:where(.x, .y): color: red\n}"));
@@ -108,7 +108,7 @@ final class CssTest extends TestCase {
 		$this->assertSame('.card, :is(.a, .b){color:red}', build_css::decode(".card, :is(.a, .b) {\n\tcolor: red\n}"));
 	}
 
-	/** A comma inside a quoted attribute value must not split the selector either. */
+	// A comma inside a quoted attribute value must not split the selector either.
 	public function testCommaInQuotedAttributePreserved():void {
 		$this->assertSame('.a b[data-x="p, q"]{color:red}', build_css::decode(".a {\n\tb[data-x=\"p, q\"]: color: red\n}"));
 	}
