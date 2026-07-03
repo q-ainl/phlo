@@ -7,7 +7,7 @@ and Phlo adheres to [Semantic Versioning](https://semver.org/) from the first
 tagged release onward. The engine version constant lives in `phlo.php`
 (`const phlo`).
 
-## [Unreleased]
+## [1.0] - 2026-07-03
 
 ### Added
 - A `security/captcha` resource: a self-contained slider-puzzle captcha (GD-rendered,

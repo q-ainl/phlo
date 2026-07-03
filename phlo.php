@@ -1,5 +1,5 @@
 <?php
-const phlo = '1.0.0-RC4';
+const phlo = '1.0';
 
 const br    = '<br>';
 const bs    = '\\';
