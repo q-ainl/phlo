@@ -40,10 +40,10 @@ target on the app's pool, in-process. The execution mode follows the host's
   loop uses). No PHP startup per message. The pool spawns workers on demand up to
   a global cap of one less than the core count and reaps them when idle; a worker
   handles one event at a time.
-- **One-shot CLI (a `build: true` dev app).** The daemon spawns a fresh
-  `<php> <app>/www/app.php websocket::<hook> <args>` per event. Simple and
-  isolated, but pays a PHP startup each message. Ideal for dev (hot-reload just
-  works) or low-traffic hosts.
+- **One-shot worker (a `build: true` dev app).** The event runs through the same
+  `phlo_serve` protocol, but as a fresh single-job worker that compiles and boots
+  the app per event. Simple, isolated and hot-reloading, at a PHP startup each
+  message. Ideal for dev or low-traffic hosts.
 
 Either way each message is a full Phlo lifecycle with all resources available
 (DB, session, etc); the resident worker simply keeps the boot and the `objPers`
