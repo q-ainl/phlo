@@ -6,6 +6,10 @@ static table = 'codes'
 static idColumn = 'slug'
 static columns = 'slug,label'
 
+static hookOld = []
+method beforeChange($old = null) => static::$hookOld['before'] = $old?->label
+method afterChange($old = null) => static::$hookOld['after'] = $old?->label
+
 static prepareTable {
 	static::DB()->query('CREATE TABLE IF NOT EXISTS codes (slug '.app::textId(static::DB()).', label TEXT)')
 	static::DB()->query('DELETE FROM codes')
@@ -24,5 +28,7 @@ static runTests {
 	$savedNew->label = 'v2'
 	$savedNew->objSave()
 	$out['saveUpdate'] = (static::record(slug: 'xyz')->label ?? null) === 'v2'
+	$out['hookOldBefore'] = (static::$hookOld['before'] ?? null) === 'v1'
+	$out['hookOldAfter'] = (static::$hookOld['after'] ?? null) === 'v1'
 	return $out
 }

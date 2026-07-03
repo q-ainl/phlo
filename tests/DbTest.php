@@ -59,6 +59,8 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['columns'] ?? false, 'objData exposes the bare record columns, which is what audit logs');
 		$this->assertTrue($r['saveNew'] ?? false, 'objSave inserts and reloads the new record by its PK');
 		$this->assertTrue($r['saveUpdate'] ?? false, 'objSave updates and reloads an existing record');
+		$this->assertTrue($r['hookOldBefore'] ?? false, 'beforeChange($old) sees the persisted value, not the already-mutated one');
+		$this->assertTrue($r['hookOldAfter'] ?? false, 'afterChange($old) sees the persisted value, not the already-mutated one');
 	}
 
 	public function testRelationLoaderHandlesIncrementalParents():void {
