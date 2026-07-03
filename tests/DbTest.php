@@ -1,12 +1,8 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// Proves the ORM is engine-agnostic by running a full CRUD suite (including the
-// driver-specific INSERT-OR-IGNORE path) on SQLite, which has zero external
-// dependency (pdo_sqlite ships with PHP). The fixture app picks its default engine
-// with `static %model.DB => %SQLite(...)`, the same injection idiom real apps use.
-// MySQL parity is verified through the live fleet (factuur/logbook run on MySQL),
-// not here, to keep the suite dependency-free.
+// Runs the ORM CRUD suite on SQLite (zero external dependency); MySqlTest and PostgreSqlTest cover the
+// other drivers in CI.
 final class DbTest extends TestCase {
 
 	private static string $appDir = __DIR__.'/fixtures/db/';

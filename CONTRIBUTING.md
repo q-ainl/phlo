@@ -42,7 +42,13 @@ between the core and the ecosystem) is written down in [GOVERNANCE.md](GOVERNANC
     `tests/`.
   - Bug fixes: add the test that fails without your fix.
 - **Style.** Match the surrounding code: tabs, compact expressions, no
-  superfluous abstractions, no comments that restate the code.
+  superfluous abstractions.
+- **Comments.** English only. Use `//` for implementation comments in PHP,
+  `.phlo` and JS; `/** */` only for docblocks read by reflection or tooling;
+  the native syntax where a format requires it (`#` in YAML, shell, Dockerfiles,
+  `.gitignore`, extended regex). Comment invariants, security boundaries and
+  non-obvious trade-offs; never narrate the next statement. One or two lines;
+  move longer explanations to docs or tests.
 - **Scope.** One change per PR. Refactors and behaviour changes don't mix.
 - **Changelog.** Add a line to the `[Unreleased]` section of `CHANGELOG.md`.
 

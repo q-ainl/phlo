@@ -70,9 +70,7 @@ on('input', '#resource-search', inp => {
 	})
 })
 on('search', '#resource-search', inp => inp.dispatchEvent(new Event('input', {bubbles: true})))
-// Config groups: header toggles between selected-only (collapsed) and all libraries.
 on('click', '.resource-group header', h => h.parentElement.classList.toggle('collapsed'))
-// Theme picker (build-site themes): icon button opens a named popover, like the dashboard's CMS picker.
 on('click', '.ctl-theme-btn', btn => {
 	const tool = btn.closest('.ctl-theme-tool')
 	const open = !tool.classList.contains('open')
@@ -85,7 +83,6 @@ on('click', '.ctl-theme-btn', btn => {
 	}
 	return false
 })
-// The theme links swap the stylesheet via the framework (apply + transition); just close the picker on use or outside click.
 on('click', '.ctl-theme-pop a', a => a.closest('.ctl-theme-tool').classList.remove('open'))
 on('click', 'html', (el, e) => { if (!e.target.closest('.ctl-theme-tool')) document.querySelectorAll('.ctl-theme-tool.open').forEach(t => t.classList.remove('open')) })
 on('input', '#error-search', inp => {

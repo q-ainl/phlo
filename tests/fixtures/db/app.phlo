@@ -7,7 +7,7 @@ static %model.DB => getenv('PHLO_TEST_DB') === 'mysql' ? %MySQL : (getenv('PHLO_
 
 static %jdoc.DB => %JSONDB(data.'jdocs.json')
 
-# Test-only DDL helpers so one model schema builds on SQLite, MySQL and PostgreSQL.
+// Test-only DDL helpers so one model schema builds on SQLite, MySQL and PostgreSQL.
 static autoId($db){
 	$driver = $db->PDO->getAttribute(\PDO::ATTR_DRIVER_NAME)
 	if ($driver === 'mysql') return 'INTEGER AUTO_INCREMENT PRIMARY KEY'

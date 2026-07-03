@@ -11,7 +11,7 @@ static schema => arr(
 	name: field(type: 'text', title: 'Name'),
 )
 
-# A string (non-'id') primary key, to prove field_many resolves the foreign key via idColumn().
+// A string (non-'id') primary key, to prove field_many resolves the foreign key via idColumn().
 static prepareTable {
 	$db = static::DB()
 	$db->query('CREATE TABLE IF NOT EXISTS tags (code TEXT PRIMARY KEY, name TEXT)')
