@@ -1,0 +1,59 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  e-Boekhouden.nl connector: session auth from an API token, relations and sales invoices
+@ extends:  Connector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @Connector creds:EBoekhouden
+@ tags:     eboekhouden accounting invoices relations connector
+
+const section = 'EBoekhouden'
+const api = 'https://api.e-boekhouden.nl/v1'
+
+prop sessionToken = void
+
+method headers => $this->sessionToken !== void ? ['Authorization: '.$this->sessionToken] : []
+
+static fields => arr(
+	section: 'EBoekhouden',
+	config: arr(source: 'Source label shown in the e-Boekhouden audit trail (optional)'),
+	secret: arr(api_token: 'API token (Beheer > Instellingen > API)'),
+)
+
+// First call exchanges the API token for a session token (one POST), cached per instance
+method session():obj {
+	if ($m = $this->missing('api_token')) return $m
+	if ($this->sessionToken !== void) return static::ok($this->sessionToken)
+	$res = $this->post('session', ['accessToken' => trim((string)$this->config['api_token']), 'source' => (string)($this->config['source'] ?? 'Phlo')])
+	if (!$res->ok) return $res
+	$token = (string)($res->data->token ?? void)
+	if ($token === void) return static::fail('e-Boekhouden session token missing in response', $res->status)
+	$this->sessionToken = $token
+	return static::ok($token)
+}
+
+method guard():?obj {
+	$res = $this->session
+	return $res->ok ? null : $res
+}
+
+method relations(array $query = []):obj {
+	if ($m = $this->guard) return $m
+	return $this->get('relation', $query)
+}
+
+method createRelation(array $relation):obj {
+	if ($m = $this->guard) return $m
+	return $this->post('relation', $relation)
+}
+
+method invoices(array $query = []):obj {
+	if ($m = $this->guard) return $m
+	return $this->get('invoice', $query)
+}
+
+method createInvoice(array $invoice):obj {
+	if ($m = $this->guard) return $m
+	return $this->post('invoice', $invoice)
+}

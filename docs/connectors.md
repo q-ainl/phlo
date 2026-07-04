@@ -127,6 +127,12 @@ Creds: `division`, `client_id`, `client_secret`, `refresh_token`.
 Read: `invoices(query)`, `accounts(query)`.
 Act: `createInvoice(invoice)`.
 
+**e-Boekhouden.nl** &middot; section `[EBoekhouden]` &middot; `connectors/finance/EBoekhouden`
+Creds: `api_token`, optional `source` (audit-trail label).
+The first call exchanges the API token for a session token (cached per instance).
+Read: `relations(query)`, `invoices(query)`.
+Act: `createRelation(relation)`, `createInvoice(invoice)`.
+
 ### Productivity / cloud
 
 **Microsoft Graph** (app-only) &middot; section `[Microsoft]` &middot; `connectors/cloud/MicrosoftGraph`

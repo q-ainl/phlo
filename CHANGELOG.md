@@ -7,6 +7,14 @@ and Phlo adheres to [Semantic Versioning](https://semver.org/) from the first
 tagged release onward. The engine version constant lives in `phlo.php`
 (`const phlo`).
 
+## [Unreleased]
+
+### Added
+- A `connectors/finance/EBoekhouden` connector: e-Boekhouden.nl relations and
+  sales invoices behind the standard connector contract. The first call
+  exchanges the configured `api_token` for a session token (cached per
+  instance); pass `source` to label the e-Boekhouden audit trail.
+
 ## [1.0] - 2026-07-03
 
 ### Added
