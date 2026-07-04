@@ -14,6 +14,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   sales invoices behind the standard connector contract. The first call
   exchanges the configured `api_token` for a session token (cached per
   instance); pass `source` to label the e-Boekhouden audit trail.
+- A `mailer` resource: transactional mail over the local MTA - multipart MIME
+  (text + HTML alternative, optional base64 attachments) through PHP `mail()`
+  with an explicit envelope sender and a CR/LF header-injection guard. The app
+  supplies its own finished HTML; deliberately no external ESP.
 
 ## [1.0] - 2026-07-03
 

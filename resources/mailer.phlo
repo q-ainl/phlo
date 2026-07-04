@@ -1,0 +1,67 @@
+@ version:  1.0
+@ summary:  Transactional mail over the local MTA: multipart MIME (text + HTML alternative, optional attachments) sent with PHP mail() and an explicit envelope sender. No external ESP.
+@ package:  network
+@ frontend: false
+@ backend:  true
+@ tags:     mail email mime smtp sendmail transactional
+
+@ advice: deliberately local-MTA only (own transactional traffic, no send-on-behalf); the app supplies its own HTML layout and passes the finished HTML in.
+static send($to, $subject, $html, $text = null, $from = null, $replyTo = null, array $attachments = [], $envelope = null):bool {
+	$to = static::header($to)
+	$subject = static::header($subject)
+	$from = static::header($from)
+	$replyTo = static::header($replyTo ?? $from)
+	$envelope = static::address($envelope ?? $from)
+	$text ??= trim(strip_tags(preg_replace('/<br\s*\/?>/i', "\n", (string)$html)))
+	$headers = [
+		'From: '.$from,
+		'Reply-To: '.$replyTo,
+		'MIME-Version: 1.0',
+	]
+	$alt = bin2hex(random_bytes(16))
+	$altBody = implode(lf, [
+		'--'.$alt,
+		'Content-Type: text/plain; charset=utf-8',
+		'Content-Transfer-Encoding: 8bit',
+		void,
+		$text,
+		'--'.$alt,
+		'Content-Type: text/html; charset=utf-8',
+		'Content-Transfer-Encoding: 8bit',
+		void,
+		$html,
+		'--'.$alt.'--',
+	])
+	if (!$attachments){
+		$headers[] = 'Content-Type: multipart/alternative; boundary="'.$alt.'"'
+		return mail($to, $subject, $altBody, implode(lf, $headers), '-f'.$envelope)
+	}
+	$mixed = bin2hex(random_bytes(16))
+	$headers[] = 'Content-Type: multipart/mixed; boundary="'.$mixed.'"'
+	$parts = [
+		'--'.$mixed,
+		'Content-Type: multipart/alternative; boundary="'.$alt.'"',
+		void,
+		$altBody,
+	]
+	foreach ($attachments AS $att){
+		$name = str_replace(['"', "\r", "\n"], void, (string)($att['name'] ?? 'attachment'))
+		$parts[] = '--'.$mixed
+		$parts[] = 'Content-Type: '.($att['mime'] ?? 'application/octet-stream').'; name="'.$name.'"'
+		$parts[] = 'Content-Transfer-Encoding: base64'
+		$parts[] = 'Content-Disposition: attachment; filename="'.$name.'"'
+		$parts[] = void
+		$parts[] = chunk_split(base64_encode((string)$att['content']), 76, lf)
+	}
+	$parts[] = '--'.$mixed.'--'
+	return mail($to, $subject, implode(lf, $parts), implode(lf, $headers), '-f'.$envelope)
+}
+
+// Header-injection guard: fold CR/LF out of anything that lands in a header line
+static header($value):string => trim(str_replace(["\r", "\n"], space, (string)$value))
+
+// Bare address for the envelope (-f): accepts 'Name <a@b>' or a plain address
+static address($value):string {
+	$value = (string)$value
+	return preg_match('/<([^>]+)>/', $value, $m) ? trim($m[1]) : trim(static::header($value))
+}
