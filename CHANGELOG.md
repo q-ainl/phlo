@@ -19,6 +19,14 @@ tagged release onward. The engine version constant lives in `phlo.php`
   with an explicit envelope sender and a CR/LF header-injection guard. The app
   supplies its own finished HTML; deliberately no external ESP.
 
+### Fixed
+- `security/social` never saw ini-backed credentials: `config()` and the Apple
+  client-secret path cast the creds section object straight to an array, which
+  exposes obj internals (`objData`, ...) instead of the ini keys, so
+  `configured()` stayed false for every ini-configured provider. Both paths now
+  unwrap the section through the creds resource's `toArray`. Covered by
+  `SocialTest` (config unwrap, redirect-uri default and override, authUrl).
+
 ## [1.0] - 2026-07-03
 
 ### Added

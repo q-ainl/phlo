@@ -35,7 +35,8 @@ static providers => arr(
 static config($provider){
 	$p = static::providers()[$provider] ?? null
 	if (!$p) return null
-	$creds = (array)(%creds->{$provider} ?? [])
+	$section = %creds->{$provider} ?? null
+	$creds = is_object($section) ? (array)$section->toArray : []
 	return $p + arr(
 		client_id: (string)($creds['client_id'] ?? void),
 		client_secret: (string)($creds['client_secret'] ?? void),
@@ -112,7 +113,8 @@ static normalize($provider, array $claims){
 static b64url($data) => rtrim(strtr(base64_encode((string)$data), '+/', '-_'), eq)
 
 static appleSecret {
-	$creds = (array)(%creds->apple ?? [])
+	$section = %creds->apple ?? null
+	$creds = is_object($section) ? (array)$section->toArray : []
 	$teamId = (string)($creds['team_id'] ?? void)
 	$keyId = (string)($creds['key_id'] ?? void)
 	$clientId = (string)($creds['client_id'] ?? void)
