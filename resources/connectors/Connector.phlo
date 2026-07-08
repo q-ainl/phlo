@@ -82,7 +82,7 @@ static parse($raw, int $status = 200):obj {
 	return obj(ok: true, status: $status, data: $data ?? $raw)
 }
 
-static retryable($method, int $status):bool => in_array($method, ['GET', 'HEAD']) && ($status === 429 || $status >= 500)
+static retryable($method, int $status):bool => in_array($method, ['GET', 'HEAD', 'QUERY']) && ($status === 429 || $status >= 500)
 
 static backoff(int $attempt, $response):int {
 	$after = (int)($response->headers['retry-after'] ?? 0)
@@ -100,6 +100,7 @@ method dispatch(array $req):obj {
 			elseif ($method === 'DELETE') $raw = HTTP($req['url'], $req['headers'], DELETE: true, cookies: false, timeout: $this->timeout, response: $response)
 			elseif ($method === 'PUT') $raw = HTTP($req['url'], $req['headers'], PUT: $body ?? void, cookies: false, timeout: $this->timeout, response: $response)
 			elseif ($method === 'PATCH') $raw = HTTP($req['url'], $req['headers'], PATCH: $body ?? void, cookies: false, timeout: $this->timeout, response: $response)
+			elseif ($method === 'QUERY') $raw = HTTP($req['url'], $req['headers'], QUERY: $body ?? void, cookies: false, timeout: $this->timeout, response: $response)
 			else $raw = HTTP($req['url'], $req['headers'], POST: $body ?? void, cookies: false, timeout: $this->timeout, response: $response)
 		}
 		catch (\Throwable $e){
@@ -124,6 +125,7 @@ method get(string $url, ?array $query = null, array $headers = []):obj => $this-
 method post(string $url, mixed $json = null, array $headers = []):obj => $this->request('POST', $url, headers: $headers, json: $json)
 method put(string $url, mixed $json = null, array $headers = []):obj => $this->request('PUT', $url, headers: $headers, json: $json)
 method patch(string $url, mixed $json = null, array $headers = []):obj => $this->request('PATCH', $url, headers: $headers, json: $json)
+method query(string $url, mixed $json = null, array $headers = []):obj => $this->request('QUERY', $url, headers: $headers, json: $json)
 method del(string $url, array $headers = []):obj => $this->request('DELETE', $url, headers: $headers)
 method form(string $url, array $fields, array $headers = []):obj => $this->request('POST', $url, headers: $headers, form: $fields)
 

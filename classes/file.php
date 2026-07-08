@@ -137,7 +137,7 @@ class build_file {
 	private function parse_node_header(string $trim):?array {
 		if (preg_match('/^<(script|style)(?:\s+ns=([^>]+))?>$/i', $trim, $match)) return ['node' => strtolower($match[1]), 'ns' => isset($match[2]) ? trim($match[2]) : null];
 		if (str_starts_with($trim, 'route')){
-			if (!preg_match('/^route\s*(sync|async|both)?\s*(GET|POST|PUT|PATCH|DELETE)(?:\s+([^@{>]*?[^@\s{>]))?(?:\s*@([A-Za-z,]+))?\s*(\{|\=\>)\s*(.*)$/', $trim, $node)) return null;
+			if (!preg_match('/^route\s*(sync|async|both)?\s*(GET|POST|PUT|PATCH|DELETE|QUERY)(?:\s+([^@{>]*?[^@\s{>]))?(?:\s*@([A-Za-z,]+))?\s*(\{|\=\>)\s*(.*)$/', $trim, $node)) return null;
 			return [
 				'node'     => 'route',
 				'mode'     => $node[1] ?: null,

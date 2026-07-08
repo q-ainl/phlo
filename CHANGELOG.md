@@ -10,6 +10,12 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- HTTP `QUERY` method support (RFC 10008): a safe, idempotent read that carries
+  a request body. `route QUERY <path>` now parses in the router; `%payload`
+  decodes the QUERY body (JSON, form-urlencoded, multipart); the `HTTP()` helper
+  takes a `QUERY:` argument; the `connectors/Connector` base gains a `query()`
+  method and treats QUERY as retryable; and the frontend `app.query()` helper
+  issues QUERY requests.
 - A `connectors/finance/EBoekhouden` connector: e-Boekhouden.nl relations and
   sales invoices behind the standard connector contract. The first call
   exchanges the configured `api_token` for a session token (cached per

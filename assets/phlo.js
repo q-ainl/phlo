@@ -78,6 +78,7 @@ const app = {
 	post: (path, data, blocking = true) => phlo.request('POST', path, data, blocking),
 	put: (path, data, blocking = true) => phlo.request('PUT', path, data, blocking),
 	patch: (path, data, blocking = true) => phlo.request('PATCH', path, data, blocking),
+	query: (path, data, blocking = true) => phlo.request('QUERY', path, data, blocking),
 	delete: (path, blocking = true) => phlo.request('DELETE', path, null, blocking),
 	get mode(){ return window.matchMedia('(display-mode:standalone)').matches },
 	get state(){ return document.hidden ? 'hidden' : (document.hasFocus() ? 'active' : 'blurred') },

@@ -113,6 +113,15 @@ final class ParserTest extends TestCase {
 		$this->assertSame('arrow',      $node->operator);
 	}
 
+	public function testRouteHeaderParsingQuery():void {
+		$src = "route QUERY search \$q => \$this->search(\$q)\n";
+		$file = $this->parse($src);
+		$node = current($file->nodes);
+		$this->assertSame('route',    $node->node);
+		$this->assertSame('QUERY',    $node->method);
+		$this->assertSame('search $q', $node->path);
+	}
+
 	public function testHtmlAfterBlankLineInViewGivesDiagnostic():void {
 		$src = "view main:\n<h1>Top</h1>\n\n<p>leaked</p>\n";
 		try {

@@ -1,25 +1,25 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  POST, PUT, PATCH and file-upload data object
+@ summary:  POST, PUT, PATCH, QUERY and file-upload data object
 @ package:  web
 @ frontend: false
 @ backend:  true
 @ requires: @file
-@ tags:     payload request upload post put patch
+@ tags:     payload request upload post put patch query
 
 $contentType = %req->contentType
-if (in_array(phlo('req')->method, ['POST', 'PUT', 'PATCH']) && str_starts_with($contentType, 'application/json')){
+if (in_array(phlo('req')->method, ['POST', 'PUT', 'PATCH', 'QUERY']) && str_starts_with($contentType, 'application/json')){
 	$data = json_read('php://input')
 	return $this->objData = is_object($data) ? get_object_vars($data) : (is_array($data) ? $data : [])
 }
 if ($_POST) $this->objImport(...$_POST)
-elseif (in_array(phlo('req')->method, ['PUT', 'PATCH']) && str_starts_with($contentType, 'application/x-www-form-urlencoded')){
+elseif (in_array(phlo('req')->method, ['PUT', 'PATCH', 'QUERY']) && str_starts_with($contentType, 'application/x-www-form-urlencoded')){
 	$body = file_get_contents('php://input')
 	$data = []
 	parse_str($body, $data)
 	if ($data) $this->objImport(...$data)
 }
-elseif (in_array(phlo('req')->method, ['PUT', 'PATCH']) && str_starts_with($contentType, 'multipart/form-data')){
+elseif (in_array(phlo('req')->method, ['PUT', 'PATCH', 'QUERY']) && str_starts_with($contentType, 'multipart/form-data')){
 	$match = regex('/boundary="?([^";]+)"?/', $contentType)
 	if (!$match) return
 	$boundary = '--'.$match[1]

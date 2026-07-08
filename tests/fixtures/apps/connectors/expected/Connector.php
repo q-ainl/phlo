@@ -90,7 +90,7 @@ class Connector extends obj {
 		return obj(ok: true, status: $status, data: $data ?? $raw);
 	}
 	public static function retryable($method, int $status):bool {
-		return in_array($method, ['GET', 'HEAD']) && ($status === 429 || $status >= 500);
+		return in_array($method, ['GET', 'HEAD', 'QUERY']) && ($status === 429 || $status >= 500);
 	}
 	public static function backoff(int $attempt, $response):int {
 		$after = (int)($response->headers['retry-after'] ?? 0);
@@ -107,6 +107,7 @@ class Connector extends obj {
 				elseif ($method === 'DELETE') $raw = HTTP($req['url'], $req['headers'], DELETE: true, cookies: false, timeout: $this->timeout, response: $response);
 				elseif ($method === 'PUT') $raw = HTTP($req['url'], $req['headers'], PUT: $body ?? void, cookies: false, timeout: $this->timeout, response: $response);
 				elseif ($method === 'PATCH') $raw = HTTP($req['url'], $req['headers'], PATCH: $body ?? void, cookies: false, timeout: $this->timeout, response: $response);
+				elseif ($method === 'QUERY') $raw = HTTP($req['url'], $req['headers'], QUERY: $body ?? void, cookies: false, timeout: $this->timeout, response: $response);
 				else $raw = HTTP($req['url'], $req['headers'], POST: $body ?? void, cookies: false, timeout: $this->timeout, response: $response);
 			}
 			catch (\Throwable $e){
@@ -136,6 +137,9 @@ class Connector extends obj {
 	}
 	protected function patch(string $url, mixed $json = null, array $headers = []):obj {
 		return $this->request('PATCH', $url, headers: $headers, json: $json);
+	}
+	protected function query(string $url, mixed $json = null, array $headers = []):obj {
+		return $this->request('QUERY', $url, headers: $headers, json: $json);
 	}
 	protected function del(string $url, array $headers = []):obj {
 		return $this->request('DELETE', $url, headers: $headers);

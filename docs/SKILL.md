@@ -425,7 +425,9 @@ route [async|both] VERB segment1 segment2 ... => target
 route [async|both] VERB segment1 segment2 ... { ... }
 ```
 
-Path segments use **spaces**, not slashes. Route modifier:
+Path segments use **spaces**, not slashes. `VERB` is one of `GET`, `POST`,
+`PUT`, `PATCH`, `DELETE` or `QUERY` (`QUERY` is safe and idempotent like `GET`
+but carries a request body, read through `%payload`). Route modifier:
 - (none) - sync requests only
 - `async` - async (Phlo frontend) requests only
 - `both` - both sync and async

@@ -33,6 +33,12 @@ final class RouteTest extends TestCase {
 		$this->assertInstanceOf(obj::class, route('GET', 'home'));
 	}
 
+	public function testQueryMethodMatches():void {
+		$this->request('QUERY', '/search');
+		$this->assertInstanceOf(obj::class, route('QUERY', 'search'));
+		$this->assertFalse(route('GET', 'search'));
+	}
+
 	public function testVariableBinding():void {
 		$this->request('GET', '/profile/42');
 		$result = route('GET', 'profile $id');

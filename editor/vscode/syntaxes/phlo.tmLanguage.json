@@ -191,7 +191,7 @@
             ]
         },
         "route": {
-            "match": "^\\s*(route)\\s+(?:(sync|async|both)\\s+)?(GET|POST|PUT|PATCH|DELETE)\\b([^@{=>]*)(@[A-Za-z,]+)?\\s*(\\{|=>)?(.*)$",
+            "match": "^\\s*(route)\\s+(?:(sync|async|both)\\s+)?(GET|POST|PUT|PATCH|DELETE|QUERY)\\b([^@{=>]*)(@[A-Za-z,]+)?\\s*(\\{|=>)?(.*)$",
             "captures": {
                 "1": { "name": "storage.type.route.phlo" },
                 "2": { "name": "storage.modifier.route-mode.phlo" },

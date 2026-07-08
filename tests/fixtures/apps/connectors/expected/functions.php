@@ -1,11 +1,12 @@
 <?php
 
-function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, bool $DELETE = false, string|bool|null $agent = null, string|bool $cookies = false, int $timeout = 15, &$response = null){
+function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, $QUERY = null, bool $DELETE = false, string|bool|null $agent = null, string|bool $cookies = false, int $timeout = 15, &$response = null){
 	$curl = curl_init($url);
-	if ($POST !== null || $PUT !== null || $PATCH !== null){
+	if ($POST !== null || $PUT !== null || $PATCH !== null || $QUERY !== null){
 		if (!is_null($POST)) [$method = 'POST', $content = $POST];
 		elseif (!is_null($PUT)) [$method = 'PUT', $content = $PUT];
 		elseif (!is_null($PATCH)) [$method = 'PATCH', $content = $PATCH];
+		elseif (!is_null($QUERY)) [$method = 'QUERY', $content = $QUERY];
 		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
 		if ($JSON) [!is_string($content) && $content = json_encode($content), array_push($headers, 'Content-Type: application/json', 'Content-Length: '.strlen($content))];
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $content);
