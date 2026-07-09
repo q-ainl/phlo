@@ -1,0 +1,105 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Record the screen, a camera/mic or a canvas via MediaRecorder -> Blob. Optionally transcodes to MP4 with the DOM/ffmpeg resource when it is loaded. Exposes the ready singleton `recorder` (and class `Recorder`).
+@ package:  DOM
+@ frontend: true
+@ backend:  false
+@ requires: DOM/ffmpeg?
+@ tags:     video recorder mediarecorder screen capture getdisplaymedia webcam canvas
+
+<script>
+// Capture a MediaStream (screen / camera / mic / canvas) to a Blob. Needs a
+// secure context and a user gesture for getDisplayMedia/getUserMedia. Only
+// Recorder + recorder enter the bundle scope.
+class Recorder {
+
+	constructor(opts = {}){
+		this.mimeType = opts.mimeType || ''
+		this.log = opts.log || (() => {})
+	}
+
+	supported(){
+		return typeof MediaRecorder !== 'undefined' && !!(navigator.mediaDevices)
+	}
+
+	pickMime(prefs){
+		if (typeof MediaRecorder === 'undefined') return ''
+		for (const m of prefs) if (m && MediaRecorder.isTypeSupported(m)) return m
+		return ''
+	}
+
+	// acquire a MediaStream from opts: {stream} | {canvas,fps} | {screen} | camera/mic.
+	// audio:true captures system/tab audio for screen or the mic for camera; mic:true
+	// additionally mixes the microphone into a screen/canvas capture.
+	async stream(opts = {}){
+		if (opts.stream) return opts.stream
+		if (opts.canvas){
+			const s = opts.canvas.captureStream(opts.fps || 30)
+			if (opts.mic){
+				const m = await navigator.mediaDevices.getUserMedia({audio: true})
+				m.getAudioTracks().forEach(t => s.addTrack(t))
+			}
+			return s
+		}
+		if (opts.screen){
+			const s = await navigator.mediaDevices.getDisplayMedia({video: opts.video == null ? true : opts.video, audio: opts.audio == null ? false : opts.audio})
+			if (opts.mic){
+				const m = await navigator.mediaDevices.getUserMedia({audio: true})
+				m.getAudioTracks().forEach(t => s.addTrack(t))
+			}
+			return s
+		}
+		return navigator.mediaDevices.getUserMedia({video: opts.video == null ? true : opts.video, audio: opts.audio == null ? true : opts.audio})
+	}
+
+	// start recording; returns a controller. Awaiting controller.stop() resolves to
+	// the recorded Blob (webm by default). stop({mp4:true}) transcodes to mp4 when the
+	// DOM/ffmpeg resource is loaded, otherwise returns the original blob.
+	async record(opts = {}){
+		if (!this.supported()) throw new Error('MediaRecorder not supported here')
+		const stream = await this.stream(opts)
+		const ownTracks = !opts.stream
+		const mime = opts.mimeType || this.mimeType || this.pickMime(['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'])
+		const recOpts = {}
+		if (mime) recOpts.mimeType = mime
+		if (opts.videoBitsPerSecond) recOpts.videoBitsPerSecond = opts.videoBitsPerSecond
+		if (opts.audioBitsPerSecond) recOpts.audioBitsPerSecond = opts.audioBitsPerSecond
+		const rec = new MediaRecorder(stream, recOpts)
+		const chunks = []
+		let stopResolve, stopReject
+		const stopped = new Promise((res, rej) => { stopResolve = res; stopReject = rej })
+		rec.ondataavailable = e => {
+			if (e.data && e.data.size){
+				chunks.push(e.data)
+				if (opts.onData) opts.onData(e.data)
+			}
+		}
+		rec.onstop = () => {
+			if (ownTracks) stream.getTracks().forEach(t => t.stop())
+			stopResolve(new Blob(chunks, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]}))
+		}
+		rec.onerror = e => stopReject((e && e.error) || new Error('recording error'))
+		// end the recording when the user stops sharing the screen/camera
+		stream.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop() }, {once: true}))
+		rec.start(opts.timeslice || undefined)
+		this.log('[recorder] started ' + (rec.mimeType || mime || 'default'))
+		return {
+			stream,
+			recorder: rec,
+			get state(){ return rec.state },
+			pause(){ if (rec.state === 'recording') rec.pause() },
+			resume(){ if (rec.state === 'paused') rec.resume() },
+			async stop(o = {}){
+				if (rec.state !== 'inactive') rec.stop()
+				const blob = await stopped
+				if (o.mp4 && typeof ffmpeg !== 'undefined' && blob.type.indexOf('mp4') === -1){
+					return ffmpeg.transcode(blob, {to: 'mp4', crf: o.crf, args: o.args, onProgress: o.onProgress, log: o.log})
+				}
+				return blob
+			},
+		}
+	}
+}
+
+const recorder = new Recorder()
+</script>
