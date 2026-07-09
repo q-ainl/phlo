@@ -32,7 +32,10 @@ class Ffmpeg {
 			const nonce = document.querySelector('meta[name="nonce"]')
 			if (nonce) el.nonce = nonce.content
 			el.onload = () => resolve()
-			el.onerror = () => reject(new Error('ffmpeg: failed to load ' + src))
+			el.onerror = () => {
+				delete this.scripts[src]
+				reject(new Error('ffmpeg: failed to load ' + src))
+			}
 			document.head.appendChild(el)
 		})
 		return this.scripts[src]
@@ -112,7 +115,7 @@ class Ffmpeg {
 	async readRange(src, offset, length){
 		if ((typeof File !== 'undefined') && src instanceof File) return new Uint8Array(await src.slice(offset, offset + length).arrayBuffer())
 		const res = await fetch(src, {headers: {Range: 'bytes=' + offset + '-' + (offset + length - 1)}})
-		if (!res.ok) throw new Error('range request failed: ' + res.status)
+		if (res.status !== 206) throw new Error('no range support: ' + res.status)
 		return new Uint8Array(await res.arrayBuffer())
 	}
 
@@ -319,7 +322,7 @@ class Ffmpeg {
 		log = log || this.log
 		await this.loadScript(this.corePath + 'ffmpeg.js')
 		const mode = (window.crossOriginIsolated && !window.ffmpegForceST) ? 'mt' : 'st'
-		if (this.ffmpeg && this.mode === mode) return this.ffmpeg
+		if (this.ffmpeg && this.ffmpeg.loaded && this.mode === mode) return this.ffmpeg
 		this.drop()
 		log('[ffmpeg] loading core: ' + mode)
 		this.ffmpeg = new FFmpegWASM.FFmpeg()
@@ -502,8 +505,9 @@ class Ffmpeg {
 	}
 
 	async muxAudio(video, audio, onProgress, log){
+		log = log || this.log
 		onProgress('Muxing audio...', 92)
-		const ff = await this.load()
+		const ff = await this.load(log)
 		await ff.writeFile('wcv.mp4', new Uint8Array(await video.arrayBuffer()))
 		let prepared
 		try {
@@ -516,20 +520,29 @@ class Ffmpeg {
 		}
 		const args = ['-i', 'wcv.mp4'].concat(prepared.args)
 		const ins = prepared.inputs
-		if (ins.length === 1 && ins[0].volume === 1) args.push('-map', '0:v', '-map', '1:a', '-c', 'copy', '-shortest', 'out.mp4')
-		else if (ins.length === 1) args.push('-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-filter:a', 'volume=' + ins[0].volume, '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
+		if (ins.length === 1 && ins[0].volume === 1) args.push('-map', '0:v', '-map', '1:a?', '-c', 'copy', '-shortest', 'out.mp4')
+		else if (ins.length === 1) args.push('-map', '0:v', '-map', '1:a?', '-c:v', 'copy', '-filter:a', 'volume=' + ins[0].volume, '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		else {
 			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]volume=' + a.volume + '[a' + i + ']')
 			const mix = ins.map((a, i) => '[a' + i + ']').join('') + 'amix=inputs=' + ins.length + ':duration=longest:normalize=0[aout]'
 			args.push('-filter_complex', parts.join(';') + ';' + mix, '-map', '0:v', '-map', '[aout]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		}
-		await this.exec(args)
-		onProgress('Reading result...', 98)
-		const out = await ff.readFile('out.mp4')
-		await ff.deleteFile('wcv.mp4').catch(() => {})
-		await ff.deleteFile('out.mp4').catch(() => {})
-		await prepared.cleanup()
-		return new Blob([out.buffer], {type: 'video/mp4'})
+		try {
+			await this.exec(args, log)
+			onProgress('Reading result...', 98)
+			const out = await ff.readFile('out.mp4')
+			return new Blob([out.buffer], {type: 'video/mp4'})
+		}
+		catch (err){
+			log('[ffmpeg] audio mux failed, keeping silent video: ' + (err && err.message ? err.message : err))
+			video.silent = true
+			return video
+		}
+		finally {
+			await ff.deleteFile('wcv.mp4').catch(() => {})
+			await ff.deleteFile('out.mp4').catch(() => {})
+			await prepared.cleanup()
+		}
 	}
 
 	async prepareAudio(ff, audio){
@@ -626,7 +639,7 @@ class Ffmpeg {
 		const ins = prepared.inputs
 		if (!ins.length) args.push('-map', '0:v', '-an', '-c:v', 'copy', 'out.mp4')
 		else if (ins.length === 1){
-			args.push('-map', '0:v', '-map', '1:a', '-c:v', 'copy')
+			args.push('-map', '0:v', '-map', '1:a?', '-c:v', 'copy')
 			if (ins[0].volume !== 1) args.push('-filter:a', 'volume=' + ins[0].volume)
 			args.push('-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		}
