@@ -14,6 +14,7 @@ class Ffmpeg {
 	constructor(opts = {}){
 		this.corePath = opts.corePath || '/ffmpeg/'
 		this.mp4boxURL = opts.mp4boxURL || '/mp4box.js'
+		this.muxerURL = opts.muxerURL || '/mp4-muxer.js'
 		this.log = opts.log || (() => {})
 		this.ffmpeg = null
 		this.mode = null
@@ -40,40 +41,57 @@ class Ffmpeg {
 	// -----------------------------------------------------------------------
 	// Frame source: WebCodecs (MP4Box demux + VideoDecoder) with a seek fallback.
 	// src is a File or a URL string; getFrame(t) returns a drawable (VideoFrame or
-	// <video>). Falls back to seek for non-MP4, huge files or unsupported codecs.
+	// <video>). Falls back to seek for non-MP4 containers or unsupported codecs.
 	// The demux is cached in one slot so a multithreaded->single-threaded retry
-	// does not re-download or re-demux the same source.
+	// does not re-read or re-demux the same source.
 	// -----------------------------------------------------------------------
 	async frameSource(src, opts = {}){
 		const from = opts.from || 0
 		const to = opts.to || 0
 		const mp4boxURL = opts.mp4boxURL || this.mp4boxURL
-		const maxBytes = opts.maxBytes || 1200 * 1048576
 		const log = opts.log || this.log
 		const isFile = (typeof File !== 'undefined') && src instanceof File
 		// only materialise an object URL when the seek fallback actually needs one
 		const seek = () => this.seekSource(isFile ? URL.createObjectURL(src) : src, isFile)
-		if (!('VideoDecoder' in window) || (isFile && src.size > maxBytes)) return seek()
+		if (!('VideoDecoder' in window)) return seek()
 		let wc = null
 		try {
 			await this.loadScript(mp4boxURL)
-			const key = typeof src === 'string' ? src : null
+			const size = await this.sourceSize(src)
+			const key = isFile ? src.name + ':' + src.size + ':' + src.lastModified : src
 			let demuxed
-			if (key && this.demuxKey === key) demuxed = this.demuxVal
+			if (this.demuxKey === key) demuxed = this.demuxVal
 			else {
-				const buffer = isFile ? await src.arrayBuffer() : await fetch(src).then(r => r.arrayBuffer())
-				demuxed = await this.demux(buffer)
-				if (key){ this.demuxKey = key; this.demuxVal = demuxed }
+				demuxed = await this.demux(src, size)
+				this.demuxKey = key
+				this.demuxVal = demuxed
 			}
 			const support = await VideoDecoder.isConfigSupported(demuxed.config)
 			if (!support.supported){
 				log('[ffmpeg] codec ' + demuxed.config.codec + ' not decodable, using seek')
 				return seek()
 			}
-			log('[ffmpeg] WebCodecs ' + demuxed.config.codec + ', ' + demuxed.chunks.length + ' frames')
-			wc = this.webCodecsSource(demuxed.config, demuxed.chunks.slice(), from, to)
+			log('[ffmpeg] WebCodecs ' + demuxed.config.codec + ', ' + demuxed.samples.length + ' frames, ' + Math.round(size / 1048576) + ' MiB streamed')
 			// probe one frame so a decoder that configures but never decodes falls back to seek
-			await wc.getFrame(from)
+			const build = async acceleration => {
+				const config = acceleration ? Object.assign({}, demuxed.config, {hardwareAcceleration: acceleration}) : demuxed.config
+				const source = this.webCodecsSource(src, size, config, demuxed.samples, from, to)
+				try {
+					if (!await source.getFrame(from)) throw new Error('decoder produced no frames')
+				}
+				catch (err){
+					source.close()
+					throw err
+				}
+				return source
+			}
+			try {
+				wc = await build()
+			}
+			catch (err){
+				log('[ffmpeg] hardware decode failed (' + (err && err.message ? err.message : err) + '), retrying software')
+				wc = await build('prefer-software')
+			}
 			return wc
 		}
 		catch (err){
@@ -83,71 +101,81 @@ class Ffmpeg {
 		}
 	}
 
-	demux(arrayBuffer){
-		return new Promise((resolve, reject) => {
-			const mp4 = MP4Box.createFile()
-			const chunks = []
-			let config = null
-			let done = false
-			mp4.onError = e => {
-				if (done) return
-				done = true
-				reject(new Error('demux error: ' + e))
-			}
-			mp4.onReady = info => {
-				const track = info.videoTracks && info.videoTracks[0]
-				if (!track){
-					done = true
-					return reject(new Error('no video track'))
-				}
-				const trak = mp4.getTrackById(track.id)
-				let description = null
-				for (const entry of trak.mdia.minf.stbl.stsd.entries){
-					const box = entry.avcC || entry.hvcC || entry.vpcC || entry.av1C
-					if (box){
-						const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN)
-						box.write(stream)
-						description = new Uint8Array(stream.buffer, 8)
-						break
-					}
-				}
-				config = {codec: track.codec, codedWidth: track.video.width, codedHeight: track.video.height, description}
-				mp4.setExtractionOptions(track.id, null, {nbSamples: Infinity})
-				mp4.start()
-			}
-			mp4.onSamples = (id, user, samples) => {
-				for (const s of samples) chunks.push(new EncodedVideoChunk({
-					type: s.is_sync ? 'key' : 'delta',
-					timestamp: Math.round(s.cts * 1e6 / s.timescale),
-					duration: Math.round((s.duration || 0) * 1e6 / s.timescale),
-					data: s.data,
-				}))
-			}
-			arrayBuffer.fileStart = 0
-			mp4.appendBuffer(arrayBuffer)
-			mp4.flush()
-			setTimeout(() => {
-				if (done) return
-				done = true
-				if (config && chunks.length) resolve({config, chunks})
-				else reject(new Error('demux produced no samples'))
-			}, 0)
-		})
+	async sourceSize(src){
+		if ((typeof File !== 'undefined') && src instanceof File) return src.size
+		const res = await fetch(src, {method: 'HEAD'})
+		const length = res.headers.get('content-length')
+		if (!length) throw new Error('source size unknown')
+		return parseInt(length, 10)
 	}
 
-	webCodecsSource(config, chunks, startT, endT){
+	async readRange(src, offset, length){
+		if ((typeof File !== 'undefined') && src instanceof File) return new Uint8Array(await src.slice(offset, offset + length).arrayBuffer())
+		const res = await fetch(src, {headers: {Range: 'bytes=' + offset + '-' + (offset + length - 1)}})
+		if (!res.ok) throw new Error('range request failed: ' + res.status)
+		return new Uint8Array(await res.arrayBuffer())
+	}
+
+	async demux(src, size){
+		const mp4 = MP4Box.createFile()
+		let info = null
+		let error = null
+		mp4.onReady = i => info = i
+		mp4.onError = e => error = e
+		const step = 1 << 20
+		let next = 0
+		while (!info && !error && next < size){
+			const bytes = await this.readRange(src, next, Math.min(step, size - next))
+			if (!bytes.length) break
+			const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)
+			buffer.fileStart = next
+			const parsed = mp4.appendBuffer(buffer)
+			if (parsed == null || parsed <= next) break
+			next = parsed
+		}
+		if (error) throw new Error('demux error: ' + error)
+		const track = info && info.videoTracks && info.videoTracks[0]
+		if (!track) throw new Error('no video track')
+		const trak = mp4.getTrackById(track.id)
+		let description = null
+		for (const entry of trak.mdia.minf.stbl.stsd.entries){
+			const box = entry.avcC || entry.hvcC || entry.vpcC || entry.av1C
+			if (box){
+				const stream = new DataStream(undefined, 0, DataStream.BIG_ENDIAN)
+				box.write(stream)
+				description = new Uint8Array(stream.buffer, 8)
+				break
+			}
+		}
+		const samples = (trak.samples || []).map(s => ({offset: s.offset, size: s.size, cts: s.cts, duration: s.duration, timescale: s.timescale, key: !!s.is_sync}))
+		if (!samples.length) throw new Error('demux produced no samples')
+		return {config: {codec: track.codec, codedWidth: track.video.width, codedHeight: track.video.height, description}, samples}
+	}
+
+	webCodecsSource(src, size, config, samples, startT, endT){
 		const decoded = []
 		let error = null
 		let waiter = null
+		let target = -Infinity
 		const signal = () => {
 			if (!waiter) return
 			const w = waiter
 			waiter = null
 			w()
 		}
+		const prune = () => {
+			let keep = 0
+			for (let i = 0; i < decoded.length; i++){
+				if (decoded[i].timestamp <= target + 1000) keep = i
+				else break
+			}
+			for (let i = 0; i < keep; i++) decoded[i].close()
+			if (keep) decoded.splice(0, keep)
+		}
 		const decoder = new VideoDecoder({
 			output: f => {
 				decoded.push(f)
+				prune()
 				signal()
 			},
 			error: e => {
@@ -157,30 +185,45 @@ class Ffmpeg {
 		})
 		decoder.configure(config)
 
-		const startMicros = Math.round((startT || 0) * 1e6)
-		const endMicros = Math.round((endT || 0) * 1e6)
+		const seconds = s => s.cts / s.timescale
 		let fed = 0
-		let last = chunks.length - 1
-		for (let i = 0; i < chunks.length; i++) if (chunks[i].type === 'key' && chunks[i].timestamp <= startMicros) fed = i
-		if (endMicros > startMicros){
-			for (let i = chunks.length - 1; i >= fed; i--) if (chunks[i].timestamp <= endMicros){ last = Math.min(chunks.length - 1, i + 2); break }
+		let last = samples.length - 1
+		for (let i = 0; i < samples.length; i++) if (samples[i].key && seconds(samples[i]) <= startT) fed = i
+		if (endT > startT){
+			for (let i = samples.length - 1; i >= fed; i--) if (seconds(samples[i]) <= endT){ last = Math.min(samples.length - 1, i + 2); break }
 		}
-		for (let i = 0; i < fed; i++) chunks[i] = null
-		for (let i = last + 1; i < chunks.length; i++) chunks[i] = null
+
+		const blockSize = 8 << 20
+		const self = this
+		let block = null
+		const ensure = async (offset, need) => {
+			if (block && offset >= block.start && offset + need <= block.end) return
+			const end = Math.min(size, Math.max(offset + need, offset + blockSize))
+			block = {start: offset, end, bytes: await self.readRange(src, offset, end - offset)}
+		}
+		const nextChunk = async () => {
+			const s = samples[fed++]
+			await ensure(s.offset, s.size)
+			const at = s.offset - block.start
+			return new EncodedVideoChunk({
+				type: s.key ? 'key' : 'delta',
+				timestamp: Math.round(s.cts * 1e6 / s.timescale),
+				duration: Math.round((s.duration || 0) * 1e6 / s.timescale),
+				data: block.bytes.subarray(at, at + s.size),
+			})
+		}
 		let flushed = false
 
 		const pump = async tMicros => {
+			target = tMicros
 			while (!error){
+				prune()
 				if (decoded.length && decoded[decoded.length - 1].timestamp > tMicros) return
 				if (fed <= last){
-					while (fed <= last && decoder.decodeQueueSize < 16){
-						decoder.decode(chunks[fed])
-						chunks[fed] = null
-						fed++
-					}
+					while (fed <= last && decoder.decodeQueueSize < 4 && decoded.length < 4) decoder.decode(await nextChunk())
 					await new Promise(r => {
 						waiter = r
-						setTimeout(signal, 200)
+						setTimeout(signal, 100)
 					})
 				}
 				else {
@@ -210,6 +253,7 @@ class Ffmpeg {
 				return decoded[0] || null
 			},
 			close(){
+				block = null
 				for (const f of decoded) f.close()
 				decoded.length = 0
 				try {
@@ -369,11 +413,123 @@ class Ffmpeg {
 		return this.run({input, inputName: inName, output: outName, args, type: opts.type || 'video/' + to, log: opts.log, onProgress: opts.onProgress})
 	}
 
-	// encode a drawn canvas timeline to an MP4 Blob (retries single-threaded on stall)
+	// encode a drawn canvas timeline to an MP4 Blob (WebCodecs encoder, ffmpeg fallback)
 	async encode(opts){
 		this.demuxKey = null
 		this.demuxVal = null
-		return this.withFallback(() => this.pass(opts), opts.onProgress, opts.log || this.log)
+		const log = opts.log || this.log
+		if ('VideoEncoder' in window && !window.ffmpegForceEncoder){
+			try {
+				return await this.encodeWebCodecs(opts)
+			}
+			catch (err){
+				log('[ffmpeg] WebCodecs encode failed (' + (err && err.message ? err.message : err) + '), using ffmpeg')
+			}
+		}
+		return this.withFallback(() => this.pass(opts), opts.onProgress, log)
+	}
+
+	async pickVideoCodec(width, height, fps, bitrate){
+		for (const codec of ['avc1.640028', 'avc1.4d0028', 'avc1.42001f']){
+			try {
+				const support = await VideoEncoder.isConfigSupported({codec, width, height, bitrate, framerate: fps})
+				if (support.supported) return codec
+			}
+			catch (e){}
+		}
+		return null
+	}
+
+	async encodeWebCodecs(opts){
+		const log = opts.log || this.log
+		const fps = opts.fps
+		const from = opts.from || 0
+		const to = opts.to
+		const onProgress = opts.onProgress || (() => {})
+		const audio = opts.audio || []
+		const W = Math.round(opts.width) - (Math.round(opts.width) % 2)
+		const H = Math.round(opts.height) - (Math.round(opts.height) % 2)
+		const total = Math.max(1, Math.round((to - from) * fps))
+		const bitrate = opts.bitrate || Math.round(W * H * fps * 0.15)
+
+		await this.loadScript(this.muxerURL)
+		const codec = await this.pickVideoCodec(W, H, fps, bitrate)
+		if (!codec) throw new Error('no supported h264 encoder configuration')
+		log('[ffmpeg] WebCodecs encode ' + W + 'x' + H + ' @' + fps + 'fps, ' + total + ' frames, ' + codec + ', ' + Math.round(bitrate / 1000) + ' kbps')
+
+		const target = new Mp4Muxer.ArrayBufferTarget()
+		const muxer = new Mp4Muxer.Muxer({target, video: {codec: 'avc', width: W, height: H}, fastStart: 'in-memory'})
+		let error = null
+		const encoder = new VideoEncoder({
+			output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+			error: e => error = e,
+		})
+		encoder.configure({codec, width: W, height: H, bitrate, framerate: fps, avc: {format: 'avc'}})
+
+		const canvas = opts.canvas || document.createElement('canvas')
+		canvas.width = W
+		canvas.height = H
+		const ctx = canvas.getContext('2d', {willReadFrequently: false})
+		const keyEvery = Math.max(1, Math.round(fps * 2))
+
+		let video
+		if (opts.beforePass) await opts.beforePass()
+		try {
+			for (let i = 0; i < total; i++){
+				if (error) throw error
+				await opts.drawFrame(ctx, from + i / fps, W, H)
+				const frame = new VideoFrame(canvas, {timestamp: Math.round(i * 1e6 / fps), duration: Math.round(1e6 / fps)})
+				encoder.encode(frame, {keyFrame: i % keyEvery === 0})
+				frame.close()
+				while (encoder.encodeQueueSize > 8 && !error) await new Promise(r => setTimeout(r, 0))
+				onProgress('Rendering frame ' + (i + 1) + '/' + total, 5 + 85 * (i + 1) / total)
+			}
+			if (error) throw error
+			await encoder.flush()
+			muxer.finalize()
+			video = new Blob([target.buffer], {type: 'video/mp4'})
+		}
+		finally {
+			try {
+				encoder.close()
+			}
+			catch (e){}
+			if (opts.afterPass) await opts.afterPass()
+		}
+		log('[ffmpeg] WebCodecs video ' + video.size + ' bytes')
+		if (!audio.length) return video
+		return this.muxAudio(video, audio, onProgress, log)
+	}
+
+	async muxAudio(video, audio, onProgress, log){
+		onProgress('Muxing audio...', 92)
+		const ff = await this.load()
+		await ff.writeFile('wcv.mp4', new Uint8Array(await video.arrayBuffer()))
+		let prepared
+		try {
+			prepared = await this.prepareAudio(ff, audio)
+		}
+		catch (err){
+			log('[ffmpeg] audio unavailable, keeping silent video: ' + (err && err.message ? err.message : err))
+			await ff.deleteFile('wcv.mp4').catch(() => {})
+			return video
+		}
+		const args = ['-i', 'wcv.mp4'].concat(prepared.args)
+		const ins = prepared.inputs
+		if (ins.length === 1 && ins[0].volume === 1) args.push('-map', '0:v', '-map', '1:a', '-c', 'copy', '-shortest', 'out.mp4')
+		else if (ins.length === 1) args.push('-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-filter:a', 'volume=' + ins[0].volume, '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
+		else {
+			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]volume=' + a.volume + '[a' + i + ']')
+			const mix = ins.map((a, i) => '[a' + i + ']').join('') + 'amix=inputs=' + ins.length + ':duration=longest:normalize=0[aout]'
+			args.push('-filter_complex', parts.join(';') + ';' + mix, '-map', '0:v', '-map', '[aout]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
+		}
+		await this.exec(args)
+		onProgress('Reading result...', 98)
+		const out = await ff.readFile('out.mp4')
+		await ff.deleteFile('wcv.mp4').catch(() => {})
+		await ff.deleteFile('out.mp4').catch(() => {})
+		await prepared.cleanup()
+		return new Blob([out.buffer], {type: 'video/mp4'})
 	}
 
 	async prepareAudio(ff, audio){
@@ -386,6 +542,7 @@ class Ffmpeg {
 			let path
 			if (a.file){
 				const dir = '/ffaud' + (mountIdx++)
+				await ff.createDir(dir).catch(() => {})
 				await ff.mount(FFmpegWASM.FFFSType.WORKERFS, {files: [a.file]}, dir)
 				path = dir + '/' + a.file.name
 				cleanups.push(() => ff.unmount(dir).catch(() => {}))
