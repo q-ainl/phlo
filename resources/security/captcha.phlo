@@ -244,6 +244,6 @@ onExist('#captcha', () => captcha.layout())
 on('load', '#captcha .bg', () => captcha.layout())
 on('resize', window, () => captcha.layout())
 on('mousedown touchstart', '#captcha .thumb', (el, e) => captcha.down(e))
-on('mousemove touchmove', window, (el, e) => captcha.move(e))
+on('mousemove touchmove', window, (el, e) => last(captcha.move(e), false))
 on('mouseup touchend', window, (el, e) => captcha.up())
 </script>
