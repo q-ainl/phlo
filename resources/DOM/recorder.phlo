@@ -28,6 +28,23 @@ class Recorder {
 		return ''
 	}
 
+	// mix multiple audio sources into one track: MediaRecorder records only the
+	// first audio track of a stream, so tab/system audio + microphone must merge
+	mixed(video, audioStreams){
+		const ctx = new AudioContext()
+		const dest = ctx.createMediaStreamDestination()
+		const sources = []
+		for (const s of audioStreams){
+			if (!s.getAudioTracks().length) continue
+			ctx.createMediaStreamSource(s).connect(dest)
+			sources.push(...s.getAudioTracks())
+		}
+		const out = new MediaStream([...video.getVideoTracks(), ...dest.stream.getAudioTracks()])
+		out.phloSources = sources
+		out.phloCtx = ctx
+		return out
+	}
+
 	// acquire a MediaStream from opts: {stream} | {canvas,fps} | {screen} | camera/mic.
 	// audio:true captures system/tab audio for screen or the mic for camera; mic:true
 	// additionally mixes the microphone into a screen/canvas capture.
@@ -45,6 +62,7 @@ class Recorder {
 			const s = await navigator.mediaDevices.getDisplayMedia({video: opts.video == null ? true : opts.video, audio: opts.audio == null ? false : opts.audio})
 			if (opts.mic){
 				const m = await navigator.mediaDevices.getUserMedia({audio: true})
+				if (s.getAudioTracks().length) return this.mixed(s, [s, m])
 				m.getAudioTracks().forEach(t => s.addTrack(t))
 			}
 			return s
@@ -75,7 +93,11 @@ class Recorder {
 			}
 		}
 		rec.onstop = () => {
-			if (ownTracks) stream.getTracks().forEach(t => t.stop())
+			if (ownTracks){
+				for (const t of stream.getTracks()) t.stop()
+				for (const t of stream.phloSources || []) t.stop()
+				if (stream.phloCtx) stream.phloCtx.close().catch(() => {})
+			}
 			stopResolve(new Blob(chunks, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]}))
 		}
 		rec.onerror = e => stopReject((e && e.error) || new Error('recording error'))
