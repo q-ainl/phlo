@@ -1,0 +1,1173 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Audio-clock presentation player for the DOM: timed image/video layers, transitions, subtitles and language alternatives from a presentation.json payload. Exposes the class `PresentationPlayer`; each transition carries its own pp-* CSS animation and the matching canvas curve for deterministic export rendering. boot() wires #pp-data + #pp-root when present.
+@ package:  DOM
+@ frontend: true
+@ backend:  false
+@ tags:     presentation player timeline audio video subtitles transitions canvas render
+
+<script>
+class PresentationPlayer {
+
+	static bezier(x1, y1, x2, y2){
+		const cx = 3 * x1
+		const bx = 3 * (x2 - x1) - cx
+		const ax = 1 - cx - bx
+		const cy = 3 * y1
+		const by = 3 * (y2 - y1) - cy
+		const ay = 1 - cy - by
+		const sampleX = t => ((ax * t + bx) * t + cx) * t
+		const sampleY = t => ((ay * t + by) * t + cy) * t
+		return x => {
+			if (x <= 0) return 0
+			if (x >= 1) return 1
+			let t = x
+			for (let i = 0; i < 8; i++){
+				const err = sampleX(t) - x
+				if (Math.abs(err) < 0.001) break
+				const d = (3 * ax * t + 2 * bx) * t + cx
+				if (Math.abs(d) < 0.000001) break
+				t -= err / d
+			}
+			return sampleY(Math.min(1, Math.max(0, t)))
+		}
+	}
+
+	static eases = {
+		linear: p => p,
+		ease: this.bezier(0.25, 0.1, 0.25, 1),
+		easeIn: this.bezier(0.42, 0, 1, 1),
+		easeOut: this.bezier(0, 0, 0.58, 1),
+		easeInOut: this.bezier(0.42, 0, 0.58, 1),
+		zoomB: this.bezier(0.25, 1, 0.5, 1),
+		tvB: this.bezier(1, 0, 0, 1),
+		cardsB: this.bezier(0.2, 0, 0.2, 1),
+	}
+
+	static clipRombus(q){
+		return (ctx, x, y, w, h) => {
+			const cx = x + w / 2
+			const cy = y + h / 2
+			const pts = [[0.5, -0.5], [1.5, 0.5], [0.5, 1.5], [-0.5, 0.5]]
+			ctx.beginPath()
+			pts.forEach(([px, py], i) => {
+				const fx = x + px * w
+				const fy = y + py * h
+				const ix = cx + (fx - cx) * q
+				const iy = cy + (fy - cy) * q
+				i ? ctx.lineTo(ix, iy) : ctx.moveTo(ix, iy)
+			})
+			ctx.closePath()
+		}
+	}
+
+	static clipCircle(r){
+		return (ctx, x, y, w, h) => {
+			ctx.beginPath()
+			ctx.arc(x + w / 2, y + h / 2, Math.max(0, r * Math.hypot(w, h) / Math.SQRT2), 0, Math.PI * 2)
+		}
+	}
+
+	static clipInset(l, r){
+		return (ctx, x, y, w, h) => {
+			ctx.beginPath()
+			ctx.rect(x + l * w, y, Math.max(0, (1 - l - r) * w), h)
+		}
+	}
+
+	static transitions = {
+		none:      null,
+		fade:      {in: 'pp-fade-in',      out: 'pp-fade-out',      ease: 'ease',
+			curve: {ease: this.eases.ease,
+				in: q => ({opacity: q}),
+				out: q => ({opacity: 1 - q})}},
+		zoom:      {in: 'pp-zoom-in',      out: 'pp-zoom-out',      ease: 'cubic-bezier(.25,1,.5,1)',
+			curve: {ease: this.eases.zoomB,
+				in: q => ({opacity: q, sx: 0.96 + 0.04 * q, sy: 0.96 + 0.04 * q}),
+				out: q => ({opacity: 1 - q, sx: 1 + 0.05 * q, sy: 1 + 0.05 * q})}},
+		glide:     {in: 'pp-glide-in',     out: 'pp-glide-out',     ease: 'ease-out',
+			curve: {ease: this.eases.easeOut,
+				in: (q, g) => ({tx: -g.W * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, tx: g.W * q})}},
+		slide:     {in: 'pp-slide-in',     out: 'pp-slide-out',     ease: 'ease-in-out',
+			curve: {ease: this.eases.easeInOut,
+				in: (q, g) => ({opacity: q, tx: -20 * g.k * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, tx: 20 * g.k * q})}},
+		drop:      {in: 'pp-drop-in',      out: 'pp-drop-out',      ease: 'ease',
+			curve: {ease: this.eases.ease,
+				in: (q, g) => ({opacity: q, ty: -50 * g.k * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, ty: 50 * g.k * q})}},
+		skew:      {in: 'pp-skew-in',      out: 'pp-skew-out',      ease: 'ease-in',
+			curve: {ease: this.eases.easeIn,
+				in: q => ({opacity: q, skew: -15 * (1 - q) * Math.PI / 180}),
+				out: q => ({opacity: 1 - q, skew: 15 * q * Math.PI / 180})}},
+		tilt:      {in: 'pp-tilt-in',      out: 'pp-tilt-out',      ease: 'ease-in',
+			curve: {ease: this.eases.easeIn,
+				in: (q, g) => ({opacity: q, rot: -5 * (1 - q) * Math.PI / 180, ty: 20 * g.k * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, rot: 5 * q * Math.PI / 180, ty: -20 * g.k * q})}},
+		spiral:    {in: 'pp-spiral-in',    out: 'pp-spiral-out',    ease: 'ease-out',
+			curve: {ease: this.eases.easeOut,
+				in: q => ({opacity: q, rot: -2 * Math.PI * (1 - q), sx: q, sy: q}),
+				out: q => ({opacity: 1 - q, rot: 2 * Math.PI * q, sx: 1 - q, sy: 1 - q})}},
+		ripple:    {in: 'pp-ripple-in',    out: 'pp-ripple-out',    ease: 'ease',
+			curve: {ease: this.eases.ease,
+				in: (q, g) => ({opacity: q, sx: 0.5 + 0.5 * q, sy: 0.5 + 0.5 * q, blur: 3 * g.k * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, sx: 1 + 0.5 * q, sy: 1 + 0.5 * q, blur: 3 * g.k * q})}},
+		curtain:   {in: 'pp-curtain-in',   out: 'pp-curtain-out',   ease: 'ease-in',
+			curve: {ease: this.eases.easeIn,
+				in: q => ({opacity: q, sy: Math.max(0.001, q), origin: 'bottom'}),
+				out: q => ({opacity: 1 - q, sy: Math.max(0.001, 1 - q), origin: 'top'})}},
+		tv:        {in: 'pp-tv-in',        out: 'pp-tv-out',        ease: 'cubic-bezier(1,0,0,1)',
+			curve: {ease: this.eases.tvB,
+				in: q => q < 0.5
+					? {opacity: 1.6 * q, sx: Math.max(0.001, q * 2), sy: Math.max(0.001, 0.04 * q)}
+					: {opacity: 0.8 + 0.4 * (q - 0.5) * 2, sx: 1, sy: 0.02 + (q - 0.5) * 2 * 0.98},
+				out: q => q < 0.5
+					? {opacity: 1 - 0.4 * q * 2, sx: 1, sy: Math.max(0.001, 1 - q * 2 * 0.98)}
+					: {opacity: 0.8 - 1.6 * (q - 0.5), sx: Math.max(0.001, 1 - (q - 0.5) * 2), sy: 0.02}}},
+		flip:      {in: 'pp-flip-in',      out: 'pp-flip-out',      ease: 'ease-in-out',
+			curve: {ease: this.eases.easeInOut,
+				in: q => ({opacity: q < 0.5 ? 0 : 1, sx: Math.max(0.001, Math.abs(Math.cos((1 - q) * Math.PI)))}),
+				out: q => ({opacity: q < 0.5 ? 1 : 0, sx: Math.max(0.001, Math.abs(Math.cos(q * Math.PI)))})}},
+		cube:      {in: 'pp-cube-in',      out: 'pp-cube-out',      ease: 'ease-in-out', originIn: '0% 50%', originOut: '100% 50%',
+			curve: {ease: this.eases.easeInOut,
+				in: q => ({opacity: Math.min(1, q * 2), sx: Math.max(0.001, Math.cos((1 - q) * Math.PI / 2)), origin: 'left'}),
+				out: q => ({opacity: 1 - q, sx: Math.max(0.001, Math.cos(q * Math.PI / 2)), origin: 'right'})}},
+		diamond:   {in: 'pp-diamond-in',   out: 'pp-diamond-out',   ease: 'ease',
+			curve: {ease: this.eases.ease,
+				in: q => ({clip: PresentationPlayer.clipRombus(q)}),
+				out: q => ({clip: PresentationPlayer.clipRombus(1 - q)})}},
+		diaphragm: {in: 'pp-diaphragm-in', out: 'pp-diaphragm-out', ease: 'linear',
+			curve: {ease: this.eases.linear,
+				in: q => ({clip: PresentationPlayer.clipCircle(0.9 * q)}),
+				out: q => ({clip: PresentationPlayer.clipCircle(0.9 * (1 - q))})}},
+		spotlight: {in: 'pp-spotlight-in', out: 'pp-spotlight-out', ease: 'ease',
+			curve: {ease: this.eases.ease,
+				in: q => ({clip: PresentationPlayer.clipCircle(0.75 * q)}),
+				out: q => ({clip: PresentationPlayer.clipCircle(0.75 * (1 - q))})}},
+		wipe:      {in: 'pp-wipe-in',      out: 'pp-wipe-out',      ease: 'ease-out',
+			curve: {ease: this.eases.easeOut,
+				in: q => ({opacity: Math.min(1, 0.1 + q * 2.2), clip: PresentationPlayer.clipInset(0, 1 - q)}),
+				out: q => ({opacity: Math.min(1, 1.1 - q), clip: PresentationPlayer.clipInset(q, 0)})}},
+		glitch:    {in: 'pp-glitch-in',    out: 'pp-glitch-out',    ease: 'linear',
+			curve: {ease: this.eases.linear,
+				in: (q, g) => ({opacity: Math.min(1, q * 1.6), bands: q < 0.95 ? 5 * g.k * (1 - q) : 0, seed: q}),
+				out: (q, g) => ({opacity: Math.max(0, 1 - q * 1.2), bands: q > 0.05 ? 5 * g.k * q : 0, seed: q})}},
+		cards:     {in: 'pp-cards-in',     out: 'pp-cards-out',     ease: 'cubic-bezier(0.2,0,0.2,1)',
+			curve: {ease: this.eases.cardsB,
+				in: (q, g) => ({ty: g.h * (1 - q)}),
+				out: (q, g) => ({opacity: 1 - q, ty: g.h * q})}},
+	}
+
+	constructor(root, data, opts = {}){
+		this.root = root
+		this.opts = opts
+		this.mediaBase = opts.mediaBase || data.mediaBase || ''
+		this.transcript = data.transcript || null
+		const pres0 = data.presentation || {}
+		this.lang = opts.lang ?? pres0.lang ?? (pres0.subtitles || {}).lang ?? null
+		this.playing = false
+		this.t = 0
+		this.clockStart = 0
+		this.items = []
+		this.videos = []
+		this.audio = null
+		this.durOverride = null
+		this.subIndex = -1
+		this.raf = null
+		this.blobCache = {}
+		this.updateGen = 0
+		this.loaded = false
+		this.buildShell()
+		this.update(data.presentation)
+	}
+
+	loadBlob(url){
+		if (!this.blobCache[url]) this.blobCache[url] = fetch(url)
+			.then(r => {
+				if (!r.ok) throw Error(String(r.status))
+				return r.blob()
+			})
+			.then(b => URL.createObjectURL(b))
+			.catch(() => url)
+		return this.blobCache[url]
+	}
+
+	guard(promise, ms){
+		return Promise.race([promise, new Promise(res => setTimeout(res, ms))])
+	}
+
+	src(name){
+		return this.mediaBase + name
+	}
+
+	srcFor(item){
+		if (item && this.lang && Array.isArray(item.alts)){
+			const alt = item.alts.find(a => a && a.src && a.lang === this.lang)
+			if (alt) return alt.src
+		}
+		return item ? item.src : ''
+	}
+
+	languages(){
+		const set = new Set()
+		const p = this.pres || {}
+		const add = it => {
+			if (!it) return
+			for (const a of it.alts || []) if (a && a.lang) set.add(a.lang)
+		}
+		add(p.audio)
+		for (const v of p.videos || []) add(v)
+		for (const i of p.images || []) add(i)
+		if (this.transcript && this.transcript.translations) for (const l of Object.keys(this.transcript.translations)) set.add(l)
+		return [...set].filter(l => l && l !== p.lang)
+	}
+
+	setLang(lang){
+		this.lang = lang || null
+		this.update(this.pres)
+	}
+
+	get duration(){
+		const p = this.pres
+		if (Number.isFinite(this.durOverride) && this.durOverride > 0) return this.durOverride
+		if (p.audio && Number.isFinite(p.audio.duration) && p.audio.duration > 0) return p.audio.duration
+		let end = 0
+		for (const img of p.images || []) end = Math.max(end, (img.start || 0) + (img.duration || 0))
+		for (const v of this.videos) if (v.duration) end = Math.max(end, v.duration)
+		return end || 10
+	}
+
+	buildShell(){
+		this.root.classList.add('pp-root', 'pp-paused')
+		if (this.opts.edit) this.root.classList.add('pp-edit')
+		this.stage = document.createElement('div')
+		this.stage.className = 'pp-stage'
+		this.root.appendChild(this.stage)
+		this.subsEl = document.createElement('div')
+		this.subsEl.className = 'pp-subs'
+		this.subsEl.style.display = 'none'
+		this.root.appendChild(this.subsEl)
+		if (this.opts.controls !== false && !this.opts.edit) this.buildControls()
+		const fit = () => {
+			const w = this.root.clientWidth
+			this.root.style.fontSize = Math.max(9, w / 48) + 'px'
+		}
+		new ResizeObserver(fit).observe(this.root)
+		fit()
+	}
+
+	icon(name){
+		const paths = {
+			play: 'M8 5v14l11-7z',
+			pause: 'M6 5h4v14H6zM14 5h4v14h-4z',
+			cc: 'M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm4.5 5.5a2 2 0 0 0-2-1.5c-1.4 0-2.5 1.3-2.5 3s1.1 3 2.5 3a2 2 0 0 0 2-1.5H6.8a1 1 0 0 1-.8.5c-.7 0-1.5-.8-1.5-2s.8-2 1.5-2a1 1 0 0 1 .8.5zm8 0a2 2 0 0 0-2-1.5c-1.4 0-2.5 1.3-2.5 3s1.1 3 2.5 3a2 2 0 0 0 2-1.5h-1.7a1 1 0 0 1-.8.5c-.7 0-1.5-.8-1.5-2s.8-2 1.5-2a1 1 0 0 1 .8.5z',
+			full: 'M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z',
+		}
+		return '<svg viewBox="0 0 24 24"><path d="' + paths[name] + '"/></svg>'
+	}
+
+	buildControls(){
+		this.bigPlay = document.createElement('button')
+		this.bigPlay.className = 'pp-bigplay'
+		this.bigPlay.innerHTML = this.icon('play')
+		this.bigPlay.addEventListener('click', () => this.toggle())
+		this.root.appendChild(this.bigPlay)
+		const bar = document.createElement('div')
+		bar.className = 'pp-controls'
+		this.playBtn = document.createElement('button')
+		this.playBtn.innerHTML = this.icon('play')
+		this.playBtn.addEventListener('click', () => this.toggle())
+		this.timeEl = document.createElement('span')
+		this.timeEl.className = 'pp-time'
+		this.seekEl = document.createElement('input')
+		this.seekEl.type = 'range'
+		this.seekEl.className = 'pp-seek'
+		this.seekEl.min = 0
+		this.seekEl.max = 1000
+		this.seekEl.value = 0
+		this.seekEl.addEventListener('input', () => this.seek(this.seekEl.value / 1000 * this.duration))
+		this.ccBtn = document.createElement('button')
+		this.ccBtn.innerHTML = this.icon('cc')
+		this.ccBtn.addEventListener('click', () => this.setSubs(!this.showSubs))
+		this.langSel = document.createElement('select')
+		this.langSel.className = 'pp-lang'
+		this.langSel.style.display = 'none'
+		this.langSel.addEventListener('change', () => this.setLang(this.langSel.value === 'original' ? null : this.langSel.value))
+		this.fsBtn = document.createElement('button')
+		this.fsBtn.innerHTML = this.icon('full')
+		this.fsBtn.addEventListener('click', () => {
+			if (document.fullscreenElement) document.exitFullscreen()
+			else (this.root.closest('.pp-standalone') || this.root).requestFullscreen()
+		})
+		bar.append(this.playBtn, this.timeEl, this.seekEl, this.ccBtn, this.langSel, this.fsBtn)
+		this.root.appendChild(bar)
+		this.stage.addEventListener('click', e => {
+			if (!e.target.closest('a')) this.toggle()
+		})
+	}
+
+	update(pres){
+		this.pres = pres
+		const gen = ++this.updateGen
+		const jobs = []
+		this.root.style.setProperty('--pp-ar', (pres.size.w / pres.size.h).toFixed(4))
+		this.stage.innerHTML = ''
+		this.items = []
+		this.videos = []
+		const wantAudio = pres.audio && pres.audio.src ? this.src(this.srcFor(pres.audio)) : ''
+		if (this.audio && this.audioSrc !== wantAudio){
+			this.audio.pause()
+			this.audio = null
+			this.durOverride = null
+		}
+		if (wantAudio && !this.audio){
+			this.audioSrc = wantAudio
+			this.audio = new Audio()
+			this.audio.preload = 'auto'
+			jobs.push(this.guard(this.loadBlob(this.audioSrc).then(url => new Promise(res => {
+				this.audio.addEventListener('loadedmetadata', () => {
+					const d = this.audio.duration
+					if (Number.isFinite(d) && d > 0){
+						this.durOverride = d
+						if (this.opts.onMeta) this.opts.onMeta(d)
+					}
+					res()
+				}, {once: true})
+				this.audio.addEventListener('error', () => res(), {once: true})
+				this.audio.src = url
+			})), 20000))
+		}
+		for (const cfg of pres.videos || []){
+			const v = document.createElement('video')
+			v.className = 'pp-video'
+			v.preload = 'auto'
+			v.playsInline = true
+			v.volume = Math.min(1, Math.max(0, (cfg.volume ?? 100) / 100))
+			v.muted = !cfg.volume
+			v.style.objectFit = cfg.fit || 'cover'
+			if (cfg.x != null || cfg.y != null || cfg.w != null){
+				v.classList.add('pp-video-box')
+				v.style.left = (cfg.x || 0) + '%'
+				v.style.top = (cfg.y || 0) + '%'
+				v.style.width = (cfg.w || 30) + '%'
+				v.style.zIndex = 10 + (cfg.z || 0)
+			}
+			jobs.push(this.guard(this.loadBlob(this.src(this.srcFor(cfg))).then(url => new Promise(res => {
+				v.addEventListener('loadedmetadata', () => res(), {once: true})
+				v.addEventListener('error', () => res(), {once: true})
+				v.src = url
+			})), 30000))
+			this.stage.appendChild(v)
+			this.videos.push(v)
+		}
+		const sorted = (pres.images || []).map((cfg, idx) => ({cfg, idx})).sort((a, b) => (a.cfg.z || 0) - (b.cfg.z || 0))
+		for (const {cfg, idx} of sorted){
+			const el = document.createElement('div')
+			el.className = 'pp-item'
+			el.dataset.idx = idx
+			el.style.left = (cfg.x || 0) + '%'
+			el.style.top = (cfg.y || 0) + '%'
+			el.style.width = (cfg.w || 30) + '%'
+			el.style.zIndex = 10 + (cfg.z || 0)
+			const img = document.createElement('img')
+			img.src = this.src(this.srcFor(cfg))
+			img.draggable = false
+			if (!img.complete) jobs.push(this.guard(new Promise(res => {
+				img.addEventListener('load', () => res(), {once: true})
+				img.addEventListener('error', () => res(), {once: true})
+			}), 15000))
+			if (cfg.link && cfg.link.href && !this.opts.edit){
+				const a = document.createElement('a')
+				a.href = cfg.link.href
+				if (cfg.link.target === '_blank'){
+					a.target = '_blank'
+					a.rel = 'noopener'
+				}
+				a.appendChild(img)
+				el.appendChild(a)
+			}
+			else el.appendChild(img)
+			this.stage.appendChild(el)
+			this.items.push({cfg, el, phase: null})
+		}
+		this.showSubs = (pres.subtitles || {}).show !== false
+		this.subIndex = -1
+		this.loaded = false
+		this.root.classList.add('pp-loading')
+		Promise.all(jobs).then(() => {
+			if (gen !== this.updateGen) return
+			this.loaded = true
+			this.root.classList.remove('pp-loading')
+			this.applyTime(this.t, true)
+			this.updateTime()
+			if (this.opts.onLoaded) this.opts.onLoaded()
+		})
+		this.applyTime(this.t, true)
+		this.updateTime()
+		this.refreshLangSel()
+	}
+
+	segments(){
+		if (!this.transcript) return null
+		const tr = this.transcript.translations || {}
+		if (this.lang && tr[this.lang]) return tr[this.lang]
+		return this.transcript.segments || null
+	}
+
+	setSubs(show){
+		this.showSubs = show
+		if (this.ccBtn) this.ccBtn.classList.toggle('pp-off', !show)
+		this.subIndex = -1
+		this.applySubs(this.t)
+	}
+
+	refreshLangSel(){
+		if (!this.langSel) return
+		const langs = this.languages()
+		if (!langs.length){
+			this.langSel.style.display = 'none'
+			return
+		}
+		this.langSel.innerHTML = ''
+		const opt = (value, label) => {
+			const o = document.createElement('option')
+			o.value = value
+			o.textContent = label
+			this.langSel.appendChild(o)
+		}
+		opt('original', 'original' + (this.pres.lang ? ' (' + this.pres.lang + ')' : ''))
+		for (const l of langs) opt(l, l)
+		this.langSel.value = this.lang || 'original'
+		this.langSel.style.display = ''
+	}
+
+	toggle(){
+		this.playing ? this.pause() : this.play()
+	}
+
+	play(){
+		if (!this.loaded) return
+		if (this.t >= this.duration - 0.05) this.seek(0)
+		this.playing = true
+		this.root.classList.remove('pp-paused')
+		if (this.bigPlay) this.bigPlay.style.display = 'none'
+		if (this.playBtn) this.playBtn.innerHTML = this.icon('pause')
+		if (this.audio){
+			this.audio.currentTime = this.t
+			this.audio.play()
+		}
+		else this.clockStart = performance.now() - this.t * 1000
+		this.syncVideos(true)
+		for (const item of this.items) if (item.phase === 'in' || item.phase === 'out') item.el.style.animationPlayState = 'running'
+		const step = () => {
+			if (!this.playing) return
+			this.t = this.audio ? this.audio.currentTime : (performance.now() - this.clockStart) / 1000
+			if (this.t >= this.duration){
+				this.t = this.duration
+				this.pause(true)
+			}
+			else this.applyTime(this.t)
+			this.updateTime()
+			if (this.opts.onTime) this.opts.onTime(this.t)
+			if (this.playing) this.raf = requestAnimationFrame(step)
+		}
+		this.raf = requestAnimationFrame(step)
+		this.ticker = setInterval(() => { if (document.hidden) step() }, 250)
+	}
+
+	pause(ended){
+		this.playing = false
+		this.root.classList.add('pp-paused')
+		if (this.raf) cancelAnimationFrame(this.raf)
+		if (this.ticker) clearInterval(this.ticker)
+		if (this.audio) this.audio.pause()
+		for (const v of this.videos) v.pause()
+		for (const item of this.items) if (item.phase === 'in' || item.phase === 'out') item.el.style.animationPlayState = 'paused'
+		if (this.bigPlay) this.bigPlay.style.display = ''
+		if (this.playBtn) this.playBtn.innerHTML = this.icon('play')
+		if (ended && this.opts.onEnded) this.opts.onEnded()
+	}
+
+	seek(t){
+		this.t = Math.min(Math.max(0, t), this.duration)
+		if (this.audio) this.audio.currentTime = this.t
+		if (!this.audio) this.clockStart = performance.now() - this.t * 1000
+		this.applyTime(this.t, true)
+		this.updateTime()
+		if (this.opts.onTime) this.opts.onTime(this.t)
+	}
+
+	applyTime(t, force){
+		for (const item of this.items){
+			const cfg = item.cfg
+			const start = cfg.start || 0
+			const end = start + (cfg.duration || 0)
+			const inDur = cfg.in && PresentationPlayer.transitions[cfg.in.name] ? (cfg.in.dur || 0) : 0
+			const outDur = cfg.out && PresentationPlayer.transitions[cfg.out.name] ? (cfg.out.dur || 0) : 0
+			let phase = 'hidden'
+			if (t >= start && t < end){
+				if (t < start + inDur) phase = 'in'
+				else if (t > end - outDur) phase = 'out'
+				else phase = 'on'
+			}
+			if (phase !== item.phase || force) this.setPhase(item, phase, t)
+		}
+		this.syncVideos(force)
+		this.applySubs(t)
+	}
+
+	setPhase(item, phase, t){
+		const el = item.el
+		const cfg = item.cfg
+		item.phase = phase
+		if (phase === 'hidden'){
+			el.style.display = 'none'
+			return
+		}
+		el.style.display = 'block'
+		const start = cfg.start || 0
+		const end = start + (cfg.duration || 0)
+		if (phase === 'on'){
+			el.style.animation = 'none'
+			el.style.transformOrigin = ''
+			return
+		}
+		const dir = phase === 'in' ? 'in' : 'out'
+		const spec = PresentationPlayer.transitions[cfg[dir].name]
+		const dur = cfg[dir].dur || 0.5
+		const elapsed = dir === 'in' ? t - start : t - (end - dur)
+		el.style.animationName = spec[dir]
+		el.style.animationDuration = dur + 's'
+		el.style.animationTimingFunction = spec.ease
+		el.style.animationDelay = (-Math.max(0, elapsed)).toFixed(3) + 's'
+		el.style.animationFillMode = 'both'
+		el.style.animationPlayState = this.playing ? 'running' : 'paused'
+		el.style.transformOrigin = (dir === 'in' ? spec.originIn : spec.originOut) || ''
+	}
+
+	syncVideos(force){
+		for (const v of this.videos){
+			if (v.readyState < 1) continue
+			const drift = Math.abs(v.currentTime - this.t)
+			if (force || drift > 0.35) v.currentTime = Math.min(this.t, v.duration || this.t)
+			if (this.playing && v.paused && this.t < (v.duration || Infinity)) v.play().catch(() => {})
+			if (!this.playing && !v.paused) v.pause()
+		}
+	}
+
+	applySubs(t){
+		const segs = this.showSubs ? this.segments() : null
+		if (!segs || !segs.length){
+			this.subsEl.style.display = 'none'
+			return
+		}
+		let current = null
+		for (const seg of segs){
+			if (t >= seg.start && t <= seg.end){
+				current = seg
+				break
+			}
+		}
+		if (current){
+			this.subsEl.textContent = current.text
+			this.subsEl.style.display = ''
+		}
+		else this.subsEl.style.display = 'none'
+	}
+
+	fmt(t){
+		const m = Math.floor(t / 60)
+		const s = Math.floor(t - m * 60)
+		return m + ':' + String(s).padStart(2, '0')
+	}
+
+	updateTime(){
+		if (this.timeEl) this.timeEl.textContent = this.fmt(this.t) + ' / ' + this.fmt(this.duration)
+		if (this.seekEl && !this.seeking) this.seekEl.value = this.duration ? Math.round(this.t / this.duration * 1000) : 0
+	}
+
+	static boot(){
+		const data = document.getElementById('pp-data')
+		const root = document.getElementById('pp-root')
+		if (data && root) window.pp = new PresentationPlayer(root, JSON.parse(data.textContent), {controls: true})
+	}
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => PresentationPlayer.boot())
+else PresentationPlayer.boot()
+</script>
+
+<style>
+.pp-root {
+	position: relative
+	background: #000
+	overflow: hidden
+	user-select: none
+	font-family: system-ui, sans-serif
+}
+.pp-stage {
+	position: absolute
+	inset: 0
+	overflow: hidden
+}
+.pp-video {
+	position: absolute
+	inset: 0
+	width: 100%
+	height: 100%
+	object-fit: cover
+	\.pp-video-box {
+		right: auto
+		bottom: auto
+		height: auto
+	}
+}
+.pp-item {
+	position: absolute
+	will-change: transform, opacity, clip-path
+	img {
+		display: block
+		width: 100%
+		height: auto
+	}
+	a {
+		display: block
+		cursor: pointer
+	}
+}
+.pp-subs {
+	position: absolute
+	left: 50%
+	bottom: 5%
+	transform: translateX(-50%)
+	max-width: 84%
+	padding: .3em .8em
+	background: rgba(0,0,0,.55)
+	color: #fff
+	font-size: 1.5em
+	line-height: 1.35
+	text-align: center
+	border-radius: .3em
+	pointer-events: none
+	z-index: 900
+}
+.pp-bigplay {
+	position: absolute
+	left: 50%
+	top: 50%
+	transform: translate(-50%,-50%)
+	width: 5em
+	height: 5em
+	border-radius: 50%
+	background: rgba(0,0,0,.6)
+	border: 2px solid rgba(255,255,255,.8)
+	color: #fff
+	cursor: pointer
+	z-index: 950
+	display: flex
+	align-items: center
+	justify-content: center
+	transition: transform .15s ease
+	\:hover: transform: translate(-50%,-50%) scale(1.08)
+	svg {
+		width: 2em
+		height: 2em
+		fill: #fff
+		margin-left: .3em
+	}
+}
+.pp-controls {
+	position: absolute
+	left: 0
+	right: 0
+	bottom: 0
+	display: flex
+	align-items: center
+	gap: .8em
+	padding: 2.2em .9em .5em
+	background: linear-gradient(transparent, rgba(0,0,0,.75))
+	z-index: 940
+	opacity: 0
+	transition: opacity .25s ease
+	font-size: .9em
+}
+.pp-root:hover .pp-controls, .pp-root.pp-paused .pp-controls: opacity: 1
+.pp-controls button {
+	background: none
+	border: 0
+	color: #fff
+	cursor: pointer
+	font-size: 1em
+	padding: .2em .4em
+	opacity: .9
+	\:hover: opacity: 1
+	svg {
+		width: 1.4em
+		height: 1.4em
+		fill: #fff
+		display: block
+	}
+}
+.pp-controls button.pp-off: opacity: .35
+.pp-controls select.pp-lang {
+	background: rgba(0,0,0,.45)
+	color: #fff
+	border: 1px solid rgba(255,255,255,.3)
+	border-radius: .3em
+	font: inherit
+	font-size: .82em
+	padding: .15em .35em
+	cursor: pointer
+	option: color: #000
+}
+.pp-time {
+	color: #fff
+	font-variant-numeric: tabular-nums
+	font-size: .95em
+	white-space: nowrap
+}
+.pp-seek {
+	flex: 1
+	accent-color: #FFB347
+	cursor: pointer
+	height: 1.2em
+	margin: 0
+}
+.pp-loading .pp-bigplay {
+	pointer-events: none
+	opacity: .6
+	border-top-color: #FFB347
+	animation: pp-spin 1s linear infinite
+	svg: opacity: .3
+}
+.pp-edit {
+	outline: 1px solid rgba(108,192,255,.7)
+	box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 0 0 4px rgba(108,192,255,.12), 0 10px 44px rgba(0,0,0,.6)
+}
+.pp-edit .pp-item {
+	cursor: move
+	outline: 1px dashed transparent
+	\:hover: outline: 1px dashed rgba(255,179,71,.6)
+}
+.pp-edit .pp-item.pp-sel {
+	outline: 2px solid #FFB347
+	z-index: 899
+}
+.pp-handle {
+	position: absolute
+	right: -7px
+	bottom: -7px
+	width: 14px
+	height: 14px
+	background: #FFB347
+	border-radius: 3px
+	cursor: nwse-resize
+	z-index: 901
+}
+.pp-standalone {
+	position: fixed
+	inset: 0
+	display: flex
+	align-items: center
+	justify-content: center
+	background: #000
+	.pp-root {
+		width: 100vw
+		height: 100vh
+	}
+	@supports (aspect-ratio: 16 / 9) {
+		.pp-root {
+			width: min(100vw, calc(100vh * var(--pp-ar, 1.7778)))
+			height: min(100vh, calc(100vw / var(--pp-ar, 1.7778)))
+		}
+	}
+}
+@keyframes pp-spin {
+	0%: transform: translate(-50%,-50%) rotate(0deg)
+	100%: transform: translate(-50%,-50%) rotate(360deg)
+}
+@keyframes pp-fade-in {
+	0%: opacity: 0
+	100%: opacity: 1
+}
+@keyframes pp-fade-out {
+	0%: opacity: 1
+	100%: opacity: 0
+}
+@keyframes pp-zoom-in {
+	0% {
+		opacity: 0
+		transform: scale(.96)
+	}
+	100% {
+		opacity: 1
+		transform: scale(1)
+	}
+}
+@keyframes pp-zoom-out {
+	0% {
+		opacity: 1
+		transform: scale(1)
+	}
+	100% {
+		opacity: 0
+		transform: scale(1.05)
+	}
+}
+@keyframes pp-glide-in {
+	0%: transform: translateX(-100dvw)
+	100%: transform: translateX(0)
+}
+@keyframes pp-glide-out {
+	0% {
+		opacity: 1
+		transform: translateX(0)
+	}
+	100% {
+		opacity: 0
+		transform: translateX(100dvw)
+	}
+}
+@keyframes pp-slide-in {
+	0% {
+		opacity: 0
+		transform: translateX(-20px)
+	}
+	100% {
+		opacity: 1
+		transform: translateX(0)
+	}
+}
+@keyframes pp-slide-out {
+	0% {
+		opacity: 1
+		transform: translateX(0)
+	}
+	100% {
+		opacity: 0
+		transform: translateX(20px)
+	}
+}
+@keyframes pp-drop-in {
+	0% {
+		opacity: 0
+		transform: translateY(-50px)
+	}
+	100% {
+		opacity: 1
+		transform: translateY(0)
+	}
+}
+@keyframes pp-drop-out {
+	0% {
+		opacity: 1
+		transform: translateY(0)
+	}
+	100% {
+		opacity: 0
+		transform: translateY(50px)
+	}
+}
+@keyframes pp-skew-in {
+	0% {
+		opacity: 0
+		transform: skewX(-15deg)
+	}
+	100% {
+		opacity: 1
+		transform: skewX(0deg)
+	}
+}
+@keyframes pp-skew-out {
+	0% {
+		opacity: 1
+		transform: skewX(0deg)
+	}
+	100% {
+		opacity: 0
+		transform: skewX(15deg)
+	}
+}
+@keyframes pp-tilt-in {
+	0% {
+		opacity: 0
+		transform: rotateZ(-5deg) translateY(20px)
+	}
+	100% {
+		opacity: 1
+		transform: rotateZ(0deg) translateY(0)
+	}
+}
+@keyframes pp-tilt-out {
+	0% {
+		opacity: 1
+		transform: rotateZ(0deg) translateY(0)
+	}
+	100% {
+		opacity: 0
+		transform: rotateZ(5deg) translateY(-20px)
+	}
+}
+@keyframes pp-spiral-in {
+	0% {
+		opacity: 0
+		transform: rotate(-360deg) scale(0)
+	}
+	100% {
+		opacity: 1
+		transform: rotate(0deg) scale(1)
+	}
+}
+@keyframes pp-spiral-out {
+	0% {
+		opacity: 1
+		transform: rotate(0deg) scale(1)
+	}
+	100% {
+		opacity: 0
+		transform: rotate(360deg) scale(0)
+	}
+}
+@keyframes pp-ripple-in {
+	0% {
+		opacity: 0
+		transform: scale(.5)
+		filter: blur(3px)
+	}
+	100% {
+		opacity: 1
+		transform: scale(1)
+		filter: blur(0px)
+	}
+}
+@keyframes pp-ripple-out {
+	0% {
+		opacity: 1
+		transform: scale(1)
+		filter: blur(0px)
+	}
+	100% {
+		opacity: 0
+		transform: scale(1.5)
+		filter: blur(3px)
+	}
+}
+@keyframes pp-curtain-in {
+	0% {
+		opacity: 0
+		transform: scaleY(0)
+		transform-origin: bottom
+	}
+	100% {
+		opacity: 1
+		transform: scaleY(1)
+		transform-origin: bottom
+	}
+}
+@keyframes pp-curtain-out {
+	0% {
+		opacity: 1
+		transform: scaleY(1)
+		transform-origin: top
+	}
+	100% {
+		opacity: 0
+		transform: scaleY(0)
+		transform-origin: top
+	}
+}
+@keyframes pp-tv-in {
+	0% {
+		opacity: 0
+		transform: scale(0, 0)
+	}
+	50% {
+		opacity: 0.8
+		transform: scale(1, 0.02)
+	}
+	100% {
+		opacity: 1
+		transform: scale(1, 1)
+	}
+}
+@keyframes pp-tv-out {
+	0% {
+		opacity: 1
+		transform: scale(1, 1)
+	}
+	50% {
+		opacity: 0.8
+		transform: scale(1, 0.02)
+	}
+	100% {
+		opacity: 0
+		transform: scale(0, 0)
+	}
+}
+@keyframes pp-flip-in {
+	0% {
+		transform: perspective(1600px) rotateY(-180deg)
+		opacity: 0
+	}
+	50%: opacity: 0
+	50.1%: opacity: 1
+	100% {
+		transform: perspective(1600px) rotateY(0deg)
+		opacity: 1
+	}
+}
+@keyframes pp-flip-out {
+	0% {
+		transform: perspective(1600px) rotateY(0deg)
+		opacity: 1
+	}
+	49.9%: opacity: 1
+	50%: opacity: 0
+	100% {
+		transform: perspective(1600px) rotateY(180deg)
+		opacity: 0
+	}
+}
+@keyframes pp-cube-in {
+	0% {
+		transform: rotateY(90deg) translateZ(0)
+		opacity: 0
+	}
+	100% {
+		transform: rotateY(0deg) translateZ(0)
+		opacity: 1
+	}
+}
+@keyframes pp-cube-out {
+	0% {
+		transform: rotateY(0deg) translateZ(0)
+		opacity: 1
+	}
+	100% {
+		transform: rotateY(-90deg) translateZ(0)
+		opacity: 0
+	}
+}
+@keyframes pp-diamond-in {
+	0%: clip-path: polygon(50% 50%,50% 50%,50% 50%,50% 50%)
+	100%: clip-path: polygon(50% -50%,150% 50%,50% 150%,-50% 50%)
+}
+@keyframes pp-diamond-out {
+	0%: clip-path: polygon(50% -50%,150% 50%,50% 150%,-50% 50%)
+	100%: clip-path: polygon(50% 50%,50% 50%,50% 50%,50% 50%)
+}
+@keyframes pp-diaphragm-in {
+	0%: clip-path: circle(0% at 50% 50%)
+	100%: clip-path: circle(90% at 50% 50%)
+}
+@keyframes pp-diaphragm-out {
+	0%: clip-path: circle(90% at 50% 50%)
+	100%: clip-path: circle(0% at 50% 50%)
+}
+@keyframes pp-spotlight-in {
+	0%: clip-path: circle(0% at 50% 50%)
+	100%: clip-path: circle(75% at 50% 50%)
+}
+@keyframes pp-spotlight-out {
+	0%: clip-path: circle(75% at 50% 50%)
+	100%: clip-path: circle(0% at 50% 50%)
+}
+@keyframes pp-wipe-in {
+	0% {
+		clip-path: inset(0% 100% 0% 0%)
+		opacity: 0
+	}
+	40% {
+		clip-path: inset(0% 40% 0% 0%)
+		opacity: .9
+	}
+	100% {
+		clip-path: inset(0% 0% 0% 0%)
+		opacity: 1
+	}
+}
+@keyframes pp-wipe-out {
+	0% {
+		clip-path: inset(0% 0% 0% 0%)
+		opacity: 1
+	}
+	60% {
+		clip-path: inset(0% 0% 0% 60%)
+		opacity: .3
+	}
+	100% {
+		clip-path: inset(0% 0% 0% 100%)
+		opacity: 0
+	}
+}
+@keyframes pp-glitch-in {
+	0% {
+		clip-path: inset(100% 0 0 0)
+		transform: translate(10px, 0)
+		opacity: 0
+	}
+	20% {
+		clip-path: inset(10% 0 60% 0)
+		transform: translate(-10px, 5px)
+	}
+	40% {
+		clip-path: inset(80% 0 5% 0)
+		transform: translate(5px, -10px)
+	}
+	60% {
+		clip-path: inset(0 0 20% 0)
+		transform: translate(-5px, 5px)
+	}
+	80% {
+		clip-path: inset(40% 0 40% 0)
+		transform: translate(5px, 0)
+	}
+	100% {
+		clip-path: inset(0 0 0 0)
+		transform: translate(0)
+		opacity: 1
+	}
+}
+@keyframes pp-glitch-out {
+	0% {
+		clip-path: inset(0 0 0 0)
+		transform: translate(0)
+	}
+	20% {
+		clip-path: inset(20% 0 80% 0)
+		transform: translate(-5px, 5px)
+	}
+	40% {
+		clip-path: inset(80% 0 5% 0)
+		transform: translate(5px, -5px)
+	}
+	60% {
+		clip-path: inset(10% 0 60% 0)
+		transform: translate(-5px, 0)
+	}
+	80% {
+		clip-path: inset(50% 0 20% 0)
+		transform: translate(5px, 5px)
+	}
+	100% {
+		clip-path: inset(50% 50% 50% 50%)
+		transform: translate(0)
+		opacity: 0
+	}
+}
+@keyframes pp-cards-in {
+	0%: transform: translateY(100%)
+	100%: transform: translateY(0)
+}
+@keyframes pp-cards-out {
+	0% {
+		transform: translateY(0)
+		opacity: 1
+	}
+	100% {
+		transform: translateY(100%)
+		opacity: 0
+	}
+}
+</style>
