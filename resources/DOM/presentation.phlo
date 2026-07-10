@@ -159,6 +159,83 @@ class PresentationPlayer {
 				out: (q, g) => ({opacity: 1 - q, ty: g.h * q})}},
 	}
 
+	static progress(tt, dur){
+		if (dur <= 0) return 1
+		return Math.min(1, Math.max(0, tt / dur))
+	}
+
+	static wave(tt, period){
+		return (1 - Math.cos(Math.PI * 2 * ((tt % period) / period))) / 2
+	}
+
+	static dirVector(dir){
+		const map = {left: [1, 0], right: [-1, 0], up: [0, 1], down: [0, -1], tl: [1, 1], tr: [-1, 1], bl: [1, -1], br: [-1, -1]}
+		return map[dir] || [1, 0]
+	}
+
+	static durings = {
+		none: null,
+		push: {css: 'pp-scale', ease: 'linear', amount: 10, dir: '',
+			vars(a, d){
+				return {'--pp-s0': String(1 - a / 100)}
+			},
+			curve(tt, dur, g, a, d){
+				const s = 1 - a / 100 * (1 - PresentationPlayer.progress(tt, dur))
+				return {sx: s, sy: s}
+			}},
+		pull: {css: 'pp-scale', ease: 'linear', amount: 10, dir: '',
+			vars(a, d){
+				return {'--pp-s0': String(1 + a / 100)}
+			},
+			curve(tt, dur, g, a, d){
+				const s = 1 + a / 100 * (1 - PresentationPlayer.progress(tt, dur))
+				return {sx: s, sy: s}
+			}},
+		pan: {css: 'pp-drift', ease: 'linear', amount: 5, dir: 'left',
+			vars(a, d){
+				const [vx, vy] = PresentationPlayer.dirVector(d)
+				return {'--pp-x0': vx * a + '%', '--pp-y0': vy * a + '%'}
+			},
+			curve(tt, dur, g, a, d){
+				const [vx, vy] = PresentationPlayer.dirVector(d)
+				const back = 1 - PresentationPlayer.progress(tt, dur)
+				return {tx: vx * a / 100 * g.w * back, ty: vy * a / 100 * g.h * back}
+			}},
+		kenburns: {css: 'pp-kenburns', ease: 'linear', amount: 8, dir: 'tr',
+			vars(a, d){
+				const [vx, vy] = PresentationPlayer.dirVector(d)
+				return {'--pp-s0': String(1 - a / 100), '--pp-x0': vx * a / 2 + '%', '--pp-y0': vy * a / 2 + '%'}
+			},
+			curve(tt, dur, g, a, d){
+				const [vx, vy] = PresentationPlayer.dirVector(d)
+				const back = 1 - PresentationPlayer.progress(tt, dur)
+				const s = 1 - a / 100 * back
+				return {sx: s, sy: s, tx: vx * a / 200 * g.w * back, ty: vy * a / 200 * g.h * back}
+			}},
+		float: {css: 'pp-float', ease: 'ease-in-out', amount: 3, dir: '', period: 4,
+			vars(a, d){
+				return {'--pp-y1': -a + '%'}
+			},
+			curve(tt, dur, g, a, d){
+				return {ty: -a / 100 * g.h * PresentationPlayer.wave(tt, this.period)}
+			}},
+		sway: {css: 'pp-sway', ease: 'ease-in-out', amount: 1.5, dir: '', period: 5,
+			vars(a, d){
+				return {'--pp-r0': -a + 'deg', '--pp-r1': a + 'deg'}
+			},
+			curve(tt, dur, g, a, d){
+				return {rot: a * (2 * PresentationPlayer.wave(tt, this.period) - 1) * Math.PI / 180}
+			}},
+		pulse: {css: 'pp-pulse', ease: 'ease-in-out', amount: 2, dir: '', period: 2.5,
+			vars(a, d){
+				return {'--pp-s1': String(1 + a / 100)}
+			},
+			curve(tt, dur, g, a, d){
+				const s = 1 + a / 100 * PresentationPlayer.wave(tt, this.period)
+				return {sx: s, sy: s}
+			}},
+	}
+
 	constructor(root, data, opts = {}){
 		this.root = root
 		this.opts = opts
@@ -370,6 +447,8 @@ class PresentationPlayer {
 			el.style.top = (cfg.y || 0) + '%'
 			el.style.width = (cfg.w || 30) + '%'
 			el.style.zIndex = 10 + (cfg.z || 0)
+			const du = cfg.during && PresentationPlayer.durings[cfg.during.name]
+			if (du) for (const [key, val] of Object.entries(du.vars(cfg.during.amount ?? du.amount, cfg.during.dir || du.dir))) el.style.setProperty(key, val)
 			const img = document.createElement('img')
 			img.src = this.src(this.srcFor(cfg))
 			img.draggable = false
@@ -459,7 +538,7 @@ class PresentationPlayer {
 		}
 		else this.clockStart = performance.now() - this.t * 1000
 		this.syncVideos(true)
-		for (const item of this.items) if (item.phase === 'in' || item.phase === 'out') item.el.style.animationPlayState = 'running'
+		for (const item of this.items) item.el.style.animationPlayState = 'running'
 		const step = () => {
 			if (!this.playing) return
 			this.t = this.audio ? this.audio.currentTime : (performance.now() - this.clockStart) / 1000
@@ -483,7 +562,7 @@ class PresentationPlayer {
 		if (this.ticker) clearInterval(this.ticker)
 		if (this.audio) this.audio.pause()
 		for (const v of this.videos) v.pause()
-		for (const item of this.items) if (item.phase === 'in' || item.phase === 'out') item.el.style.animationPlayState = 'paused'
+		for (const item of this.items) item.el.style.animationPlayState = 'paused'
 		if (this.bigPlay) this.bigPlay.style.display = ''
 		if (this.playBtn) this.playBtn.innerHTML = this.icon('play')
 		if (ended && this.opts.onEnded) this.opts.onEnded()
@@ -528,22 +607,43 @@ class PresentationPlayer {
 		el.style.display = 'block'
 		const start = cfg.start || 0
 		const end = start + (cfg.duration || 0)
-		if (phase === 'on'){
+		const names = []
+		const durs = []
+		const delays = []
+		const eases = []
+		const counts = []
+		el.style.transformOrigin = ''
+		if (phase !== 'on'){
+			const dir = phase === 'in' ? 'in' : 'out'
+			const spec = PresentationPlayer.transitions[cfg[dir].name]
+			const dur = cfg[dir].dur || 0.5
+			const elapsed = dir === 'in' ? t - start : t - (end - dur)
+			names.push(spec[dir])
+			durs.push(dur + 's')
+			delays.push((-Math.max(0, elapsed)).toFixed(3) + 's')
+			eases.push(spec.ease)
+			counts.push('1')
+			el.style.transformOrigin = (dir === 'in' ? spec.originIn : spec.originOut) || ''
+		}
+		const du = cfg.during && PresentationPlayer.durings[cfg.during.name]
+		if (du){
+			names.push(du.css)
+			durs.push((du.period || Math.max(0.1, end - start)) + 's')
+			delays.push((-Math.max(0, t - start)).toFixed(3) + 's')
+			eases.push(du.ease)
+			counts.push(du.period ? 'infinite' : '1')
+		}
+		if (!names.length){
 			el.style.animation = 'none'
-			el.style.transformOrigin = ''
 			return
 		}
-		const dir = phase === 'in' ? 'in' : 'out'
-		const spec = PresentationPlayer.transitions[cfg[dir].name]
-		const dur = cfg[dir].dur || 0.5
-		const elapsed = dir === 'in' ? t - start : t - (end - dur)
-		el.style.animationName = spec[dir]
-		el.style.animationDuration = dur + 's'
-		el.style.animationTimingFunction = spec.ease
-		el.style.animationDelay = (-Math.max(0, elapsed)).toFixed(3) + 's'
+		el.style.animationName = names.join(', ')
+		el.style.animationDuration = durs.join(', ')
+		el.style.animationDelay = delays.join(', ')
+		el.style.animationTimingFunction = eases.join(', ')
+		el.style.animationIterationCount = counts.join(', ')
 		el.style.animationFillMode = 'both'
 		el.style.animationPlayState = this.playing ? 'running' : 'paused'
-		el.style.transformOrigin = (dir === 'in' ? spec.originIn : spec.originOut) || ''
 	}
 
 	syncVideos(force){
@@ -1169,5 +1269,38 @@ else PresentationPlayer.boot()
 		transform: translateY(100%)
 		opacity: 0
 	}
+}
+@keyframes pp-scale {
+	0%: scale: var(--pp-s0, .9)
+	100%: scale: 1
+}
+@keyframes pp-drift {
+	0%: translate: var(--pp-x0, 5%) var(--pp-y0, 0%)
+	100%: translate: 0% 0%
+}
+@keyframes pp-kenburns {
+	0% {
+		scale: var(--pp-s0, .92)
+		translate: var(--pp-x0, -4%) var(--pp-y0, 4%)
+	}
+	100% {
+		scale: 1
+		translate: 0% 0%
+	}
+}
+@keyframes pp-float {
+	0%: translate: 0% 0%
+	50%: translate: 0% var(--pp-y1, -3%)
+	100%: translate: 0% 0%
+}
+@keyframes pp-sway {
+	0%: rotate: var(--pp-r0, -1.5deg)
+	50%: rotate: var(--pp-r1, 1.5deg)
+	100%: rotate: var(--pp-r0, -1.5deg)
+}
+@keyframes pp-pulse {
+	0%: scale: 1
+	50%: scale: var(--pp-s1, 1.02)
+	100%: scale: 1
 }
 </style>
