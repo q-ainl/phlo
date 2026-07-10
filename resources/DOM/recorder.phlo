@@ -8,9 +8,6 @@
 @ tags:     video recorder mediarecorder screen capture getdisplaymedia webcam canvas
 
 <script>
-// Capture a MediaStream (screen / camera / mic / canvas) to a Blob. Needs a
-// secure context and a user gesture for getDisplayMedia/getUserMedia. Only
-// Recorder + recorder enter the bundle scope.
 class Recorder {
 
 	constructor(opts = {}){
@@ -28,8 +25,6 @@ class Recorder {
 		return ''
 	}
 
-	// mix multiple audio sources into one track: MediaRecorder records only the
-	// first audio track of a stream, so tab/system audio + microphone must merge
 	mixed(video, audioStreams){
 		const ctx = new AudioContext()
 		const dest = ctx.createMediaStreamDestination()
@@ -45,9 +40,6 @@ class Recorder {
 		return out
 	}
 
-	// acquire a MediaStream from opts: {stream} | {canvas,fps} | {screen} | camera/mic.
-	// audio:true captures system/tab audio for screen or the mic for camera; mic:true
-	// additionally mixes the microphone into a screen/canvas capture.
 	async stream(opts = {}){
 		if (opts.stream) return opts.stream
 		if (opts.canvas){
@@ -70,9 +62,6 @@ class Recorder {
 		return navigator.mediaDevices.getUserMedia({video: opts.video == null ? true : opts.video, audio: opts.audio == null ? true : opts.audio})
 	}
 
-	// start recording; returns a controller. Awaiting controller.stop() resolves to
-	// the recorded Blob (webm by default). stop({mp4:true}) transcodes to mp4 when the
-	// DOM/ffmpeg resource is loaded, otherwise returns the original blob.
 	async record(opts = {}){
 		if (!this.supported()) throw new Error('MediaRecorder not supported here')
 		const stream = await this.stream(opts)
@@ -85,7 +74,10 @@ class Recorder {
 		const rec = new MediaRecorder(stream, recOpts)
 		const chunks = []
 		let stopResolve, stopReject
-		const stopped = new Promise((res, rej) => { stopResolve = res; stopReject = rej })
+		const stopped = new Promise((res, rej) => {
+			stopResolve = res
+			stopReject = rej
+		})
 		rec.ondataavailable = e => {
 			if (e.data && e.data.size){
 				chunks.push(e.data)
@@ -101,7 +93,6 @@ class Recorder {
 			stopResolve(new Blob(chunks, {type: (rec.mimeType || mime || 'video/webm').split(';')[0]}))
 		}
 		rec.onerror = e => stopReject((e && e.error) || new Error('recording error'))
-		// end the recording when the user stops sharing the screen/camera
 		stream.getVideoTracks().forEach(t => t.addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop() }, {once: true}))
 		rec.start(opts.timeslice || undefined)
 		this.log('[recorder] started ' + (rec.mimeType || mime || 'default'))
@@ -123,5 +114,5 @@ class Recorder {
 	}
 }
 
-const recorder = new Recorder()
+const recorder = new Recorder
 </script>
