@@ -16,9 +16,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   `FileFormatTest`.
 - A `stream` resource: `stream()` emits raw text or binary chunks under any
   content type beside the JSON command channel, and the frontend gains
-  `app.stream(path, {type, data, onData, signal})`: a fetch consumer that
-  dispatches on the response Content-Type (ndjson, sse, text, json, blob, raw).
-  Covered by `OutputTest`.
+  `app.stream(path, onData, async, type, data)`: a fetch consumer that
+  dispatches on the response Content-Type (ndjson, sse, text, json, blob, raw),
+  normalizes SSE line endings, and reaches `route async` targets when the
+  `async` argument is true. Covered by `OutputTest` and `StreamHttpTest`.
 - HTTP `QUERY` method support (RFC 10008): a safe, idempotent read that carries
   a request body. `route QUERY <path>` now parses in the router; `%payload`
   decodes the QUERY body (JSON, form-urlencoded, multipart); the `HTTP()` helper

@@ -4,3 +4,5 @@ app::route()
 
 route GET => view('ok', 'OUT')
 route GET streamed => flow::streamText()
+route async GET streamedasync => flow::streamText()
+route GET streamsse => flow::streamSse()

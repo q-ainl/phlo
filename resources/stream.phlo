@@ -28,19 +28,20 @@ function stream($data = null, string $type = 'application/octet-stream', ?string
 }
 
 <script>
-app.stream = async (path, opts = {}) => {
+app.stream = async (path, onData = null, async = false, type = null, data = null) => {
 	const url = `${location.origin}/${path}`
-	const headers = {...(opts.headers ?? {})}
+	const headers = {}
 	const csrf = obj('meta[name="csrf"]')?.content
 	csrf && (headers['X-CSRF-Token'] = csrf)
-	let body = opts.data ?? null
+	async && (headers['X-Requested-With'] = 'phlo')
+	let body = data
 	if (body !== null && !(body instanceof FormData) && !(body instanceof Blob)) [body = JSON.stringify(body), headers['Content-Type'] = 'application/json']
 	phlo.log(`⇣ APP.STREAM ${url}`)
-	const res = await fetch(url, {method: opts.method ?? (body === null ? 'GET' : 'POST'), credentials: 'same-origin', headers, body, signal: opts.signal ?? null})
+	const res = await fetch(url, {method: body === null ? 'GET' : 'POST', credentials: 'same-origin', headers, body})
 	if (!res.ok) throw new Error(`stream ${url} 🔴 ${res.status}`)
 	const mime = (res.headers.get('content-type') ?? '').split(';')[0].trim()
-	const kind = opts.type ?? (mime === 'application/x-ndjson' ? 'ndjson' : mime === 'application/json' ? 'json' : mime === 'text/event-stream' ? 'sse' : mime.startsWith('text/') ? 'text' : 'raw')
-	const emit = value => opts.onData && opts.onData(value)
+	const kind = type ?? (mime === 'application/x-ndjson' ? 'ndjson' : mime === 'application/json' ? 'json' : mime === 'text/event-stream' ? 'sse' : mime.startsWith('text/') ? 'text' : 'raw')
+	const emit = value => onData && onData(value)
 	if (kind === 'json'){
 		const value = await res.json()
 		emit(value)
@@ -87,6 +88,10 @@ app.stream = async (path, opts = {}) => {
 			continue
 		}
 		buffer += piece
+		if (kind === 'sse'){
+			const hold = buffer.endsWith('\r') ? '\r' : ''
+			buffer = buffer.slice(0, buffer.length - hold.length).replace(/\r\n?/g, '\n') + hold
+		}
 		const pieces = buffer.split(kind === 'sse' ? '\n\n' : '\n')
 		buffer = pieces.pop()
 		pieces.forEach(kind === 'sse' ? frame : line)
@@ -98,7 +103,7 @@ app.stream = async (path, opts = {}) => {
 		return text
 	}
 	buffer += tail
-	buffer && (kind === 'sse' ? frame(buffer) : line(buffer))
+	buffer && (kind === 'sse' ? frame(buffer.replace(/\r\n?/g, '\n')) : line(buffer))
 	return out
 }
 </script>

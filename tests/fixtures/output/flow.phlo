@@ -37,3 +37,6 @@ static applyStream {
 	apply(a: 1)
 	stream('BLOCKEDSTREAM', 'text/plain')
 }
+static streamSse {
+	stream("data: alpha\r\n\r\nevent: tick\r\ndata: beta\r\n\r\n", 'text/event-stream')
+}
