@@ -712,6 +712,8 @@ route async POST report::generate {
 }
 ```
 
+**Raw streams.** The `stream` resource carries data that does not fit the JSON command channel. Server-side, `stream($data, $type, $name)` opens a streaming response under any content type (default `application/octet-stream`) and emits string or iterable chunks verbatim; call it repeatedly to append, pass `$name` for a download filename. Frontend, `app.stream(path, opts)` consumes such a response with fetch and dispatches on the Content-Type: `ndjson` and `sse` parse per line/frame, `text` streams decoded text, `json` and `blob` resolve once, anything else streams raw `Uint8Array` chunks and resolves to a `Blob`. Pass `onData` for incremental chunks (override detection with `type:`); the returned promise resolves with the collected result. `app.stream` sends the CSRF token but not `X-Requested-With: phlo`: the route produces a plain data response, not SPA commands.
+
 For the full semantics (targeting forms, streaming, error handling and the `app.res` extension point) see [apply-protocol.md](apply-protocol.md).
 
 ---

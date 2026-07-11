@@ -23,3 +23,17 @@ static applyChunk {
 	apply(a: 1)
 	chunk(b: 2)
 }
+static streamText {
+	stream('hello ', 'text/plain')
+	stream('world')
+}
+static streamIterable {
+	stream(['a', 'b', 'c'], 'text/plain')
+}
+static streamBinary {
+	stream(pack('C*', 0, 1, 2, 255))
+}
+static applyStream {
+	apply(a: 1)
+	stream('BLOCKEDSTREAM', 'text/plain')
+}

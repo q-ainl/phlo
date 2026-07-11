@@ -1,0 +1,104 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Raw data stream beside the JSON command channel: stream() emits text or binary chunks under any content type, app.stream() consumes them via fetch dispatching on the response type
+@ package:  runtime
+@ frontend: true
+@ backend:  true
+@ provides: app.stream
+@ tags:     stream binary raw data download
+
+function stream($data = null, string $type = 'application/octet-stream', ?string $name = null):void {
+	$res = %res
+	$cli = %req->cli
+	!$res->streaming && $res->done && error('Output already started, invalid stream()')
+	if (!$res->streaming){
+		$res->streaming = true
+		$res->type = $type
+		$res->header('Cache-Control', 'no-store')
+		$res->header('X-Content-Type-Options', 'nosniff')
+		$res->header('X-Accel-Buffering', 'no')
+		$name === null || $res->header('Content-Disposition', 'attachment; filename="'.str_replace('"', '', $name).'"')
+		$res->render()
+	}
+	if ($data === null) return
+	foreach (is_iterable($data) ? $data : [$data] as $part){
+		print((string)$part)
+		$cli || [@ob_flush(), flush()]
+	}
+}
+
+<script>
+app.stream = async (path, opts = {}) => {
+	const url = `${location.origin}/${path}`
+	const headers = {...(opts.headers ?? {})}
+	const csrf = obj('meta[name="csrf"]')?.content
+	csrf && (headers['X-CSRF-Token'] = csrf)
+	let body = opts.data ?? null
+	if (body !== null && !(body instanceof FormData) && !(body instanceof Blob)) [body = JSON.stringify(body), headers['Content-Type'] = 'application/json']
+	phlo.log(`⇣ APP.STREAM ${url}`)
+	const res = await fetch(url, {method: opts.method ?? (body === null ? 'GET' : 'POST'), credentials: 'same-origin', headers, body, signal: opts.signal ?? null})
+	if (!res.ok) throw new Error(`stream ${url} 🔴 ${res.status}`)
+	const mime = (res.headers.get('content-type') ?? '').split(';')[0].trim()
+	const kind = opts.type ?? (mime === 'application/x-ndjson' ? 'ndjson' : mime === 'application/json' ? 'json' : mime === 'text/event-stream' ? 'sse' : mime.startsWith('text/') ? 'text' : 'raw')
+	const emit = value => opts.onData && opts.onData(value)
+	if (kind === 'json'){
+		const value = await res.json()
+		emit(value)
+		return value
+	}
+	if (kind === 'blob'){
+		const value = await res.blob()
+		emit(value)
+		return value
+	}
+	const reader = res.body.getReader()
+	const decoder = new TextDecoder()
+	const out = []
+	const parts = []
+	let text = ''
+	let buffer = ''
+	const line = raw => {
+		if (!raw) return
+		const value = JSON.parse(raw)
+		out.push(value)
+		emit(value)
+	}
+	const frame = raw => {
+		if (!raw.trim()) return
+		let event = 'message'
+		const data = []
+		raw.split('\n').forEach(l => l.startsWith('event:') ? event = l.slice(6).trim() : l.startsWith('data:') && data.push(l.slice(5).replace(/^ /, '')))
+		const value = {event, data: data.join('\n')}
+		out.push(value)
+		emit(value)
+	}
+	while (true){
+		const {done, value} = await reader.read()
+		if (done) break
+		if (kind === 'raw'){
+			parts.push(value)
+			emit(value)
+			continue
+		}
+		const piece = decoder.decode(value, {stream: true})
+		if (kind === 'text'){
+			text += piece
+			emit(piece)
+			continue
+		}
+		buffer += piece
+		const pieces = buffer.split(kind === 'sse' ? '\n\n' : '\n')
+		buffer = pieces.pop()
+		pieces.forEach(kind === 'sse' ? frame : line)
+	}
+	if (kind === 'raw') return new Blob(parts, {type: mime || 'application/octet-stream'})
+	const tail = decoder.decode()
+	if (kind === 'text'){
+		tail && [text += tail, emit(tail)]
+		return text
+	}
+	buffer += tail
+	buffer && (kind === 'sse' ? frame(buffer) : line(buffer))
+	return out
+}
+</script>

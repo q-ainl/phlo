@@ -75,4 +75,29 @@ final class OutputTest extends TestCase {
 		$this->assertNotSame(0, $code);
 		$this->assertStringContainsString('Output already started', $out.$err);
 	}
+
+	public function testStreamAppendsRawText():void {
+		[$code, $out, $err] = self::cli('flow::streamText');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame('hello world', $out, 'stream() emits raw payload without framing');
+	}
+
+	public function testStreamIterableEmitsEveryChunk():void {
+		[$code, $out, $err] = self::cli('flow::streamIterable');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame('abc', $out);
+	}
+
+	public function testStreamCarriesBinary():void {
+		[$code, $out, $err] = self::cli('flow::streamBinary');
+		$this->assertSame(0, $code, $err);
+		$this->assertSame(pack('C*', 0, 1, 2, 255), $out, 'binary bytes pass through unmangled');
+	}
+
+	public function testStreamAfterBufferedApplyThrows():void {
+		[$code, $out, $err] = self::cli('flow::applyStream');
+		$this->assertNotSame(0, $code, "expected non-zero exit, out:\n$out");
+		$this->assertStringContainsString('{"a":1}', $out, 'first output should be emitted');
+		$this->assertStringNotContainsString('BLOCKEDSTREAM', $out, 'the blocked stream must not be emitted');
+	}
 }

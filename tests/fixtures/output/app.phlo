@@ -3,3 +3,4 @@
 app::route()
 
 route GET => view('ok', 'OUT')
+route GET streamed => flow::streamText()
