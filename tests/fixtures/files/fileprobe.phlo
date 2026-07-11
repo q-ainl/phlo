@@ -34,6 +34,24 @@ static iniCases {
 	return $out
 }
 
+static settingsCases {
+	$file = data.'settings.json'
+	is_file($file) && unlink($file)
+	$out = ['emptyAll' => setting(), 'missing' => setting('nope')]
+	setting('billing.currency', 'EUR')
+	setting('features.import_gpx', false)
+	$out['flushed'] = is_file($file)
+	$out['readBack'] = setting('billing.currency')
+	$out['all'] = setting()
+	return $out
+}
+
+static settingsPersisted {
+	$out = ['currency' => setting('billing.currency'), 'flag' => setting('features.import_gpx')]
+	unlink(data.'settings.json')
+	return $out
+}
+
 static jsonCases {
 	$dir = sys_get_temp_dir().slash
 	$f = uniqid('phlo-json-')

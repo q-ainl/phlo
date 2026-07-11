@@ -2,6 +2,7 @@
     "resources": [
         "files/CSV",
         "files/INI",
-        "files/JSON"
+        "files/JSON",
+        "settings"
     ]
 }

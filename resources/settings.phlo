@@ -1,0 +1,18 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Persistent app settings in data/settings.json: setting() lists everything, setting(key) reads one value or null, setting(key, value) writes
+@ package:  files
+@ frontend: false
+@ backend:  true
+@ requires: @JSON
+@ tags:     settings config storage json
+
+function setting(?string $key = null, $value = null){
+	$store = %JSON('settings', assoc: true)
+	if ($key === null) return $store->objData
+	if (func_num_args() > 1){
+		$store->$key = $value
+		$store->objChanged && $store->objWrite($store->objData)
+	}
+	return $store->$key
+}

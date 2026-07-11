@@ -50,4 +50,19 @@ final class FileFormatTest extends TestCase {
 		$this->assertSame(2, $r['tagCount'], 'a nested array is read');
 		$this->assertTrue($r['wroteBob'], 'objWrite serializes the new data');
 	}
+
+	public function testSettingsReadWrite():void {
+		$r = self::fetch('fileprobe::settingsCases');
+		$this->assertSame([], $r['emptyAll'], 'no settings file yields an empty map');
+		$this->assertNull($r['missing'], 'an unknown key reads as null');
+		$this->assertTrue($r['flushed'], 'a set writes data/settings.json immediately');
+		$this->assertSame('EUR', $r['readBack'], 'a written key reads back in-request');
+		$this->assertSame(['billing.currency' => 'EUR', 'features.import_gpx' => false], $r['all'], 'setting() returns every key and value');
+	}
+
+	public function testSettingsPersistAcrossProcesses():void {
+		$r = self::fetch('fileprobe::settingsPersisted');
+		$this->assertSame('EUR', $r['currency'], 'settings flush to data/settings.json at shutdown');
+		$this->assertFalse($r['flag'], 'a false value survives the JSON round-trip');
+	}
 }

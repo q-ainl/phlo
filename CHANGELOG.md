@@ -10,6 +10,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- A `settings` resource: `setting()` lists, reads and writes persistent app
+  settings as a flat key/value map in `data/settings.json`. Reads are fresh per
+  request (worker-safe); a write flushes to disk immediately. Covered by
+  `FileFormatTest`.
 - HTTP `QUERY` method support (RFC 10008): a safe, idempotent read that carries
   a request body. `route QUERY <path>` now parses in the router; `%payload`
   decodes the QUERY body (JSON, form-urlencoded, multipart); the `HTTP()` helper

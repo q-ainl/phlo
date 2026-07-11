@@ -851,6 +851,17 @@ Worker-safe code rules: no `die()` or `exit()` in the HTTP path; no static prope
 
 The ORM resolves the primary key through `static idColumn` (default `'id'`), so a non-`id` primary key such as `sku` or `barcode` works across the identity map, record lookup, and the `child`/`many` relations (see [model-opt-in.md](model-opt-in.md), "Non-int / non-'id' primary key"). An auto-increment integer `id` remains the simplest default.
 
+### Persistent app settings
+
+The `settings` resource provides `setting()`: a flat key/value store persisted as `data/settings.json`, for non-secret functional settings (feature toggles, business defaults). `setting()` returns every stored key and value as an array, `setting('key')` returns one value or `null`, `setting('key', $value)` writes and flushes to disk immediately. Keys are plain strings (a dot in a key is just a character). Worker-safe by default: the backing `%JSON` store is transient and re-read per request. Keep secrets in `%creds`, build flags in `data/app.json`, and bootstrap constants in `phlo_app()`.
+
+```phlo
+setting('billing.currency', 'EUR')
+setting('billing.currency')    // 'EUR'
+setting('unknown')             // null
+setting()                      // every stored key and value
+```
+
 ### Phlo Control Center
 
 **Terminology, keep these apart:**
