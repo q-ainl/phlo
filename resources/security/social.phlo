@@ -4,15 +4,16 @@
 @ package:  security
 @ frontend: false
 @ backend:  true
-@ requires: OAuth2 creds payload
+@ requires: OAuth2 creds payload HTTP php-ext:openssl
 @ tags:     oauth oidc social login google microsoft apple authentication
-@ advice:   id_token signature is not JWKS-verified because it is fetched server-to-server over TLS, but issuer, audience (must equal client_id) and expiry ARE checked in verifyClaims before any claim is trusted. Microsoft sends no email_verified, so a present email counts as verified. Apple's client_secret is an ES256 JWT signed with the .p8 key (team_id/key_id/client_id + key from creds).
+@ advice:   The id_token is verified against the provider's JWKS (RS256 only, key looked up by kid) before any claim is read, on top of issuer, audience (must equal client_id), expiry and, when supplied, nonce. `verified` reports what the provider actually proved: Microsoft omits email_verified, so it counts only when the optional xms_edov claim states the tenant owns the address. Treat an unverified email as a claim, never as an identity: match users on provider + sub. Apple's client_secret is an ES256 JWT signed with the .p8 key (team_id/key_id/client_id + key from creds).
 
 static providers => arr(
 	google: arr(
 		label: 'Google',
 		authorize: 'https://accounts.google.com/o/oauth2/v2/auth',
 		token: 'https://oauth2.googleapis.com/token',
+		jwks: 'https://www.googleapis.com/oauth2/v3/certs',
 		scope: 'openid email profile',
 		issuer: 'https://accounts.google.com',
 	),
@@ -20,6 +21,7 @@ static providers => arr(
 		label: 'Microsoft',
 		authorize: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
 		token: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+		jwks: 'https://login.microsoftonline.com/common/discovery/v2.0/keys',
 		scope: 'openid email profile',
 		issuer: 'https://login.microsoftonline.com/',
 	),
@@ -27,6 +29,7 @@ static providers => arr(
 		label: 'Apple',
 		authorize: 'https://appleid.apple.com/auth/authorize',
 		token: 'https://appleid.apple.com/auth/token',
+		jwks: 'https://appleid.apple.com/auth/keys',
 		scope: 'name email',
 		issuer: 'https://appleid.apple.com',
 	),
@@ -49,7 +52,7 @@ static configured($provider){
 	return $c && $c['client_id'] !== void
 }
 
-static authUrl($provider, $state){
+static authUrl($provider, $state, $nonce = void){
 	$c = static::config($provider)
 	$params = arr(
 		client_id: $c['client_id'],
@@ -58,17 +61,20 @@ static authUrl($provider, $state){
 		scope: $c['scope'],
 		state: $state,
 	)
+	if ($nonce !== void) $params['nonce'] = $nonce
 	if ($provider === 'apple') $params['response_mode'] = 'form_post'
 	return OAuth2::authorizeUrl($c['authorize'], $params)
 }
 
-static profile($provider, $code){
+static profile($provider, $code, $nonce = void){
 	$cfg = static::config($provider)
 	if (!$cfg || $cfg['client_id'] === void) return null
 	$secret = $provider === 'apple' ? static::appleSecret() : $cfg['client_secret']
 	$token = OAuth2::exchangeCode($cfg['token'], $cfg['client_id'], $secret, $code, $cfg['redirect_uri'])
-	$claims = static::decodeIdToken($token['id_token'] ?? void)
-	if (!$claims || !static::verifyClaims($provider, $cfg, $claims)) return null
+	$jwt = (string)($token['id_token'] ?? void)
+	if (!static::verifySignature($provider, $jwt)) return null
+	$claims = static::decodeIdToken($jwt)
+	if (!$claims || !static::verifyClaims($provider, $cfg, $claims, $nonce)) return null
 	$profile = static::normalize($provider, $claims)
 	if ($provider === 'apple' && !$profile['name']){
 		$u = json_decode((string)(%payload->user ?? void), true)
@@ -80,25 +86,105 @@ static profile($provider, $code){
 static decodeIdToken($jwt){
 	$parts = explode(dot, (string)$jwt)
 	if (count($parts) < 2) return null
-	$claims = json_decode((string)base64_decode(strtr($parts[1], '-_', '+/')), true)
+	$claims = json_decode(static::b64urlDecode($parts[1]), true)
 	return is_array($claims) ? $claims : null
 }
 
-static verifyClaims($provider, array $cfg, array $claims){
+static algs => arr(RS256: OPENSSL_ALGO_SHA256)
+
+static verifySignature($provider, $jwt){
+	$parts = explode(dot, (string)$jwt)
+	if (count($parts) !== 3) return false
+	$header = json_decode(static::b64urlDecode($parts[0]), true)
+	if (!is_array($header)) return false
+	$alg = static::algs()[(string)($header['alg'] ?? void)] ?? null
+	$kid = (string)($header['kid'] ?? void)
+	if (!$alg || !$kid) return false
+	$pem = static::key($provider, $kid)
+	if (!$pem) return false
+	return openssl_verify($parts[0].dot.$parts[1], static::b64urlDecode($parts[2]), $pem, $alg) === 1
+}
+
+static jwks($provider){
+	$cached = %req->socialJwks ?? []
+	if (isset($cached[$provider])) return $cached[$provider]
+	$url = (string)(static::providers()[$provider]['jwks'] ?? void)
+	$keys = []
+	if ($url){
+		$data = json_decode((string)HTTP($url, ['Accept: application/json']), true)
+		if (is_array($data) && is_array($data['keys'] ?? null)) $keys = $data['keys']
+	}
+	$cached[$provider] = $keys
+	%req->socialJwks = $cached
+	return $keys
+}
+
+static key($provider, $kid){
+	foreach (static::jwks($provider) AS $jwk){
+		if ((string)($jwk['kid'] ?? void) === $kid) return static::jwkToPem((array)$jwk)
+	}
+	return void
+}
+
+static jwkToPem(array $jwk){
+	if ((string)($jwk['kty'] ?? void) !== 'RSA') return void
+	$n = static::b64urlDecode((string)($jwk['n'] ?? void))
+	$e = static::b64urlDecode((string)($jwk['e'] ?? void))
+	if (!$n || !$e) return void
+	$key = static::der(0x30, static::derInt($n).static::derInt($e))
+	$bits = static::der(0x03, "\x00".$key)
+	$algo = static::der(0x30, "\x06\x09\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01\x05\x00")
+	$spki = static::der(0x30, $algo.$bits)
+	return '-----BEGIN PUBLIC KEY-----'.lf.chunk_split(base64_encode($spki), 64, lf).'-----END PUBLIC KEY-----'.lf
+}
+
+static der($tag, $content){
+	$len = strlen($content)
+	if ($len < 0x80) return chr($tag).chr($len).$content
+	$bytes = ltrim(pack('N', $len), "\x00")
+	return chr($tag).chr(0x80 | strlen($bytes)).$bytes.$content
+}
+
+static derInt($bytes){
+	$bytes = ltrim((string)$bytes, "\x00")
+	if ($bytes === void) $bytes = "\x00"
+	if (ord($bytes[0]) & 0x80) $bytes = "\x00".$bytes
+	return static::der(0x02, $bytes)
+}
+
+static b64urlDecode($data){
+	$data = strtr((string)$data, '-_', '+/')
+	$pad = strlen($data) % 4
+	if ($pad) $data .= str_repeat(eq, 4 - $pad)
+	return (string)base64_decode($data)
+}
+
+static verifyClaims($provider, array $cfg, array $claims, $nonce = void){
 	if ((int)($claims['exp'] ?? 0) <= time()) return false
 	$aud = $claims['aud'] ?? void
 	if (!in_array((string)($cfg['client_id'] ?? void), array_map('strval', is_array($aud) ? $aud : [$aud]), true)) return false
-	$expected = (string)(static::providers()[$provider]['issuer'] ?? void)
-	if ($expected === void) return true
+	if ($nonce !== void && !hash_equals((string)$nonce, (string)($claims['nonce'] ?? void))) return false
+	return static::verifyIssuer($provider, $claims)
+}
+
+static verifyIssuer($provider, array $claims){
 	$iss = (string)($claims['iss'] ?? void)
-	if ($provider === 'microsoft') return str_starts_with($iss, $expected)
+	if ($provider === 'microsoft'){
+		$tid = (string)($claims['tid'] ?? void)
+		return $tid !== void && $iss === 'https://login.microsoftonline.com/'.$tid.'/v2.0'
+	}
+	$expected = (string)(static::providers()[$provider]['issuer'] ?? void)
+	if ($expected === void) return false
 	return $iss === $expected || ($provider === 'google' && $iss === 'accounts.google.com')
 }
 
 static normalize($provider, array $claims){
 	$ev = $claims['email_verified'] ?? null
 	$verified = $ev === true || $ev === 'true'
-	if ($provider === 'microsoft' && !empty($claims['email'])) $verified = true
+	if ($provider === 'microsoft'){
+		$edov = $claims['xms_edov'] ?? null
+		$verified = $edov === true || $edov === 'true' || $edov === 1 || $edov === '1'
+	}
 	$name = (string)($claims['name'] ?? void)
 	if (!$name) $name = trim(((string)($claims['given_name'] ?? void)).space.((string)($claims['family_name'] ?? void)))
 	return arr(

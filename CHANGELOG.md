@@ -31,6 +31,27 @@ tagged release onward. The engine version constant lives in `phlo.php`
   exchanges the configured `api_token` for a session token (cached per
   instance); pass `source` to label the e-Boekhouden audit trail.
 
+### Security
+- `security/social` now verifies the OIDC `id_token` signature against the
+  provider's JWKS (RS256 only, key looked up by `kid`) before a single claim is
+  read. It previously decoded the payload and trusted it, on the grounds that the
+  token arrives server-to-server over TLS; that holds for the transport but
+  leaves nothing checking the token itself, and an `alg: none` or symmetric
+  header was accepted as readily as a real one. The audience, expiry and, when
+  the caller passes one to `authUrl()`/`profile()`, the `nonce` are checked too.
+- The Microsoft issuer is now bound to the tenant that signed the token
+  (`iss` must equal `https://login.microsoftonline.com/{tid}/v2.0`) instead of
+  matching the `login.microsoftonline.com` prefix, which accepted a token from
+  any tenant in the world. An unknown issuer now fails closed rather than
+  passing when the provider declares none.
+- A Microsoft email is no longer reported as verified just because it is present.
+  Microsoft omits `email_verified`, and any tenant administrator can put someone
+  else's address in the claim (nOAuth), so a caller that trusted the flag could
+  be walked onto an existing local account. `verified` now reflects the optional
+  `xms_edov` claim, which states that the tenant owns the address. Callers must
+  key identity on provider + `sub` and treat an unverified address as a claim,
+  never as an identity. Covered by `SocialTest`.
+
 ### Fixed
 - `security/social` never saw ini-backed credentials: `config()` and the Apple
   client-secret path cast the creds section object straight to an array, which
