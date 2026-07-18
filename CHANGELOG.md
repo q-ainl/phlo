@@ -62,6 +62,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   never as an identity. Covered by `SocialTest`.
 
 ### Fixed
+- `payload` raised "Error reading php://input" on any request that declared
+  `Content-Type: application/json` but sent an empty or malformed body (common
+  from bots and scanners), turning a bad request into a logged 500. The JSON
+  branch now decodes the body directly and treats a null result as an empty
+  payload, the same as the form and multipart branches.
 - `security/social` never saw ini-backed credentials: `config()` and the Apple
   client-secret path cast the creds section object straight to an array, which
   exposes obj internals (`objData`, ...) instead of the ini keys, so
