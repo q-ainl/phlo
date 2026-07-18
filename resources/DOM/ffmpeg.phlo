@@ -193,7 +193,10 @@ class Ffmpeg {
 		let last = samples.length - 1
 		for (let i = 0; i < samples.length; i++) if (samples[i].key && seconds(samples[i]) <= startT) fed = i
 		if (endT > startT){
-			for (let i = samples.length - 1; i >= fed; i--) if (seconds(samples[i]) <= endT){ last = Math.min(samples.length - 1, i + 2); break }
+			for (let i = samples.length - 1; i >= fed; i--) if (seconds(samples[i]) <= endT){
+				last = Math.min(samples.length - 1, i + 2)
+				break
+			}
 		}
 
 		const blockSize = 8 << 20
@@ -287,8 +290,14 @@ class Ffmpeg {
 		const self = this
 		await new Promise((resolve, reject) => {
 			const timer = setTimeout(() => reject(new Error('video load timeout')), 20000)
-			rv.addEventListener('loadedmetadata', () => { clearTimeout(timer); resolve() }, {once: true})
-			rv.addEventListener('error', () => { clearTimeout(timer); reject(new Error('Could not load video for rendering')) }, {once: true})
+			rv.addEventListener('loadedmetadata', () => {
+				clearTimeout(timer)
+				resolve()
+			}, {once: true})
+			rv.addEventListener('error', () => {
+				clearTimeout(timer)
+				reject(new Error('Could not load video for rendering'))
+			}, {once: true})
 		})
 		return {
 			mode: 'seek',
