@@ -232,4 +232,17 @@ final class ParserTest extends TestCase {
 		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<if \$x>\na\n<else>\nb\n<elseif \$y>\nc\n</if>", 'line' => 1]);
 		$node->renderMethod('App');
 	}
+
+	public function testBracketInterpolationAutoEscapes():void {
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<p>{[ \$x ]}</p>", 'line' => 1]);
+		$out = $node->renderMethod('App');
+		$this->assertStringContainsString('esc($x)', $out);
+		$this->assertStringNotContainsString('{[', $out);
+	}
+
+	public function testBracketInterpolationIsQuoteAware():void {
+		$node = new build_node(['node' => 'view', 'name' => 'main', 'operator' => 'view', 'body' => "<p>{[ \$ok ? \"a]}b\" : \"c\" ]}</p>", 'line' => 1]);
+		$out = $node->renderMethod('App');
+		$this->assertStringContainsString('esc($ok ? "a]}b" : "c")', $out);
+	}
 }
