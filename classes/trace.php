@@ -12,6 +12,8 @@ class trace {
 	public static string $route = void;
 
 	public static function boot(string $appPath):void {
+		$path = ltrim((string)parse_url($_SERVER['REQUEST_URI'] ?? void, PHP_URL_PATH), slash);
+		if (defined('control') && control && str_starts_with($path.slash, control.slash)) return;
 		self::$on = true;
 		self::$t0 = microtime(true);
 		self::$id = date('Ymd-His').'-'.substr(uniqid(), -4);
