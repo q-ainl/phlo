@@ -421,6 +421,8 @@ class PresentationPlayer {
 			v.muted = !cfg.volume
 			v.style.objectFit = cfg.fit || 'cover'
 			v._start = cfg.start || 0
+			v._inDur = cfg.in && cfg.in.dur ? cfg.in.dur : 0
+			v._outDur = cfg.out && cfg.out.dur ? cfg.out.dur : 0
 			if (cfg.x != null || cfg.y != null || cfg.w != null){
 				v.classList.add('pp-video-box')
 				v.style.left = (cfg.x || 0) + '%'
@@ -429,6 +431,10 @@ class PresentationPlayer {
 				v.style.zIndex = 10 + (cfg.z || 0)
 			}
 			else v.style.zIndex = 1000
+			if (cfg.frame){
+				v.style.borderRadius = '20px'
+				v.style.boxShadow = '0 26px 70px rgba(0,0,0,.55)'
+			}
 			jobs.push(this.guard(this.loadBlob(this.src(this.srcFor(cfg))).then(url => new Promise(res => {
 				v.addEventListener('loadedmetadata', () => res(), {once: true})
 				v.addEventListener('error', () => res(), {once: true})
@@ -674,6 +680,13 @@ class PresentationPlayer {
 		const known = Number.isFinite(el.duration) && el.duration > 0
 		const show = known && this.t >= start && this.t < start + el.duration
 		if (el.style) el.style.display = show ? '' : 'none'
+		if (el.style && el.tagName === 'VIDEO'){
+			const end = start + (el.duration || 0)
+			let op = 1
+			if (el._inDur && this.t < start + el._inDur) op = (this.t - start) / el._inDur
+			else if (el._outDur && this.t > end - el._outDur) op = (end - this.t) / el._outDur
+			el.style.opacity = Math.max(0, Math.min(1, op)).toFixed(3)
+		}
 		if (el.readyState < 1) return
 		if (!show){
 			if (!el.paused) el.pause()
