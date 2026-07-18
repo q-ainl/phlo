@@ -531,10 +531,10 @@ class Ffmpeg {
 		}
 		const args = ['-i', 'wcv.mp4'].concat(prepared.args)
 		const ins = prepared.inputs
-		if (ins.length === 1 && ins[0].volume === 1) args.push('-map', '0:v', '-map', '1:a?', '-c', 'copy', '-shortest', 'out.mp4')
-		else if (ins.length === 1) args.push('-map', '0:v', '-map', '1:a?', '-c:v', 'copy', '-filter:a', 'volume=' + ins[0].volume, '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
+		if (ins.length === 1 && ins[0].volume === 1 && !ins[0].delay) args.push('-map', '0:v', '-map', '1:a?', '-c', 'copy', '-shortest', 'out.mp4')
+		else if (ins.length === 1 && !ins[0].delay) args.push('-map', '0:v', '-map', '1:a?', '-c:v', 'copy', '-filter:a', 'volume=' + ins[0].volume, '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		else {
-			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]volume=' + a.volume + '[a' + i + ']')
+			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]' + (a.delay ? 'adelay=' + Math.round(a.delay) + ':all=1,' : '') + 'volume=' + a.volume + '[a' + i + ']')
 			const mix = ins.map((a, i) => '[a' + i + ']').join('') + 'amix=inputs=' + ins.length + ':duration=longest:normalize=0[aout]'
 			args.push('-filter_complex', parts.join(';') + ';' + mix, '-map', '0:v', '-map', '[aout]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		}
@@ -581,7 +581,7 @@ class Ffmpeg {
 			}
 			if (a.seek) args.push('-ss', String(a.seek))
 			args.push('-i', path)
-			inputs.push({volume: a.volume == null ? 1 : a.volume})
+			inputs.push({volume: a.volume == null ? 1 : a.volume, delay: a.delay || 0})
 		}
 		return {args, inputs, cleanup: async () => { for (const c of cleanups) await c() }}
 	}
@@ -649,13 +649,13 @@ class Ffmpeg {
 		args.push(...prepared.args)
 		const ins = prepared.inputs
 		if (!ins.length) args.push('-map', '0:v', '-an', '-c:v', 'copy', 'out.mp4')
-		else if (ins.length === 1){
+		else if (ins.length === 1 && !ins[0].delay){
 			args.push('-map', '0:v', '-map', '1:a?', '-c:v', 'copy')
 			if (ins[0].volume !== 1) args.push('-filter:a', 'volume=' + ins[0].volume)
 			args.push('-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		}
 		else {
-			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]volume=' + a.volume + '[a' + i + ']')
+			const parts = ins.map((a, i) => '[' + (i + 1) + ':a]' + (a.delay ? 'adelay=' + Math.round(a.delay) + ':all=1,' : '') + 'volume=' + a.volume + '[a' + i + ']')
 			const mix = ins.map((a, i) => '[a' + i + ']').join('') + 'amix=inputs=' + ins.length + ':duration=longest:normalize=0[aout]'
 			args.push('-filter_complex', parts.join(';') + ';' + mix, '-map', '0:v', '-map', '[aout]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', 'out.mp4')
 		}

@@ -249,7 +249,7 @@ class PresentationPlayer {
 		this.items = []
 		this.videos = []
 		this.audio = null
-		this.durOverride = null
+		this.audioStart = 0
 		this.subIndex = -1
 		this.raf = null
 		this.blobCache = {}
@@ -307,11 +307,10 @@ class PresentationPlayer {
 
 	get duration(){
 		const p = this.pres
-		if (Number.isFinite(this.durOverride) && this.durOverride > 0) return this.durOverride
-		if (p.audio && Number.isFinite(p.audio.duration) && p.audio.duration > 0) return p.audio.duration
 		let end = 0
 		for (const img of p.images || []) end = Math.max(end, (img.start || 0) + (img.duration || 0))
-		for (const v of this.videos) if (v.duration) end = Math.max(end, v.duration)
+		for (const v of this.videos) if (v.duration) end = Math.max(end, v._start + v.duration)
+		if (p.audio && p.audio.duration) end = Math.max(end, (p.audio.start || 0) + p.audio.duration)
 		return end || 10
 	}
 
@@ -393,10 +392,10 @@ class PresentationPlayer {
 		this.items = []
 		this.videos = []
 		const wantAudio = pres.audio && pres.audio.src ? this.src(this.srcFor(pres.audio)) : ''
+		this.audioStart = pres.audio && pres.audio.start ? pres.audio.start : 0
 		if (this.audio && this.audioSrc !== wantAudio){
 			this.audio.pause()
 			this.audio = null
-			this.durOverride = null
 		}
 		if (wantAudio && !this.audio){
 			this.audioSrc = wantAudio
@@ -405,10 +404,7 @@ class PresentationPlayer {
 			jobs.push(this.guard(this.loadBlob(this.audioSrc).then(url => new Promise(res => {
 				this.audio.addEventListener('loadedmetadata', () => {
 					const d = this.audio.duration
-					if (Number.isFinite(d) && d > 0){
-						this.durOverride = d
-						if (this.opts.onMeta) this.opts.onMeta(d)
-					}
+					if (Number.isFinite(d) && d > 0 && this.opts.onMeta) this.opts.onMeta(d)
 					res()
 				}, {once: true})
 				this.audio.addEventListener('error', () => res(), {once: true})
@@ -423,6 +419,7 @@ class PresentationPlayer {
 			v.volume = Math.min(1, Math.max(0, (cfg.volume ?? 100) / 100))
 			v.muted = !cfg.volume
 			v.style.objectFit = cfg.fit || 'cover'
+			v._start = cfg.start || 0
 			if (cfg.x != null || cfg.y != null || cfg.w != null){
 				v.classList.add('pp-video-box')
 				v.style.left = (cfg.x || 0) + '%'
@@ -430,6 +427,7 @@ class PresentationPlayer {
 				v.style.width = (cfg.w || 30) + '%'
 				v.style.zIndex = 10 + (cfg.z || 0)
 			}
+			else v.style.zIndex = 1000
 			jobs.push(this.guard(this.loadBlob(this.src(this.srcFor(cfg))).then(url => new Promise(res => {
 				v.addEventListener('loadedmetadata', () => res(), {once: true})
 				v.addEventListener('error', () => res(), {once: true})
@@ -532,16 +530,13 @@ class PresentationPlayer {
 		this.root.classList.remove('pp-paused')
 		if (this.bigPlay) this.bigPlay.style.display = 'none'
 		if (this.playBtn) this.playBtn.innerHTML = this.icon('pause')
-		if (this.audio){
-			this.audio.currentTime = this.t
-			this.audio.play()
-		}
-		else this.clockStart = performance.now() - this.t * 1000
+		this.clockStart = performance.now() - this.t * 1000
 		this.syncVideos(true)
+		if (this.audio) this.syncAudio(true)
 		for (const item of this.items) item.el.style.animationPlayState = 'running'
 		const step = () => {
 			if (!this.playing) return
-			this.t = this.audio ? this.audio.currentTime : (performance.now() - this.clockStart) / 1000
+			this.t = (performance.now() - this.clockStart) / 1000
 			if (this.t >= this.duration){
 				this.t = this.duration
 				this.pause(true)
@@ -570,8 +565,7 @@ class PresentationPlayer {
 
 	seek(t){
 		this.t = Math.min(Math.max(0, t), this.duration)
-		if (this.audio) this.audio.currentTime = this.t
-		if (!this.audio) this.clockStart = performance.now() - this.t * 1000
+		this.clockStart = performance.now() - this.t * 1000
 		this.applyTime(this.t, true)
 		this.updateTime()
 		if (this.opts.onTime) this.opts.onTime(this.t)
@@ -593,6 +587,7 @@ class PresentationPlayer {
 			if (phase !== item.phase || force) this.setPhase(item, phase, t)
 		}
 		this.syncVideos(force)
+		if (this.audio) this.syncAudio(force)
 		this.applySubs(t)
 	}
 
@@ -647,13 +642,26 @@ class PresentationPlayer {
 	}
 
 	syncVideos(force){
-		for (const v of this.videos){
-			if (v.readyState < 1) continue
-			const drift = Math.abs(v.currentTime - this.t)
-			if (force || drift > 0.35) v.currentTime = Math.min(this.t, v.duration || this.t)
-			if (this.playing && v.paused && this.t < (v.duration || Infinity)) v.play().catch(() => {})
-			if (!this.playing && !v.paused) v.pause()
+		for (const v of this.videos) this.syncMedia(v, v._start, force)
+	}
+
+	syncAudio(force){
+		this.syncMedia(this.audio, this.audioStart, force)
+	}
+
+	syncMedia(el, start, force){
+		const known = Number.isFinite(el.duration) && el.duration > 0
+		const show = known && this.t >= start && this.t < start + el.duration
+		if (el.style) el.style.display = show ? '' : 'none'
+		if (el.readyState < 1) return
+		if (!show){
+			if (!el.paused) el.pause()
+			return
 		}
+		const target = this.t - start
+		if (force || Math.abs(el.currentTime - target) > 0.35) el.currentTime = Math.min(Math.max(0, target), el.duration || target)
+		if (this.playing && el.paused) el.play().catch(() => {})
+		if (!this.playing && !el.paused) el.pause()
 	}
 
 	applySubs(t){
