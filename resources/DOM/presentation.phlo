@@ -491,9 +491,27 @@ class PresentationPlayer {
 			if (cfg.bold) el.style.fontWeight = 'bold'
 			const du = cfg.during && PresentationPlayer.durings[cfg.during.name]
 			if (du) for (const [key, val] of Object.entries(du.vars(cfg.during.amount ?? du.amount, cfg.during.dir || du.dir))) el.style.setProperty(key, val)
-			el.textContent = cfg.content || ''
+			let words = null
+			if (cfg.kinetic){
+				words = []
+				let wi = 0
+				for (const tok of (cfg.content || '').split(/(\s+)/)){
+					if (tok === '') continue
+					if (/^\s+$/.test(tok)){
+						el.appendChild(document.createTextNode(tok))
+						continue
+					}
+					const span = document.createElement('span')
+					span.className = 'pp-word'
+					span.textContent = tok
+					el.appendChild(span)
+					words.push({span, i: wi})
+					wi++
+				}
+			}
+			else el.textContent = cfg.content || ''
 			this.stage.appendChild(el)
-			this.items.push({cfg, el, phase: null})
+			this.items.push({cfg, el, phase: null, words})
 		}
 		this.showSubs = (pres.subtitles || {}).show !== false
 		this.subIndex = -1
@@ -613,9 +631,28 @@ class PresentationPlayer {
 			}
 			if (phase !== item.phase || force) this.setPhase(item, phase, t)
 		}
+		for (const item of this.items){
+			if (!item.words) continue
+			const start = item.cfg.start || 0
+			if (t < start || t >= start + (item.cfg.duration || 0)) continue
+			for (const {span, i} of item.words){
+				const st = PresentationPlayer.popState(t - start - i * 0.06)
+				span.style.opacity = st.o
+				span.style.transform = 'translateY(' + st.y + 'em) scale(' + st.s + ')'
+			}
+		}
 		this.syncVideos(force)
 		if (this.audio) this.syncAudio(force)
 		this.applySubs(t)
+	}
+
+	static popState(dt){
+		const D = 0.34
+		if (dt <= 0) return {o: 0, s: 0.82, y: 0.28}
+		if (dt >= D) return {o: 1, s: 1, y: 0}
+		const p = dt / D
+		const e = 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2)
+		return {o: Math.min(1, p * 1.8), s: 0.82 + 0.18 * e, y: 0.28 * (1 - e)}
 	}
 
 	setPhase(item, phase, t){
@@ -786,6 +823,10 @@ else PresentationPlayer.boot()
 	overflow-wrap: break-word
 	line-height: 1.25
 	text-shadow: 0 1px 3px rgba(0,0,0,.55)
+	.pp-word {
+		display: inline-block
+		will-change: transform, opacity
+	}
 }
 .pp-subs {
 	position: absolute
