@@ -11,7 +11,7 @@
 app.mod.toast = msg => {
 	obj('#toasts') || app.mod.append('body', '<div id="toasts"></div>')
 	const toast = document.createElement('div')
-	toast.innerHTML = msg
+	toast.textContent = msg
 	toast.onclick = () => toast.remove()
 	obj('#toasts').insertAdjacentElement('beforeend', toast)
 	setTimeout(() => toast.remove(), 4000)
