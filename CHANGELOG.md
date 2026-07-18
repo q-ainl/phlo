@@ -10,6 +10,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- `{[ expr ]}` view interpolation for auto-escaped output: it HTML-escapes its
+  value (equivalent to `{{ esc(expr) }}`), while `{{ }}` and `{( )}` stay raw.
+  Quote-aware, so a `]}` inside a string literal does not close it early.
+  Covered by the views golden fixture and `ParserTest`.
 - A `settings` resource: `setting()` lists, reads and writes persistent app
   settings as a flat key/value map in `data/settings.json`. Reads are fresh per
   request (worker-safe); a write flushes to disk immediately. Covered by
@@ -30,6 +34,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   sales invoices behind the standard connector contract. The first call
   exchanges the configured `api_token` for a session token (cached per
   instance); pass `source` to label the e-Boekhouden audit trail.
+
+### Changed
+- Trace no longer records internal Control Center requests (paths under the
+  `control` prefix), so a trace session shows only real app requests. It runs
+  only when `trace` is on (dev-only). Covered by `TraceScopeTest`.
 
 ### Security
 - `security/social` now verifies the OIDC `id_token` signature against the

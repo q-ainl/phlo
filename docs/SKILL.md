@@ -486,6 +486,7 @@ view:
 | `$this->prop` | Property or zero-argument method |
 | `{{ expr }}` | Function calls, method calls with args, chained access |
 | `{( expr )}` | Conditions, operators, null-coalesce |
+| `{[ expr ]}` | Same as `{{ }}`, but HTML-escaped output (untrusted data) |
 
 ```phlo
 view card($item):
@@ -495,11 +496,11 @@ view card($item):
 <p>{( $item->note ?? dash )}</p>
 ```
 
-**Output is raw - escape untrusted data yourself.** `{{ }}` and `{( )}` emit their value verbatim; Phlo does not auto-escape. This is deliberate: a view *is* HTML, and escaping every value for you would make it impossible to emit the markup you do mean. For values that come from users, wrap them in `esc()`:
+**`{{ }}` and `{( )}` output raw; `{[ ]}` escapes.** `{{ }}` and `{( )}` emit their value verbatim, Phlo does not auto-escape them: a view *is* HTML, and escaping every value for you would make it impossible to emit the markup you do mean. For untrusted or user-supplied text use `{[ expr ]}`, which HTML-escapes its value (the same as writing `{{ esc(expr) }}`):
 
 ```phlo
 view comment($c):
-<p>{{ esc($c->body) }}</p>                 <- user text: escape it
+<p>{[ $c->body ]}</p>                      <- user text: escaped for you
 <div>{{ $this->renderMarkup($c) }}</div>   <- you own the HTML: leave it raw
 ```
 
