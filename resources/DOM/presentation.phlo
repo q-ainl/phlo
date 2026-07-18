@@ -477,7 +477,7 @@ class PresentationPlayer {
 			el.style.left = (cfg.x || 0) + '%'
 			el.style.top = (cfg.y || 0) + '%'
 			el.style.width = (cfg.w || 80) + '%'
-			el.style.zIndex = 10 + (cfg.z || 0)
+			el.style.zIndex = 2000 + (cfg.z || 0)
 			el.style.fontFamily = cfg.font || 'system-ui, sans-serif'
 			el.style.fontSize = (cfg.size || 6) + 'cqh'
 			el.style.color = cfg.color || '#ffffff'
