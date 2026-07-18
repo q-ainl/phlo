@@ -1,6 +1,8 @@
 {
     "resources": [
         "phlo.async",
-        "security/social"
+        "security/social",
+        "files/file",
+        "payload"
     ]
 }

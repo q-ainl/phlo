@@ -24,6 +24,20 @@ final class E2eTest extends TestCase {
 		return (string)file_get_contents($url, false, $context);
 	}
 
+	private static function post(string $url, string $body, array $headers = []):array {
+		$context = stream_context_create(['http' => [
+			'method'        => 'POST',
+			'header'        => implode("\r\n", array_merge($headers, ['Content-Length: '.strlen($body)])),
+			'content'       => $body,
+			'timeout'       => 5,
+			'ignore_errors' => true,
+		]]);
+		$out    = (string)file_get_contents($url, false, $context);
+		$status = 0;
+		foreach ($http_response_header ?? [] as $h) if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)){ $status = (int)$m[1]; break; }
+		return [$status, $out];
+	}
+
 	public function testCliBuildAndLint():void {
 		[$code, $out, $err] = self::cli('build::run');
 		$this->assertSame(0, $code, "build::run failed:\n$out$err");
@@ -146,6 +160,20 @@ final class E2eTest extends TestCase {
 			$segBody = self::get("http://127.0.0.1:$port/seg/0", ['X-Requested-With: phlo']);
 			$segData = json_decode($segBody, true);
 			$this->assertSame('0', $segData['seg'] ?? null, 'a 0 path segment must match');
+
+			// payload must not 500 on an empty or malformed application/json body (bots and scanners hit this
+			// constantly); it becomes an empty payload, the same as the form-urlencoded and multipart branches.
+			[$status, $body] = self::post("http://127.0.0.1:$port/payload", '', ['Content-Type: application/json']);
+			$this->assertSame(200, $status, "empty JSON body must not error: $body");
+			$this->assertSame([], json_decode($body, true)['keys'] ?? null, "empty JSON body is an empty payload: $body");
+
+			[$status, $body] = self::post("http://127.0.0.1:$port/payload", '{bad', ['Content-Type: application/json']);
+			$this->assertSame(200, $status, "malformed JSON body must not error: $body");
+			$this->assertSame([], json_decode($body, true)['keys'] ?? null, "malformed JSON body is an empty payload: $body");
+
+			[$status, $body] = self::post("http://127.0.0.1:$port/payload", '{"name":"x"}', ['Content-Type: application/json']);
+			$this->assertSame(200, $status, $body);
+			$this->assertSame(['name'], json_decode($body, true)['keys'] ?? null, "a valid JSON body parses: $body");
 		}
 		finally {
 			proc_terminate($server);

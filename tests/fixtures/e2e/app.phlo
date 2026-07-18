@@ -8,6 +8,7 @@ route GET => $this->home
 route both GET ping => $this->pong
 route GET eval => phlo_eval('return 31337')
 route both GET seg $n => $this->seg($n)
+route both POST payload => output(['keys' => %payload->objKeys])
 
 method home => view($this->main, 'Home')
 
