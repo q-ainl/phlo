@@ -14,7 +14,7 @@ static __handle => null
 prop title => ucfirst($this->name)
 
 method input($record) => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
-method label($record) => $record->{$this->name};
+method label($record) => esc($record->{$this->name});
 
 prop objColumns => []
 
