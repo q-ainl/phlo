@@ -797,11 +797,11 @@ else PresentationPlayer.boot()
 	width: 100%
 	height: 100%
 	object-fit: cover
-	\.pp-video-box {
-		right: auto
-		bottom: auto
-		height: auto
-	}
+}
+.pp-video-box {
+	right: auto
+	bottom: auto
+	height: auto
 }
 .pp-item {
 	position: absolute
