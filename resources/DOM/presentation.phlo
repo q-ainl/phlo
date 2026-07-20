@@ -842,7 +842,7 @@ else PresentationPlayer.boot()
 	text-align: center
 	border-radius: .3em
 	pointer-events: none
-	z-index: 900
+	z-index: 3000
 }
 .pp-bigplay {
 	position: absolute
@@ -856,7 +856,7 @@ else PresentationPlayer.boot()
 	border: 2px solid rgba(255,255,255,.8)
 	color: #fff
 	cursor: pointer
-	z-index: 950
+	z-index: 3050
 	display: flex
 	align-items: center
 	justify-content: center
@@ -879,7 +879,7 @@ else PresentationPlayer.boot()
 	gap: .8em
 	padding: 2.2em .9em .5em
 	background: linear-gradient(transparent, rgba(0,0,0,.75))
-	z-index: 940
+	z-index: 3040
 	opacity: 0
 	transition: opacity .25s ease
 	font-size: .9em
