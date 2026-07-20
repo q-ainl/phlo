@@ -244,7 +244,8 @@ class PresentationPlayer {
 		const pres0 = data.presentation || {}
 		this.lang = opts.lang ?? pres0.lang ?? (pres0.subtitles || {}).lang ?? null
 		this.playing = false
-		this.t = 0
+		this.started = false
+		this.t = !opts.edit && pres0.poster ? Math.max(0, pres0.poster) : 0
 		this.clockStart = 0
 		this.items = []
 		this.videos = []
@@ -579,6 +580,8 @@ class PresentationPlayer {
 
 	play(){
 		if (!this.loaded) return
+		if (!this.started && this.t > 0) this.seek(0)
+		this.started = true
 		if (this.t >= this.duration - 0.05) this.seek(0)
 		this.playing = true
 		this.root.classList.remove('pp-paused')
