@@ -286,6 +286,14 @@ class PresentationPlayer {
 		return item ? item.src : ''
 	}
 
+	contentFor(item){
+		if (item && this.lang && Array.isArray(item.alts)){
+			const alt = item.alts.find(a => a && a.content && a.lang === this.lang)
+			if (alt) return alt.content
+		}
+		return item && item.content ? item.content : ''
+	}
+
 	languages(){
 		const set = new Set()
 		const p = this.pres || {}
@@ -296,6 +304,7 @@ class PresentationPlayer {
 		add(p.audio)
 		for (const v of p.videos || []) add(v)
 		for (const i of p.images || []) add(i)
+		for (const t of p.texts || []) add(t)
 		if (this.transcript && this.transcript.translations) for (const l of Object.keys(this.transcript.translations)) set.add(l)
 		return [...set].filter(l => l && l !== p.lang)
 	}
@@ -495,7 +504,7 @@ class PresentationPlayer {
 			if (cfg.kinetic){
 				words = []
 				let wi = 0
-				for (const tok of (cfg.content || '').split(/(\s+)/)){
+				for (const tok of this.contentFor(cfg).split(/(\s+)/)){
 					if (tok === '') continue
 					if (/^\s+$/.test(tok)){
 						el.appendChild(document.createTextNode(tok))
@@ -509,7 +518,7 @@ class PresentationPlayer {
 					wi++
 				}
 			}
-			else el.textContent = cfg.content || ''
+			else el.textContent = this.contentFor(cfg)
 			this.stage.appendChild(el)
 			this.items.push({cfg, el, phase: null, words})
 		}
@@ -546,7 +555,7 @@ class PresentationPlayer {
 
 	refreshLangSel(){
 		if (!this.langSel) return
-		const langs = this.languages()
+		const langs = this.opts.langSelector === false ? [] : this.languages()
 		if (!langs.length){
 			this.langSel.style.display = 'none'
 			return
@@ -767,14 +776,20 @@ class PresentationPlayer {
 	}
 
 	static boot(){
-		const data = document.getElementById('pp-data')
-		const root = document.getElementById('pp-root')
-		if (data && root) window.pp = new PresentationPlayer(root, JSON.parse(data.textContent), {controls: true})
+		for (const root of document.querySelectorAll('.pp-embed')){
+			if (root.dataset.ppBooted) continue
+			const data = root.querySelector('script[type="application/json"]')
+			if (!data) continue
+			root.dataset.ppBooted = '1'
+			const forced = 'lang' in root.dataset
+			new PresentationPlayer(root, JSON.parse(data.textContent), {controls: true, lang: root.dataset.lang || null, langSelector: !forced})
+		}
 	}
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => PresentationPlayer.boot())
 else PresentationPlayer.boot()
+new MutationObserver(() => PresentationPlayer.boot()).observe(document.documentElement, {childList: true, subtree: true})
 </script>
 
 <style>
