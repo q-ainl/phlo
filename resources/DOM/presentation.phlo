@@ -44,6 +44,8 @@ class PresentationPlayer {
 		cardsB: this.bezier(0.2, 0, 0.2, 1),
 	}
 
+	static instances = new Set()
+
 	static clipRombus(q){
 		return (ctx, x, y, w, h) => {
 			const cx = x + w / 2
@@ -255,9 +257,10 @@ class PresentationPlayer {
 			if (saved){
 				this.t = saved.t
 				this.started = true
-				this.resumePlay = saved.playing
+				this.resumePlay = true
 			}
 		}
+		PresentationPlayer.instances.add(this)
 		this.clockStart = 0
 		this.items = []
 		this.videos = []
@@ -308,9 +311,22 @@ class PresentationPlayer {
 		return null
 	}
 
-	saveState(playing){
-		try { sessionStorage.setItem(this.stateKey, JSON.stringify({t: this.t, playing, ts: Date.now()})) }
+	saveState(){
+		try { sessionStorage.setItem(this.stateKey, JSON.stringify({t: this.t, ts: Date.now()})) }
 		catch {}
+	}
+
+	destroy(){
+		if (this.playing && !this.opts.edit) this.saveState()
+		this.playing = false
+		if (this.raf) cancelAnimationFrame(this.raf)
+		if (this.ticker) clearInterval(this.ticker)
+		if (this.audio) this.audio.pause()
+		for (const v of this.videos) v.pause()
+		this.audio = null
+		this.videos = []
+		for (const entry of Object.values(this.blobCache)) Promise.resolve(entry).then(url => typeof url === 'string' && url.startsWith('blob:') && URL.revokeObjectURL(url))
+		this.blobCache = {}
 	}
 
 	clearState(){
@@ -681,7 +697,7 @@ class PresentationPlayer {
 			const tick = Math.floor(this.t)
 			if (tick !== this.savedTick){
 				this.savedTick = tick
-				this.saveState(true)
+				this.saveState()
 			}
 			if (this.t >= this.duration){
 				this.t = this.duration
@@ -698,7 +714,7 @@ class PresentationPlayer {
 
 	pause(ended){
 		this.playing = false
-		if (!this.opts.edit && this.started) ended ? this.clearState() : this.saveState(false)
+		if (!this.opts.edit) this.clearState()
 		this.root.classList.add('pp-paused')
 		if (this.raf) cancelAnimationFrame(this.raf)
 		if (this.ticker) clearInterval(this.ticker)
@@ -869,6 +885,15 @@ class PresentationPlayer {
 		if (this.seekEl && !this.seeking) this.seekEl.value = this.duration ? Math.round(shown / this.duration * 1000) : 0
 	}
 
+	static sweep(){
+		for (const player of this.instances){
+			if (player.root.isConnected) continue
+			player.destroy()
+			this.instances.delete(player)
+		}
+		this.boot()
+	}
+
 	static boot(){
 		for (const root of document.querySelectorAll('.pp-embed')){
 			if (root.dataset.ppBooted) continue
@@ -883,7 +908,7 @@ class PresentationPlayer {
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => PresentationPlayer.boot())
 else PresentationPlayer.boot()
-new MutationObserver(() => PresentationPlayer.boot()).observe(document.documentElement, {childList: true, subtree: true})
+new MutationObserver(() => PresentationPlayer.sweep()).observe(document.documentElement, {childList: true, subtree: true})
 </script>
 
 <style>
