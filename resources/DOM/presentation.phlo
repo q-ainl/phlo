@@ -363,6 +363,7 @@ class PresentationPlayer {
 		if (this.audio) this.audio.volume = eff
 		for (const v of this.videos) v.volume = (v._baseVol ?? 0) * eff
 		if (this.volBtn) this.volBtn.innerHTML = this.icon(eff > 0 ? 'vol' : 'mute')
+		if (this.volBtn) this.volBtn.setAttribute('aria-label', eff > 0 ? 'Mute' : 'Unmute')
 		if (this.volEl && !this.muted) this.volEl.value = Math.round(this.vol * 100)
 	}
 
@@ -456,12 +457,14 @@ class PresentationPlayer {
 	buildControls(){
 		this.bigPlay = document.createElement('button')
 		this.bigPlay.className = 'pp-bigplay'
+		this.bigPlay.setAttribute('aria-label', 'Play')
 		this.bigPlay.innerHTML = this.icon('play')
 		this.bigPlay.addEventListener('click', () => this.toggle())
 		this.root.appendChild(this.bigPlay)
 		const bar = document.createElement('div')
 		bar.className = 'pp-controls'
 		this.playBtn = document.createElement('button')
+		this.playBtn.setAttribute('aria-label', 'Play')
 		this.playBtn.innerHTML = this.icon('play')
 		this.playBtn.addEventListener('click', () => this.toggle())
 		this.timeEl = document.createElement('span')
@@ -469,28 +472,34 @@ class PresentationPlayer {
 		this.seekEl = document.createElement('input')
 		this.seekEl.type = 'range'
 		this.seekEl.className = 'pp-seek'
+		this.seekEl.setAttribute('aria-label', 'Seek')
 		this.seekEl.min = 0
 		this.seekEl.max = 1000
 		this.seekEl.value = 0
 		this.seekEl.addEventListener('input', () => this.seek(this.seekEl.value / 1000 * this.duration))
 		this.volBtn = document.createElement('button')
+		this.volBtn.setAttribute('aria-label', 'Mute')
 		this.volBtn.innerHTML = this.icon('vol')
 		this.volBtn.addEventListener('click', () => this.toggleMute())
 		this.volEl = document.createElement('input')
 		this.volEl.type = 'range'
 		this.volEl.className = 'pp-vol'
+		this.volEl.setAttribute('aria-label', 'Volume')
 		this.volEl.min = 0
 		this.volEl.max = 100
 		this.volEl.value = Math.round(this.vol * 100)
 		this.volEl.addEventListener('input', () => this.setVol(this.volEl.value / 100))
 		this.ccBtn = document.createElement('button')
+		this.ccBtn.setAttribute('aria-label', 'Subtitles')
 		this.ccBtn.innerHTML = this.icon('cc')
 		this.ccBtn.addEventListener('click', () => this.setSubs(!this.showSubs))
 		this.langSel = document.createElement('select')
 		this.langSel.className = 'pp-lang'
+		this.langSel.setAttribute('aria-label', 'Language')
 		this.langSel.style.display = 'none'
 		this.langSel.addEventListener('change', () => this.setLang(this.langSel.value === 'original' ? null : this.langSel.value))
 		this.fsBtn = document.createElement('button')
+		this.fsBtn.setAttribute('aria-label', 'Fullscreen')
 		this.fsBtn.innerHTML = this.icon('full')
 		this.fsBtn.addEventListener('click', () => {
 			if (document.fullscreenElement) document.exitFullscreen()
@@ -586,7 +595,12 @@ class PresentationPlayer {
 			if (du) for (const [key, val] of Object.entries(du.vars(cfg.during.amount ?? du.amount, cfg.during.dir || du.dir))) el.style.setProperty(key, val)
 			const img = document.createElement('img')
 			img.src = this.src(this.srcFor(cfg))
+			img.alt = cfg.alt || ''
 			img.draggable = false
+			img.addEventListener('load', () => {
+				img.width = img.naturalWidth
+				img.height = img.naturalHeight
+			}, {once: true})
 			if (!img.complete) jobs.push(this.guard(new Promise(res => {
 				img.addEventListener('load', () => res(), {once: true})
 				img.addEventListener('error', () => res(), {once: true})
@@ -721,6 +735,7 @@ class PresentationPlayer {
 		if (this.wake) this.wake()
 		if (this.bigPlay) this.bigPlay.style.display = 'none'
 		if (this.playBtn) this.playBtn.innerHTML = this.icon('pause')
+		if (this.playBtn) this.playBtn.setAttribute('aria-label', 'Pause')
 		this.clockStart = performance.now() - this.t * 1000
 		this.syncVideos(true)
 		if (this.audio) this.syncAudio(true)
@@ -759,6 +774,7 @@ class PresentationPlayer {
 		for (const item of this.items) item.el.style.animationPlayState = 'paused'
 		if (this.bigPlay) this.bigPlay.style.display = ''
 		if (this.playBtn) this.playBtn.innerHTML = this.icon('play')
+		if (this.playBtn) this.playBtn.setAttribute('aria-label', 'Play')
 		if (ended && this.opts.onEnded) this.opts.onEnded()
 	}
 
