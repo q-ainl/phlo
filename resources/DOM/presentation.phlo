@@ -247,6 +247,9 @@ class PresentationPlayer {
 		this.lang = opts.lang ?? pres0.lang ?? (pres0.subtitles || {}).lang ?? null
 		this.playing = false
 		this.started = false
+		this.deferMedia = !opts.edit
+		this.mediaLoaded = !!opts.edit
+		this.pendingMedia = []
 		this.vol = Math.min(1, Math.max(0, parseFloat(localStorage.getItem('pp-vol') ?? '1') || 0))
 		this.muted = localStorage.getItem('pp-muted') === '1'
 		this.t = !opts.edit && pres0.poster ? Math.max(0, pres0.poster) : 0
@@ -273,6 +276,22 @@ class PresentationPlayer {
 		this.loaded = false
 		this.buildShell()
 		this.update(data.presentation)
+	}
+
+	mediaJob(jobs, job){
+		if (this.mediaLoaded) jobs.push(job())
+		else this.pendingMedia.push(job)
+	}
+
+	loadMedia(){
+		if (this.mediaLoaded) return Promise.resolve()
+		this.mediaLoaded = true
+		this.root.classList.add('pp-loading')
+		return Promise.all(this.pendingMedia.splice(0).map(job => job())).then(() => {
+			this.root.classList.remove('pp-loading')
+			this.applyTime(this.t, true)
+			this.updateTime()
+		})
 	}
 
 	loadBlob(url){
@@ -319,6 +338,7 @@ class PresentationPlayer {
 	destroy(){
 		if (this.playing && !this.opts.edit) this.saveState()
 		this.playing = false
+		clearTimeout(this.idleTimer)
 		if (this.raf) cancelAnimationFrame(this.raf)
 		if (this.ticker) clearInterval(this.ticker)
 		if (this.audio) this.audio.pause()
@@ -481,12 +501,21 @@ class PresentationPlayer {
 		this.stage.addEventListener('click', e => {
 			if (!e.target.closest('a')) this.toggle()
 		})
+		const wake = () => {
+			this.root.classList.remove('pp-idle')
+			clearTimeout(this.idleTimer)
+			this.idleTimer = setTimeout(() => this.playing && this.root.classList.add('pp-idle'), 2800)
+		}
+		this.wake = wake
+		this.root.addEventListener('mousemove', wake)
+		this.root.addEventListener('touchstart', wake, {passive: true})
 	}
 
 	update(pres){
 		this.pres = pres
 		const gen = ++this.updateGen
 		const jobs = []
+		this.pendingMedia = []
 		this.root.style.setProperty('--pp-ar', (pres.size.w / pres.size.h).toFixed(4))
 		this.stage.innerHTML = ''
 		this.items = []
@@ -502,7 +531,7 @@ class PresentationPlayer {
 			this.audio = new Audio()
 			this.audio.preload = 'auto'
 			this.audio.volume = this.effVol()
-			jobs.push(this.guard(this.loadBlob(this.audioSrc).then(url => new Promise(res => {
+			this.mediaJob(jobs, () => this.guard(this.loadBlob(this.audioSrc).then(url => new Promise(res => {
 				this.audio.addEventListener('loadedmetadata', () => {
 					const d = this.audio.duration
 					if (Number.isFinite(d) && d > 0 && this.opts.onMeta) this.opts.onMeta(d)
@@ -536,7 +565,7 @@ class PresentationPlayer {
 				v.style.borderRadius = '20px'
 				v.style.boxShadow = '0 26px 70px rgba(0,0,0,.55)'
 			}
-			jobs.push(this.guard(this.loadBlob(this.src(this.srcFor(cfg))).then(url => new Promise(res => {
+			this.mediaJob(jobs, () => this.guard(this.loadBlob(this.src(this.srcFor(cfg))).then(url => new Promise(res => {
 				v.addEventListener('loadedmetadata', () => res(), {once: true})
 				v.addEventListener('error', () => res(), {once: true})
 				v.src = url
@@ -680,11 +709,16 @@ class PresentationPlayer {
 
 	play(){
 		if (!this.loaded) return
+		if (!this.mediaLoaded){
+			this.loadMedia().then(() => this.play())
+			return
+		}
 		if (!this.started && this.t > 0) this.seek(0)
 		this.started = true
 		if (this.t >= this.duration - 0.05) this.seek(0)
 		this.playing = true
 		this.root.classList.remove('pp-paused')
+		if (this.wake) this.wake()
 		if (this.bigPlay) this.bigPlay.style.display = 'none'
 		if (this.playBtn) this.playBtn.innerHTML = this.icon('pause')
 		this.clockStart = performance.now() - this.t * 1000
@@ -714,6 +748,8 @@ class PresentationPlayer {
 
 	pause(ended){
 		this.playing = false
+		clearTimeout(this.idleTimer)
+		this.root.classList.remove('pp-idle')
 		if (!this.opts.edit) this.clearState()
 		this.root.classList.add('pp-paused')
 		if (this.raf) cancelAnimationFrame(this.raf)
@@ -1018,7 +1054,8 @@ new MutationObserver(() => PresentationPlayer.sweep()).observe(document.document
 	transition: opacity .25s ease
 	font-size: .9em
 }
-.pp-root:hover .pp-controls, .pp-root.pp-paused .pp-controls: opacity: 1
+.pp-root:hover:not(.pp-idle) .pp-controls, .pp-root.pp-paused .pp-controls: opacity: 1
+.pp-root.pp-idle: cursor: none
 .pp-controls button {
 	background: none
 	border: 0
