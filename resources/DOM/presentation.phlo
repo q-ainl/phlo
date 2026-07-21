@@ -434,12 +434,8 @@ class PresentationPlayer {
 		this.subsEl.style.display = 'none'
 		this.root.appendChild(this.subsEl)
 		if (this.opts.controls !== false && !this.opts.edit) this.buildControls()
-		const fit = () => {
-			const w = this.root.clientWidth
-			this.root.style.fontSize = Math.max(9, w / 48) + 'px'
-		}
-		new ResizeObserver(fit).observe(this.root)
-		fit()
+		const fit = w => this.root.style.fontSize = Math.max(9, w / 48) + 'px'
+		new ResizeObserver(entries => fit(entries[0].contentRect.width)).observe(this.root)
 	}
 
 	icon(name){
