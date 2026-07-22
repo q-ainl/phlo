@@ -1,5 +1,6 @@
 {
     "resources": [
+        "payload",
         "tag",
         "tags.form",
         "fields/field",

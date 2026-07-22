@@ -24,3 +24,9 @@ static rendering => [
 	'passwordLabel' => field(type: 'password', name: 'pass')->label(new obj(pass: 'secret')),
 	'dateLabel' => field(type: 'date', name: 'created')->label(new obj(created: '2025-09-01')),
 ]
+
+static parsing {
+	$record = new obj(pass: 'kept')
+	field(type: 'password', name: 'pass')->parse($record)
+	return ['absentLeavesRecord' => $record->pass]
+}

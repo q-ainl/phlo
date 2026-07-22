@@ -53,4 +53,9 @@ final class FieldTest extends TestCase {
 		$this->assertStringContainsString('••••••••', (string)$r['passwordLabel'], 'password label is masked');
 		$this->assertStringContainsString('2025', (string)$r['dateLabel'], 'date label is formatted and keeps the year');
 	}
+
+	public function testPasswordParseSkipsAnAbsentPayloadKey():void {
+		$r = self::fetch('fieldprobe::parsing');
+		$this->assertSame('kept', $r['absentLeavesRecord'], 'saving a record without a password value leaves the stored hash alone');
+	}
 }
