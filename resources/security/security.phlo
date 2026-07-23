@@ -8,30 +8,33 @@
 @ tags:     security csp nonce headers
 
 prop whitelist = []
+prop sources = []
 
 method setNonce => %app->nonce = token(8)
 
 method frameProtect($mode = 'DENY') => %res->header('X-Frame-Options', $mode)
 method frameWhitelist => $this->whitelist ? ' '.implode(space, array_map(fn($d) => "https://*.$d", (array)$this->whitelist)) : void
+// Extra origins the app loads content from (images, media, fetch), e.g. a CDN; full origins, applied verbatim.
+method sourceList => $this->sources ? ' '.implode(space, (array)$this->sources) : void
 
 method strict {
 	$this->base
 	if (%req->async) return
 	%res->header('Cache-Control', 'no-store')
 	$nonce = $this->setNonce
-	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$nonce'; worker-src 'self'; style-src 'self' 'nonce-$nonce'; img-src 'self' data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
+	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'nonce-$nonce'; worker-src 'self'; style-src 'self' 'nonce-$nonce'; img-src 'self' data:$this->sourceList; media-src 'self' blob:$this->sourceList; font-src 'self'; connect-src 'self'$this->sourceList; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
 // Under debug, basic/marketing relax script-src to 'unsafe-inline' so the inline debug console runs.
 // Whether debug is on in production is the app's own responsibility, so this is tied to debug by design.
 method basic {
 	$this->base
 	if (%req->async) return
-	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
+	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data:$this->sourceList; media-src 'self' blob:$this->sourceList; font-src 'self'; connect-src 'self'$this->sourceList; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
 method marketing {
 	$this->base
 	if (%req->async) return
-	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
+	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob:$this->sourceList; font-src 'self'; connect-src 'self'$this->sourceList; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
 method api {
 	%res->api = true

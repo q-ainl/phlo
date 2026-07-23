@@ -1,6 +1,6 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Audio-clock presentation player for the DOM: timed image/video layers, transitions, subtitles and language alternatives from a presentation.json payload. Exposes the class `PresentationPlayer`; each transition carries its own pp-* CSS animation and the matching canvas curve for deterministic export rendering. boot() wires #pp-data + #pp-root when present.
+@ summary:  Audio-clock presentation player for the DOM: timed image/video layers, transitions, subtitles and language alternatives from a presentation.json payload. Exposes the class `PresentationPlayer`; each transition carries its own pp-* CSS animation and the matching canvas curve for deterministic export rendering. boot() wires every .pp-embed, from an inline JSON script child or a data-src payload URL.
 @ package:  DOM
 @ frontend: true
 @ backend:  false
@@ -946,11 +946,27 @@ class PresentationPlayer {
 		for (const root of document.querySelectorAll('.pp-embed')){
 			if (root.dataset.ppBooted) continue
 			const data = root.querySelector('script[type="application/json"]')
-			if (!data) continue
+			if (data){
+				root.dataset.ppBooted = '1'
+				this.wire(root, JSON.parse(data.textContent))
+				continue
+			}
+			if (!root.dataset.src) continue
 			root.dataset.ppBooted = '1'
-			const forced = 'lang' in root.dataset
-			new PresentationPlayer(root, JSON.parse(data.textContent), {controls: true, lang: root.dataset.lang || null, langSelector: !forced})
+			fetch(root.dataset.src)
+				.then(r => r.json())
+				.then(json => {
+					if (!root.isConnected) return
+					const payload = json.presentation ? json : {presentation: json, mediaBase: root.dataset.src.replace(/[^\/]*$/, '') + 'media/'}
+					this.wire(root, payload)
+				})
+				.catch(e => console.warn('PresentationPlayer: failed to load', root.dataset.src, e))
 		}
+	}
+
+	static wire(root, payload){
+		const forced = 'lang' in root.dataset
+		new PresentationPlayer(root, payload, {controls: true, lang: root.dataset.lang || null, langSelector: !forced})
 	}
 }
 
