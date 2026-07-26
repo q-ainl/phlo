@@ -1,0 +1,24 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  PWA web app manifest: declare the body, get the manifest.json route, head link and correct serving
+@ package:  web
+@ frontend: false
+@ backend:  true
+@ advice:   Set the body from your app (prop %manifest.body => arr(...)) and include %manifest->head in your head view. Apps with multiple manifest variants keep their own routes and serve each body through manifest::output().
+@ tags:     manifest pwa webmanifest install standalone
+
+route GET manifest.json {
+	if (!%manifest->body) return false
+	manifest::output(%manifest->body)
+}
+
+prop body = null
+prop maxAge = 60
+
+static output($body, $maxAge = null){
+	%res->header('Cache-Control', 'public, max-age='.($maxAge ?? %manifest->maxAge))
+	output(json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), type: 'application/manifest+json')
+}
+
+view head:
+<link rel="manifest" href="/manifest.json">

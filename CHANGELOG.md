@@ -10,6 +10,14 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Added
+- A `manifest` resource: declare the web-app-manifest body once
+  (`prop %manifest.body => arr(...)`) and the resource serves
+  `GET /manifest.json` as `application/manifest+json` (pretty-printed, short
+  cache), plus a `%manifest->head` view for the `<link rel="manifest">` tag.
+  Apps with several manifest variants keep their own routes and serve each
+  body through `manifest::output()`; the default route steps aside (`return
+  false`) when no body is declared, so it never shadows an app-defined
+  `manifest.json` route.
 - `{[ expr ]}` view interpolation for auto-escaped output: it HTML-escapes its
   value (equivalent to `{{ esc(expr) }}`), while `{{ }}` and `{( )}` stay raw.
   Quote-aware, so a `]}` inside a string literal does not close it early.
