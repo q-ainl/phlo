@@ -1186,8 +1186,8 @@ new MutationObserver(() => PresentationPlayer.sweep()).observe(document.document
 	}
 	@supports (aspect-ratio: 16 / 9) {
 		.pp-root {
-			width: min(100vw, calc(100vh * var(--pp-ar, 1.7778)))
-			height: min(100vh, calc(100vw / var(--pp-ar, 1.7778)))
+			width: min(100vw, calc(100dvh * var(--pp-ar, 1.7778)))
+			height: min(100dvh, calc(100vw / var(--pp-ar, 1.7778)))
 		}
 	}
 }
