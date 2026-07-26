@@ -707,9 +707,9 @@ class PresentationPlayer {
 			o.textContent = label
 			this.langSel.appendChild(o)
 		}
-		opt('original', 'original' + (this.pres.lang ? ' (' + this.pres.lang + ')' : ''))
-		for (const l of langs) opt(l, l)
-		this.langSel.value = this.lang || 'original'
+		opt('original', (this.pres.lang || 'original').toUpperCase())
+		for (const l of langs) opt(l, l.toUpperCase())
+		this.langSel.value = (this.lang && this.lang !== this.pres.lang) ? this.lang : 'original'
 		this.langSel.style.display = ''
 	}
 
