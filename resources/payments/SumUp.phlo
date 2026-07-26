@@ -1,0 +1,77 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  SumUp connector: card-present checkouts on paired Solo readers via the Cloud API, transaction lookup and history
+@ extends:  Connector
+@ package:  connectors
+@ frontend: false
+@ backend:  true
+@ requires: @Connector creds:SumUp
+@ tags:     sumup payments terminal reader card-present checkout connector
+
+// Cloud-initiated terminal payments: the POS creates a checkout for a paired reader over
+// HTTPS, the reader wakes up with the amount, and the result arrives on the return_url
+// webhook (or by polling transaction()). A checkout must start on the device within 60
+// seconds and only one checkout can be active per reader at a time.
+//
+// Treat the webhook as a wake-up call, never as the verdict: re-fetch the transaction via
+// transaction() before recording a payment, so a forged POST can never book money.
+
+const section = 'SumUp'
+const api = 'https://api.sumup.com'
+
+method headers => [static::bearer($this->config['api_key'] ?? void)]
+
+static fields => arr(
+	section: 'SumUp',
+	config: arr(
+		merchant_code: 'Merchant code (profile > merchant profile)',
+		reader_id: 'Default paired reader id (optional; every call accepts an explicit one)',
+	),
+	secret: arr(api_key: 'API key (developer.sumup.com > API keys)'),
+)
+
+method merchant => 'v0.1/merchants/'.($this->config['merchant_code'] ?? void)
+
+// Paired readers of the merchant. A reader id changes when a device is re-paired, so
+// resolve by name and store the id; never assume it is permanent.
+method readers():obj {
+	if ($m = $this->missing('merchant_code', 'api_key')) return $m
+	return $this->get($this->merchant.'/readers')
+}
+
+method reader(?string $readerId = null):string => (string)($readerId ?? $this->config['reader_id'] ?? void)
+
+// Start a card-present checkout on a reader. The amount is in minor units (cents).
+// The response carries data->data->client_transaction_id: keep it, that is the handle for
+// the webhook, polling and refunds.
+method createReaderCheckout(int $amountMinor, string $currency = 'EUR', ?string $readerId = null, ?string $description = null, ?string $returnUrl = null):obj {
+	if ($m = $this->missing('merchant_code', 'api_key')) return $m
+	$reader = $this->reader($readerId)
+	if ($reader === void) return static::fail('SumUp reader id not configured')
+	$body = ['total_amount' => ['value' => $amountMinor, 'currency' => $currency, 'minor_unit' => 2]]
+	if ($description !== null) $body['description'] = $description
+	if ($returnUrl !== null) $body['return_url'] = $returnUrl
+	return $this->post($this->merchant.'/readers/'.$reader.'/checkout', $body)
+}
+
+// Stop the active checkout on a reader. Only works while the device is still waiting for
+// the cardholder; the response carries no confirmation.
+method terminateReaderCheckout(?string $readerId = null):obj {
+	if ($m = $this->missing('merchant_code', 'api_key')) return $m
+	$reader = $this->reader($readerId)
+	if ($reader === void) return static::fail('SumUp reader id not configured')
+	return $this->post($this->merchant.'/readers/'.$reader.'/terminate')
+}
+
+// Look up a transaction by the client transaction id a checkout returned. Statuses:
+// PENDING, SUCCESSFUL, CANCELLED, FAILED. A checkout the cardholder has not touched yet
+// may yield 404 until it expires; treat that as still pending.
+method transaction(string $clientTransactionId):obj {
+	if ($m = $this->missing('merchant_code', 'api_key')) return $m
+	return $this->get('v0.1/me/transactions', ['client_transaction_id' => $clientTransactionId])
+}
+
+method transactions(array $query = []):obj {
+	if ($m = $this->missing('merchant_code', 'api_key')) return $m
+	return $this->get('v0.1/me/transactions/history', $query)
+}

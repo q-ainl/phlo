@@ -133,6 +133,15 @@ The first call exchanges the API token for a session token (cached per instance)
 Read: `relations(query)`, `invoices(query)`.
 Act: `createRelation(relation)`, `createInvoice(invoice)`.
 
+### Payments
+
+**SumUp** &middot; section `[SumUp]` &middot; `payments/SumUp` (a Connector subclass living next to Stripe)
+Creds: `merchant_code`, `api_key`, optional `reader_id` (default paired reader).
+Card-present checkouts on paired Solo readers via the Cloud API; treat the `return_url`
+webhook as a wake-up call and verify with `transaction()` before recording a payment.
+Read: `readers()`, `transaction(clientTransactionId)`, `transactions(query)`.
+Act: `createReaderCheckout(amountMinor, currency, readerId, description, returnUrl)`, `terminateReaderCheckout(readerId)`.
+
 ### Productivity / cloud
 
 **Microsoft Graph** (app-only) &middot; section `[Microsoft]` &middot; `connectors/cloud/MicrosoftGraph`
