@@ -675,7 +675,10 @@ class PresentationPlayer {
 		this.applyTime(this.t, true)
 		this.updateTime()
 		this.refreshLangSel()
-		if (this.ccBtn) this.ccBtn.style.display = (this.segments() || []).length ? '' : 'none'
+		if (this.ccBtn){
+			this.ccBtn.style.display = (this.segments() || []).length ? '' : 'none'
+			this.ccBtn.classList.toggle('pp-off', !this.showSubs)
+		}
 		this.applyVolume()
 	}
 
