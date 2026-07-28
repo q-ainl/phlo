@@ -1,0 +1,159 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  On-screen keyboard for touch devices, with selectable layout
+@ advice:   Put data-keyboard on a field to open a docked keyboard on focus; data-keyboard="azerty" picks the layout. phlo.keyboard.layouts takes extra layouts.
+@ package:  dom
+@ frontend: true
+@ backend:  false
+@ requires: @DOM
+@ tags:     dom keyboard onscreen touch input frontend
+
+<script>
+phlo.keyboard = {
+	// A layout is three letter rows; the digit row and the function keys are the same
+	// everywhere. Add your own with phlo.keyboard.layouts.dvorak = [...].
+	layouts: {
+		qwerty: ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'],
+		azerty: ['azertyuiop', 'qsdfghjklm', 'wxcvbn'],
+		qwertz: ['qwertzuiop', 'asdfghjkl', 'yxcvbnm'],
+	},
+	digits: '1234567890',
+	shifted: {',': ';', '.': ':', '-': '_', "'": '"'},
+	labels: {shift: '&uarr;', back: '&larr;', space: '&nbsp;', enter: '&crarr;', close: '&times;'},
+	open: null,
+	caps: false,
+	layout: el => phlo.keyboard.layouts[el?.dataset.keyboard] ? el.dataset.keyboard : (el?.closest('[data-keyboard-layout]')?.dataset.keyboardLayout || 'qwerty'),
+	key: (value, label, cls) => `<button class="keyboard__key${cls ? ' ' + cls : ''}" type="button" data-keyboard-key="${value}">${label ?? value}</button>`,
+	rows(name){
+		const layout = phlo.keyboard.layouts[name] || phlo.keyboard.layouts.qwerty
+		const cast = char => phlo.keyboard.caps ? (phlo.keyboard.shifted[char] ?? char.toUpperCase()) : char
+		const key = phlo.keyboard.key
+		let html = '<div class="keyboard__row">' + [...phlo.keyboard.digits].map(char => key(char)).join('') + key('back', phlo.keyboard.labels.back, 'keyboard__key--wide') + '</div>'
+		layout.forEach((row, index) => {
+			html += '<div class="keyboard__row">'
+			if (index === 2) html += key('shift', phlo.keyboard.labels.shift, 'keyboard__key--wide' + (phlo.keyboard.caps ? ' keyboard__key--on' : ''))
+			html += [...row].map(char => key(cast(char))).join('')
+			if (index === 2) html += key('enter', phlo.keyboard.labels.enter, 'keyboard__key--wide')
+			html += '</div>'
+		})
+		html += '<div class="keyboard__row">' + [key('-'), key(cast("'")), key(' ', phlo.keyboard.labels.space, 'keyboard__key--space'), key(cast(',')), key(cast('.')), key('close', phlo.keyboard.labels.close, 'keyboard__key--close')].join('') + '</div>'
+		return html
+	},
+	render(){
+		const target = phlo.keyboard.open
+		if (!target) return
+		obj('#keyboard') || app.mod.append('body', '<div id="keyboard" class="keyboard" role="group" aria-label="On-screen keyboard"></div>')
+		app.mod.inner('#keyboard', phlo.keyboard.rows(phlo.keyboard.layout(target)))
+	},
+	show(target){
+		phlo.keyboard.open = target
+		phlo.keyboard.caps = false
+		phlo.keyboard.render()
+	},
+	hide(){
+		phlo.keyboard.open = null
+		obj('#keyboard')?.remove()
+	},
+	// Writing happens at the caret, so a correction halfway a word lands where the cashier
+	// tapped instead of at the end.
+	write(target, insert, back = false){
+		const start = target.selectionStart ?? target.value.length
+		const end = target.selectionEnd ?? start
+		const from = back && start === end ? Math.max(0, start - 1) : start
+		target.value = target.value.slice(0, from) + insert + target.value.slice(end)
+		const caret = from + insert.length
+		target.setSelectionRange?.(caret, caret)
+		target.dispatchEvent(new Event('input', {bubbles: true}))
+	},
+	press(name){
+		const target = phlo.keyboard.open
+		if (!target) return
+		if (name === 'close') return phlo.keyboard.hide()
+		if (name === 'shift'){
+			phlo.keyboard.caps = !phlo.keyboard.caps
+			return phlo.keyboard.render()
+		}
+		if (name === 'back') return phlo.keyboard.write(target, '', true)
+		if (name === 'enter'){
+			const form = target.closest('form')
+			phlo.keyboard.hide()
+			target.dispatchEvent(new Event('change', {bubbles: true}))
+			return form?.requestSubmit()
+		}
+		phlo.keyboard.write(target, name)
+		if (phlo.keyboard.caps){
+			phlo.keyboard.caps = false
+			phlo.keyboard.render()
+		}
+	},
+}
+
+app.keyboard = {
+	show: selector => phlo.keyboard.show(obj(selector)),
+	hide: () => phlo.keyboard.hide(),
+}
+
+on('focus', '[data-keyboard]', el => phlo.keyboard.show(el))
+
+on('click', '[data-keyboard-key]', (el, e) => {
+	e.preventDefault()
+	phlo.keyboard.press(el.dataset.keyboardKey)
+	phlo.keyboard.open?.focus({preventScroll: true})
+})
+
+// A tap outside both the keyboard and its field closes it; Escape does the same.
+on('pointerdown', 'body', (el, e) => {
+	if (!phlo.keyboard.open) return
+	if (e.target.closest('#keyboard') || e.target === phlo.keyboard.open) return
+	phlo.keyboard.hide()
+})
+
+on('keydown', 'body', (el, e) => {
+	if (e.key === 'Escape') phlo.keyboard.hide()
+})
+</script>
+
+<style>
+.keyboard {
+	position: fixed
+	left: 0
+	right: 0
+	bottom: 0
+	z-index: 1000
+	display: grid
+	gap: var(--keyboard-gap, .3rem)
+	padding: var(--keyboard-pad, .5rem)
+	background: var(--keyboard-bg, #1c2029)
+	color: var(--keyboard-color, #f2f2f2)
+	box-shadow: 0 -2px 12px #0006
+	touch-action: manipulation
+	user-select: none
+}
+.keyboard__row {
+	display: flex
+	gap: var(--keyboard-gap, .3rem)
+	justify-content: center
+}
+.keyboard__key {
+	font: inherit
+	font-size: var(--keyboard-size, 1.1rem)
+	flex: 1 1 auto
+	max-width: var(--keyboard-key, 4rem)
+	padding: var(--keyboard-key-pad, .7rem .2rem)
+	border: 1px solid var(--keyboard-border, #ffffff26)
+	border-radius: var(--keyboard-radius, 6px)
+	background: var(--keyboard-key-bg, #ffffff14)
+	color: inherit
+	cursor: pointer
+	\:active: background: var(--keyboard-key-active, #ffffff2e)
+}
+.keyboard__key--wide {
+	max-width: var(--keyboard-wide, 6rem)
+}
+.keyboard__key--space {
+	max-width: var(--keyboard-space, 18rem)
+}
+.keyboard__key--on {
+	background: var(--keyboard-key-on, #ffffff33)
+}
+</style>

@@ -1,0 +1,108 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  On-screen numeric keypad for touch input, bound to a field
+@ advice:   Put data-numpad="<selector>" on a container; the keys are built inside it. Without a selector the pad writes to the first field of its own form.
+@ package:  dom
+@ frontend: true
+@ backend:  false
+@ requires: @DOM
+@ tags:     dom numpad keypad touch input pos frontend
+
+<script>
+phlo.numpad = {
+	layouts: {
+		calculator: ['7', '8', '9', '4', '5', '6', '1', '2', '3'],
+		phone: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+	},
+	labels: {back: '&larr;', clear: 'C', enter: '&crarr;'},
+	options: el => ({
+		layout: el.dataset.numpadLayout || 'calculator',
+		decimal: el.dataset.numpadDecimal ?? ',',
+		extra: el.dataset.numpadExtra ?? '',
+		keys: (el.dataset.numpadKeys ?? 'back,clear').split(',').map(key => key.trim()).filter(Boolean),
+		fresh: el.dataset.numpadFresh !== undefined,
+		max: parseInt(el.dataset.numpadMax) || 0,
+	}),
+	// The field a pad writes to: the given selector, otherwise the first field of the form
+	// the pad itself sits in.
+	target: el => obj(el.dataset.numpad) || el.closest('form')?.querySelector('input, textarea') || null,
+	keys(options){
+		const key = (value, label, cls) => `<button class="numpad__key${cls ? ' ' + cls : ''}" type="button" data-numpad-key="${value}">${label ?? value}</button>`
+		let html = (phlo.numpad.layouts[options.layout] || phlo.numpad.layouts.calculator).map(value => key(value)).join('')
+		html += options.extra ? key(options.extra) : ''
+		html += key('0')
+		html += options.decimal ? key(options.decimal) : ''
+		options.keys.forEach(name => html += key(name, phlo.numpad.labels[name] ?? name, 'numpad__key--' + name))
+		return html
+	},
+	build(el){
+		if (el.dataset.numpadReady) return
+		el.dataset.numpadReady = '1'
+		el.classList.add('numpad')
+		app.mod.inner(el, phlo.numpad.keys(phlo.numpad.options(el)))
+	},
+	// Every change goes through the field itself and fires input, so validation, mirrors and
+	// bindings see it like a keystroke.
+	write(target, value){
+		target.value = value
+		target.dispatchEvent(new Event('input', {bubbles: true}))
+	},
+	press(target, name, options){
+		if (!target) return
+		if (name === 'clear') return phlo.numpad.write(target, '')
+		if (name === 'back') return phlo.numpad.write(target, target.value.slice(0, -1))
+		if (name === 'enter'){
+			const form = target.closest('form')
+			target.dispatchEvent(new Event('change', {bubbles: true}))
+			return form?.requestSubmit()
+		}
+		let value = target.value
+		if (options.fresh && !target.dataset.numpadTyped){
+			value = ''
+			target.dataset.numpadTyped = '1'
+		}
+		if (options.decimal && name === options.decimal && value.includes(options.decimal)) return
+		if (options.max && (value + name).length > options.max) return
+		phlo.numpad.write(target, value + name)
+	},
+}
+
+app.numpad = (selector, options = {}) => `<div class="numpad" data-numpad="${selector}"${Object.entries(options).map(([key, value]) => ` data-numpad-${key.toLowerCase()}="${value}"`).join('')}></div>`
+
+onExist('[data-numpad]', el => phlo.numpad.build(el))
+
+on('click', '[data-numpad-key]', el => {
+	const pad = el.closest('[data-numpad]')
+	if (!pad) return
+	const target = phlo.numpad.target(pad)
+	phlo.numpad.press(target, el.dataset.numpadKey, phlo.numpad.options(pad))
+	target?.focus({preventScroll: true})
+})
+
+// Touching the field by hand starts the fresh cycle over: the next key clears again.
+on('focus', '[data-numpad-typed]', el => delete el.dataset.numpadTyped)
+</script>
+
+<style>
+.numpad {
+	display: grid
+	grid-template-columns: repeat(3, 1fr)
+	gap: var(--numpad-gap, .4rem)
+}
+.numpad__key {
+	font: inherit
+	font-size: var(--numpad-size, 1.2rem)
+	padding: var(--numpad-pad, .7rem)
+	border: 1px solid var(--numpad-border, #0002)
+	border-radius: var(--numpad-radius, 8px)
+	background: var(--numpad-bg, #0000000a)
+	color: inherit
+	cursor: pointer
+	touch-action: manipulation
+	user-select: none
+	\:active: background: var(--numpad-bg-active, #00000018)
+}
+.numpad__key--enter {
+	grid-column: span 3
+}
+</style>
