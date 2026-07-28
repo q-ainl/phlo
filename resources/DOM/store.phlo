@@ -228,17 +228,9 @@ phlo.store = {
 app.store = phlo.store.proxy('')
 
 app.mod.store = (key, value) => {
-	const cur = phlo.store.get(key)
-	if (JSON.stringify(cur) === JSON.stringify(value)) return
-	if (Array.isArray(cur) && Array.isArray(value) && value.length < cur.length){
-		phlo.store.setPath(key, value.slice())
-		phlo.store.notify(key, value)
-		phlo.store.recalc(key)
-		phlo.store.schedule()
-		phlo.store.save(key)
-		return
-	}
+	if (JSON.stringify(phlo.store.get(key)) === JSON.stringify(value)) return
 	const walk = (base, obj) => {
+		if (Array.isArray(obj)) return phlo.store.set(base, obj)
 		if (typeof obj !== 'object' || obj === null) return phlo.store.set(base, obj)
 		Object.entries(obj).forEach(([k, v]) => walk(isNaN(k) ? `${base}.${k}` : `${base}[${k}]`, v))
 	}
