@@ -13,7 +13,7 @@ prop false = '❌'
 
 method label($record) => $record->{$this->name} ? $this->true : $this->false
 method input($record) => tag('label', inner: input(type: 'checkbox', name: $this->name, value: 1, checked: $record->{$this->name} ? true : null).tag('span', class: 'slider', inner: void))
-method parse($record) => $record->{$this->name} = (bool)%payload->{$this->name};
+method parse($record) => $record->{$this->name} = %payload->{$this->name} ? 1 : 0
 method nullable => false
 
 prop objColumns => [$this->name]
