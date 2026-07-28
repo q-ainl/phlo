@@ -5,7 +5,7 @@
 @ frontend: true
 @ backend:  false
 @ requires: @DOM
-@ tags:     dom store binding state signals calc reactive
+@ tags:     dom store binding state signals calc reactive each persist websocket sync
 
 <script>
 phlo.store = {
@@ -15,6 +15,10 @@ phlo.store = {
 	calcDeps: {},
 	calcVals: {},
 	calcTick: false,
+	formats: {},
+	persists: {},
+	syncs: {},
+	scope: 'page',
 	split: path => path.replace(/\]/g, '').split(/\.|\[/),
 	get(path){
 		if (!path) return undefined
@@ -45,24 +49,56 @@ phlo.store = {
 		phlo.store.notify(path, phlo.store.get(path))
 		phlo.store.recalc(path)
 		phlo.store.schedule()
+		phlo.store.save(path)
+		phlo.store.push(path)
 	},
-	on(path, cb){ (phlo.store.listeners[path] ??= new Set).add(cb) },
-	off(path, cb){ phlo.store.listeners[path] && phlo.store.listeners[path].delete(cb) },
-	reset(){
-		phlo.store.signals = {}
-		phlo.store.listeners = {}
-		phlo.store.calcs = {}
-		phlo.store.calcDeps = {}
-		phlo.store.calcVals = {}
-		phlo.store.calcTick = false
+	on(path, cb, el = null){
+		(phlo.store.listeners[path] ??= new Set).add(cb)
+		if (el) phlo.store.owners.set(cb, el)
+	},
+	off(path, cb){
+		phlo.store.listeners[path]?.delete(cb)
+		phlo.store.owners.delete(cb)
+	},
+	owners: new WeakMap,
+	sweep(){
+		Object.keys(phlo.store.listeners).forEach(path => {
+			phlo.store.listeners[path].forEach(cb => {
+				const el = phlo.store.owners.get(cb)
+				if (el && !el.isConnected) phlo.store.off(path, cb)
+			})
+			if (!phlo.store.listeners[path].size) delete phlo.store.listeners[path]
+		})
+	},
+	reset(prefix = ''){
+		if (!prefix){
+			phlo.store.signals = {}
+			phlo.store.listeners = {}
+			phlo.store.calcs = {}
+			phlo.store.calcDeps = {}
+			phlo.store.calcVals = {}
+			phlo.store.calcTick = false
+			return
+		}
+		const keys = phlo.store.split(prefix)
+		let ctx = phlo.store.signals
+		for (let i = 0; i < keys.length - 1; i++) ctx = ctx?.[keys[i]]
+		if (ctx) delete ctx[keys[keys.length - 1]]
+		Object.keys(phlo.store.listeners).forEach(path => phlo.store.match(prefix, path) && delete phlo.store.listeners[path])
+		phlo.store.notify(prefix, undefined)
 	},
 	signal(path, initial){
 		if (phlo.store.get(path) === undefined) phlo.store.set(path, initial)
 		return { subscribe: cb => phlo.store.on(path, cb), unsubscribe: cb => phlo.store.off(path, cb) }
 	},
 	notify(path, val){
-		const set = phlo.store.listeners[path]
-		if (set) set.forEach(cb => cb(val))
+		Object.keys(phlo.store.listeners).forEach(dep => {
+			if (!phlo.store.match(dep, path)) return
+			const set = phlo.store.listeners[dep]
+			if (!set) return
+			const value = dep === path ? val : phlo.store.get(dep)
+			;[...set].forEach(cb => cb(value))
+		})
 	},
 	match(dep, changed){
 		if (!dep) return false
@@ -123,6 +159,50 @@ phlo.store = {
 			phlo.store.recalcAll()
 		})
 	},
+
+	format(name, value){
+		const fn = phlo.store.formats[name]
+		return fn ? fn(value) : value
+	},
+
+	adapters: {
+		local: {
+			read: key => { try { return JSON.parse(localStorage.getItem('phlo.' + key)) } catch(e){ return undefined } },
+			write: (key, value) => { try { localStorage.setItem('phlo.' + key, JSON.stringify(value)) } catch(e){} },
+		},
+		session: {
+			read: key => { try { return JSON.parse(sessionStorage.getItem('phlo.' + key)) } catch(e){ return undefined } },
+			write: (key, value) => { try { sessionStorage.setItem('phlo.' + key, JSON.stringify(value)) } catch(e){} },
+		},
+	},
+	persist(path, adapter = 'local'){
+		const store = typeof adapter === 'string' ? phlo.store.adapters[adapter] : adapter
+		if (!store) return
+		phlo.store.persists[path] = store
+		const saved = store.read(path)
+		if (saved !== undefined && saved !== null) app.mod.store(path, saved)
+	},
+	save(changed){
+		Object.keys(phlo.store.persists).forEach(path => {
+			if (phlo.store.match(path, changed)) phlo.store.persists[path].write(path, phlo.store.get(path))
+		})
+	},
+
+	sync(path, options = {}){
+		phlo.store.syncs[path] = {ws: options.ws ?? true, post: options.post ?? null, delay: options.delay ?? 200}
+	},
+	push(changed){
+		Object.keys(phlo.store.syncs).forEach(path => {
+			if (!phlo.store.match(path, changed)) return
+			const sync = phlo.store.syncs[path]
+			delay('store-' + path, sync.delay, () => {
+				const value = phlo.store.get(path)
+				if (sync.ws && app.websocket) app.websocket.send({store: {[path]: value}})
+				if (sync.post) app.post(sync.post, {path, value}, false)
+			})
+		})
+	},
+
 	proxy(base){
 		return new Proxy({}, {
 			get(t, k){
@@ -150,6 +230,14 @@ app.store = phlo.store.proxy('')
 app.mod.store = (key, value) => {
 	const cur = phlo.store.get(key)
 	if (JSON.stringify(cur) === JSON.stringify(value)) return
+	if (Array.isArray(cur) && Array.isArray(value) && value.length < cur.length){
+		phlo.store.setPath(key, value.slice())
+		phlo.store.notify(key, value)
+		phlo.store.recalc(key)
+		phlo.store.schedule()
+		phlo.store.save(key)
+		return
+	}
 	const walk = (base, obj) => {
 		if (typeof obj !== 'object' || obj === null) return phlo.store.set(base, obj)
 		Object.entries(obj).forEach(([k, v]) => walk(isNaN(k) ? `${base}.${k}` : `${base}[${k}]`, v))
@@ -182,6 +270,10 @@ app.calc = new Proxy({}, {
 	getOwnPropertyDescriptor(){ return { enumerable: true, configurable: true } }
 })
 
+app.format = (name, fn) => phlo.store.formats[name] = fn
+app.persist = (path, adapter) => phlo.store.persist(path, adapter)
+app.sync = (path, options) => phlo.store.sync(path, options)
+
 onExist('[data-bind]', el => {
 	const key = el.dataset.bind
 	const isCalc = key.startsWith('calc.')
@@ -191,13 +283,14 @@ onExist('[data-bind]', el => {
 	const domNonEmpty = (fromDom ?? '').trim() !== ''
 	const storeEmpty = fromStore === undefined || (typeof fromStore === 'string' && fromStore.trim() === '')
 	const domLeads = !isCalc && domNonEmpty && storeEmpty
+	const format = el.dataset.bindFormat
 	const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
 	const apply = v => {
-		const s = S(v)
+		const s = S(format ? phlo.store.format(format, v) : v)
 		if (isInput) el.value = s
 		else el.textContent = s
 	}
-	phlo.store.on(key, apply)
+	phlo.store.on(key, apply, el)
 	if (domLeads) phlo.store.set(key, fromDom)
 	const initial = domLeads ? fromDom : fromStore
 	apply(initial)
@@ -215,6 +308,7 @@ onExist('[data-bind-attr]', el => {
 	}
 	meta.attr || (meta.attr = {})
 	meta.attr.cls || (meta.attr.cls = [])
+	const format = el.dataset.bindFormat
 	spec.split(/\s*,\s*/).filter(Boolean).forEach(pair => {
 		const m = pair.match(/^\s*([^:]+)\s*:\s*(.+)\s*$/)
 		if (!m) return
@@ -233,9 +327,9 @@ onExist('[data-bind-attr]', el => {
 		const domLeads = !isCalc && name !== 'class' && domNonEmpty && storeEmpty
 		const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
 		const apply = v => {
-			if (name === 'text') el.textContent = S(v)
+			if (name === 'text') el.textContent = S(format ? phlo.store.format(format, v) : v)
 			else if (name === 'html') app.mod.inner(el, S(v))
-			else if (name === 'value') app.mod.value(el, S(v))
+			else if (name === 'value') app.mod.value(el, S(format ? phlo.store.format(format, v) : v))
 			else if (name === 'class'){
 				const next = Array.isArray(v) ? v : (v && typeof v === 'object') ? Object.keys(v).filter(k => v[k]) : String(v ?? '').split(/\s+/)
 				const uniq = [...new Set(next.filter(Boolean))]
@@ -251,11 +345,65 @@ onExist('[data-bind-attr]', el => {
 			}
 			else app.mod.attr(el, { [name]: S(v) })
 		}
-		phlo.store.on(path, apply)
+		phlo.store.on(path, apply, el)
 		if (domLeads) phlo.store.set(path, domVal)
 		const initial = domLeads ? domVal : fromStore
 		apply(initial)
 		if (!isCalc && isInputVal) el.oninput = e => phlo.store.set(path, e.target.value)
 	})
 })
+
+onExist('[data-each]', el => {
+	const path = el.dataset.each
+	const template = el.querySelector('template')
+	if (!template) return
+	const key = el.dataset.key ? (el.dataset.key.startsWith('.') ? el.dataset.key : '.' + el.dataset.key) : ''
+	const rows = new Map
+	const address = (node, index) => {
+		const base = `${path}[${index}]`
+		const bound = [...objects('[data-bind], [data-bind-attr]', node)]
+		if (node.matches('[data-bind], [data-bind-attr]')) bound.push(node)
+		bound.forEach(item => {
+			if (item.dataset.bind !== undefined && item.dataset.eachBind === undefined) item.dataset.eachBind = item.dataset.bind
+			const attr = item.getAttribute('data-bind-attr')
+			if (attr !== null && item.dataset.eachBindAttr === undefined) item.dataset.eachBindAttr = attr
+			if (item.dataset.eachBind !== undefined) item.dataset.bind = item.dataset.eachBind === '.' ? base : base + item.dataset.eachBind
+			if (item.dataset.eachBindAttr !== undefined) item.setAttribute('data-bind-attr', item.dataset.eachBindAttr.replace(/:\s*\./g, ': ' + base + '.'))
+		})
+	}
+	const draw = () => {
+		const list = phlo.store.get(path)
+		const items = Array.isArray(list) ? list : (list && typeof list === 'object' ? Object.values(list) : [])
+		let changed = false
+		items.forEach((item, index) => {
+			const id = key ? String(phlo.store.get(`${path}[${index}]${key}`) ?? index) : String(index)
+			const row = rows.get(index)
+			if (row && row.id === id) return
+			row?.node.remove()
+			const node = template.content.firstElementChild.cloneNode(true)
+			address(node, index)
+			rows.set(index, {id, node})
+			el.appendChild(node)
+			changed = true
+		})
+		for (const [index, row] of [...rows]){
+			if (index < items.length) continue
+			row.node.remove()
+			rows.delete(index)
+			changed = true
+		}
+		if (changed) app.update()
+	}
+	phlo.store.on(path, draw, el)
+	draw()
+})
+
+onExist('[data-store-post]', el => {
+	const path = el.dataset.bind || el.dataset.storePath
+	if (!path) return
+	phlo.store.sync(path, {ws: el.dataset.storeWs !== undefined, post: el.dataset.storePost, delay: parseInt(el.dataset.storeDelay) || 200})
+})
+
+app.updates.push(() => phlo.store.sweep())
+addEventListener('popstate', () => phlo.store.reset(phlo.store.scope))
 </script>
