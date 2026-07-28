@@ -93,9 +93,15 @@ app.keyboard = {
 	hide: () => phlo.keyboard.hide(),
 }
 
-on('focus', '[data-keyboard]', el => phlo.keyboard.show(el))
+// Delegated from the body: the keys are drawn outside the update cycle, and a field can
+// appear at any moment in a single page app.
+on('focusin', 'body', (body, e) => {
+	if (e.target.matches?.('[data-keyboard]')) phlo.keyboard.show(e.target)
+})
 
-on('click', '[data-keyboard-key]', (el, e) => {
+on('click', 'body', (body, e) => {
+	const el = e.target.closest?.('[data-keyboard-key]')
+	if (!el) return
 	e.preventDefault()
 	phlo.keyboard.press(el.dataset.keyboardKey)
 	phlo.keyboard.open?.focus({preventScroll: true})
