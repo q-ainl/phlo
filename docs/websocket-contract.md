@@ -137,6 +137,27 @@ say.
 silently. For guaranteed delivery (financial events, etc) pair it with a
 DB queue.
 
+## Client-side events
+
+`DOM/websocket` reports `connect`, `close` and `error`. Assigning
+`app.websocket.connect = fn` still works and still runs first, but a second
+feature assigning the same field silently replaced the first, so prefer:
+
+```js
+const off = app.websocket.on('connect', fn, element)
+```
+
+Two things make this safe to call from anywhere:
+
+- **It fires at once when the socket is already open.** A page that mounts after
+  the connection came up would otherwise never get its moment, which is the
+  usual reason a feature works on a fresh load and not after navigating.
+- **A subscriber tied to an element is dropped once that element leaves the
+  document**, so a screen swap cleans up after itself. `on()` also returns an
+  unsubscribe function for the cases that need it.
+
+A subscriber that throws is logged and does not stop the others.
+
 ## Message envelope (convention)
 
 Payload shape is per app, but the stack convention is:
