@@ -267,7 +267,8 @@ app.persist = (path, adapter) => phlo.store.persist(path, adapter)
 app.sync = (path, options) => phlo.store.sync(path, options)
 
 onExist('[data-bind]', el => {
-	const key = el.dataset.bind
+	const not = el.dataset.bind.startsWith('!')
+	const key = not ? el.dataset.bind.slice(1) : el.dataset.bind
 	const isCalc = key.startsWith('calc.')
 	const isInput = el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA'
 	const fromDom = isInput ? el.value : el.textContent
@@ -277,7 +278,8 @@ onExist('[data-bind]', el => {
 	const domLeads = !isCalc && domNonEmpty && storeEmpty
 	const format = el.dataset.bindFormat
 	const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
-	const apply = v => {
+	const apply = raw => {
+		const v = not ? !raw : raw
 		const s = S(format ? phlo.store.format(format, v) : v)
 		if (isInput) el.value = s
 		else el.textContent = s
@@ -305,7 +307,8 @@ onExist('[data-bind-attr]', el => {
 		const m = pair.match(/^\s*([^:]+)\s*:\s*(.+)\s*$/)
 		if (!m) return
 		const name = m[1]
-		const path = m[2]
+		const not = m[2].startsWith('!')
+		const path = not ? m[2].slice(1) : m[2]
 		const isCalc = path.startsWith('calc.')
 		const isInputVal = name === 'value' && (el.tagName === 'INPUT' || el.tagName === 'SELECT' || el.tagName === 'TEXTAREA')
 		const domVal =
@@ -318,7 +321,8 @@ onExist('[data-bind-attr]', el => {
 		const storeEmpty = fromStore === undefined || (typeof fromStore === 'string' && fromStore.trim() === '')
 		const domLeads = !isCalc && name !== 'class' && domNonEmpty && storeEmpty
 		const S = v => v == null ? '' : (typeof v === 'object' ? '' : String(v))
-		const apply = v => {
+		const apply = raw => {
+			const v = not ? !raw : raw
 			if (name === 'text') el.textContent = S(format ? phlo.store.format(format, v) : v)
 			else if (name === 'html') app.mod.inner(el, S(v))
 			else if (name === 'value') app.mod.value(el, S(format ? phlo.store.format(format, v) : v))
@@ -347,9 +351,16 @@ onExist('[data-bind-attr]', el => {
 
 onExist('[data-each]', el => {
 	const path = el.dataset.each
-	const template = el.querySelector('template')
-	if (!template) return
+	const templates = [...objects('template', el)]
+	if (!templates.length) return
 	const key = el.dataset.key ? (el.dataset.key.startsWith('.') ? el.dataset.key : '.' + el.dataset.key) : ''
+	const pick = el.dataset.eachTemplate ? (el.dataset.eachTemplate.startsWith('.') ? el.dataset.eachTemplate : '.' + el.dataset.eachTemplate) : ''
+	const fallback = templates.find(t => t.dataset.template === undefined) || templates[0]
+	const template = index => {
+		if (!pick) return fallback
+		const name = String(phlo.store.get(`${path}[${index}]${pick}`) ?? '')
+		return templates.find(t => t.dataset.template === name) || fallback
+	}
 	const rows = new Map
 	const address = (node, index) => {
 		const base = `${path}[${index}]`
@@ -359,8 +370,12 @@ onExist('[data-each]', el => {
 			if (item.dataset.bind !== undefined && item.dataset.eachBind === undefined) item.dataset.eachBind = item.dataset.bind
 			const attr = item.getAttribute('data-bind-attr')
 			if (attr !== null && item.dataset.eachBindAttr === undefined) item.dataset.eachBindAttr = attr
-			if (item.dataset.eachBind !== undefined) item.dataset.bind = item.dataset.eachBind === '.' ? base : base + item.dataset.eachBind
-			if (item.dataset.eachBindAttr !== undefined) item.setAttribute('data-bind-attr', item.dataset.eachBindAttr.replace(/:\s*\./g, ': ' + base + '.'))
+			if (item.dataset.eachBind !== undefined){
+				const not = item.dataset.eachBind.startsWith('!') ? '!' : ''
+				const rel = not ? item.dataset.eachBind.slice(1) : item.dataset.eachBind
+				item.dataset.bind = not + (rel === '.' ? base : base + rel)
+			}
+			if (item.dataset.eachBindAttr !== undefined) item.setAttribute('data-bind-attr', item.dataset.eachBindAttr.replace(/:\s*(!?)\./g, (all, not) => ': ' + not + base + '.'))
 		})
 	}
 	const draw = () => {
@@ -369,12 +384,13 @@ onExist('[data-each]', el => {
 		let changed = false
 		items.forEach((item, index) => {
 			const id = key ? String(phlo.store.get(`${path}[${index}]${key}`) ?? index) : String(index)
+			const tpl = template(index)
 			const row = rows.get(index)
-			if (row && row.id === id) return
+			if (row && row.id === id && row.tpl === tpl) return
 			row?.node.remove()
-			const node = template.content.firstElementChild.cloneNode(true)
+			const node = tpl.content.firstElementChild.cloneNode(true)
 			address(node, index)
-			rows.set(index, {id, node})
+			rows.set(index, {id, tpl, node})
 			el.appendChild(node)
 			changed = true
 		})
