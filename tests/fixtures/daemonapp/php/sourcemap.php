@@ -21,7 +21,7 @@
 				'source' => '/srv/control/phlo/resources/wsCast.phlo',
 			],
 			[
-				'php' => 88,
+				'php' => 89,
 				'phlo' => 10,
 				'name' => 'HTTP',
 				'source' => '/srv/control/phlo/resources/HTTP.phlo',

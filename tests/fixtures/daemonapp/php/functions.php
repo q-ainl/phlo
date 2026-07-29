@@ -72,13 +72,14 @@ function await(...$jobs){
 	return $results;
 }
 
-function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = daemon, ...$data){
+function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = daemon, $wsExcept = void, ...$data){
 	return HTTP (
 		'http://127.0.0.1:'.$wsPort.'/message',
 		JSON: true,
 		POST: arr (
 			host: $wsHost,
 			target: $wsTarget,
+			except: $wsExcept,
 			data: $data,
 		),
 	);
