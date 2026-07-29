@@ -10,8 +10,10 @@ const vm = require('vm')
 
 const ENGINE = path.resolve(__dirname, '../../..')
 
+// A resource name resolves against the engine; an absolute path lets anything built on Phlo
+// load its own resources with the same helper.
 function scriptOf(resource){
-	const file = path.join(ENGINE, 'resources', resource + '.phlo')
+	const file = path.isAbsolute(resource) ? resource : path.join(ENGINE, 'resources', resource + '.phlo')
 	const source = fs.readFileSync(file, 'utf8')
 	const blocks = [...source.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1])
 	if (!blocks.length) throw new Error(`no script block in ${resource}`)
