@@ -29,6 +29,13 @@ endpoints:
 | `/message` | POST | Server-to-client casts (used by the `wsCast` resource) |
 | `/health` | GET | Status: worker total/cap, per-pool stats, sockets, configured hosts |
 
+`/health` reports sockets per host as `{tokens, sockets, perToken}`. `perToken`
+is the socket count per connected token, keyed by `sha256` of the token so the
+endpoint never hands out a credential; an app hashes its own tokens the same way
+to look them up. Read presence there rather than counting connects and closes
+into your own store: a hard restart never fires the closes, so a tally of your
+own drifts and reports live clients as offline.
+
 For each socket event the daemon dispatches the matching `websocket::<hook>`
 target on the app's pool, in-process. The execution mode follows the host's
 `build` flag from its `config/daemon.js` entry, not any app-side toggle:
