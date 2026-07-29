@@ -96,13 +96,35 @@ connections of the same user/session.
 wsCast('all', host, daemon, channel: 'inbox', type: 'message.new')
 ```
 
-`wsCast($target, $host, $port, ...$data)` posts `{host, target, data}` to
-`/message`. Targets:
+`wsCast($target, $host, $port, $except, ...$data)` posts
+`{host, target, except, data}` to `/message`. Targets:
 
 - `all`: every client on this host
 - `token:<token>`: all connections of one token
-- `token:not:<token>`: everyone except one token (e.g. the sender)
+- `token:not:<token>`: everyone except one token
 - `socket:<socket>`: one specific connection
+
+A token is a principal, not a connection: one user or one station may hold
+several sockets at once. `token:not:` therefore excludes every screen of that
+token, which is what you want to reach *other* principals, and never what you
+want to reach the *other screens of the sender*.
+
+For that, `$except` names a single socket that is skipped no matter which
+target selected it. Pass the `$wsSocket` a hook was handed and the message goes
+to everyone the target covers but the sender:
+
+```phlo
+function wsReceive($wsHost, $wsToken, $wsSocket, ...$data){
+	wsCast(wsTarget: 'token:'.$wsToken, wsExcept: $wsSocket, inner: $data['inner'])
+}
+```
+
+(Spell the payload out; `...$data` after a named argument is a fatal PHP error.)
+
+Exclusion lives beside the target instead of inside it because the daemon
+cannot know who "me" is: a cast is a separate HTTP call with no link to the
+socket that triggered the handler. Only the hook knows, so only the hook can
+say.
 
 **No retry, no dead-letter, no ACK.** If the daemon is down the POST fails
 silently. For guaranteed delivery (financial events, etc) pair it with a

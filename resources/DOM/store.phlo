@@ -18,6 +18,7 @@ phlo.store = {
 	formats: {},
 	persists: {},
 	syncs: {},
+	quiet: 0,
 	scope: 'page',
 	split: path => path.replace(/\]/g, '').split(/\.|\[/),
 	get(path){
@@ -50,7 +51,7 @@ phlo.store = {
 		phlo.store.recalc(path)
 		phlo.store.schedule()
 		phlo.store.save(path)
-		phlo.store.push(path)
+		if (!phlo.store.quiet) phlo.store.push(path)
 	},
 	on(path, cb, el = null){
 		(phlo.store.listeners[path] ??= new Set).add(cb)
@@ -204,10 +205,15 @@ phlo.store = {
 			const sync = phlo.store.syncs[path]
 			delay('store-' + path, sync.delay, () => {
 				const value = phlo.store.get(path)
-				if (sync.ws && app.websocket) app.websocket.send({store: {[path]: value}})
+				if (sync.ws && app.websocket) app.websocket.send({sync: {[path]: value}})
 				if (sync.post) app.post(sync.post, {path, value}, false)
 			})
 		})
+	},
+	mirror(path, value){
+		phlo.store.quiet++
+		try { app.mod.store(path, value) }
+		finally { phlo.store.quiet-- }
 	},
 
 	proxy(base){
@@ -244,6 +250,8 @@ app.mod.store = (key, value) => {
 	walk(key, value)
 }
 
+app.mod.sync = (key, value) => phlo.store.mirror(key, value)
+
 phlo.calc = new Proxy({}, {
 	set(t, k, fn){
 		if (typeof fn !== 'function') return false
@@ -272,6 +280,7 @@ app.calc = new Proxy({}, {
 app.format = (name, fn) => phlo.store.formats[name] = fn
 app.persist = (path, adapter) => phlo.store.persist(path, adapter)
 app.sync = (path, options) => phlo.store.sync(path, options)
+app.push = path => phlo.store.push(path)
 app.replace = (path, value) => phlo.store.replace(path, value)
 
 onExist('[data-bind]', el => {
