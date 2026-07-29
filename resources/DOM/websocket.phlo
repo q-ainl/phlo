@@ -20,6 +20,7 @@ app.websocket = {
 		})
 	},
 	path: 'websocket',
+	get ready(){ return phlo.wss?.readyState === 1 },
 	send: data => phlo.wss?.readyState === 1 ? [phlo.log('🖧 app.websocket.send', '\n', data), phlo.wss.send(JSON.stringify(data))] : phlo.error('🖧 Could not send websocket data over closed socket'),
 	retry: 333,
 }

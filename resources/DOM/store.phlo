@@ -105,7 +105,10 @@ phlo.store = {
 			const set = phlo.store.listeners[dep]
 			if (!set) return
 			const value = dep === path ? val : phlo.store.get(dep)
-			;[...set].forEach(cb => cb(value))
+			;[...set].forEach(cb => {
+				try { cb(value) }
+				catch(e){ phlo.log('store binding', dep, e) }
+			})
 		})
 	},
 	match(dep, changed){
@@ -205,7 +208,7 @@ phlo.store = {
 			const sync = phlo.store.syncs[path]
 			delay('store-' + path, sync.delay, () => {
 				const value = phlo.store.get(path)
-				if (sync.ws && app.websocket) app.websocket.send({sync: {[path]: value}})
+				if (sync.ws && app.websocket?.ready) app.websocket.send({sync: {[path]: value}})
 				if (sync.post) app.post(sync.post, {path, value}, false)
 			})
 		})
