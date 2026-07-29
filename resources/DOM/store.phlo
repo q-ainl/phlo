@@ -93,7 +93,6 @@ phlo.store = {
 		for (let i = 0; i < keys.length - 1; i++) ctx = ctx?.[keys[i]]
 		if (ctx) delete ctx[keys[keys.length - 1]]
 		phlo.store.set(path, value)
-		phlo.store.notify(path, value)
 	},
 	signal(path, initial){
 		if (phlo.store.get(path) === undefined) phlo.store.set(path, initial)
