@@ -107,3 +107,7 @@ tests/fixtures/serve/php/
 tests/fixtures/serve/www/app.css
 tests/fixtures/serve/www/app.js
 tests/fixtures/serve/data/errors.json
+
+# Dev dependencies for the frontend tests; the engine itself ships no JavaScript toolchain
+node_modules/
+package-lock.json

@@ -1,0 +1,11 @@
+{
+	"name": "phlo",
+	"private": true,
+	"description": "Frontend tests for the Phlo resources. The engine itself is PHP; this covers the JavaScript that ships with it.",
+	"scripts": {
+		"test": "node --test tests/js/"
+	},
+	"devDependencies": {
+		"jsdom": "^24.1.3"
+	}
+}
