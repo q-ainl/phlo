@@ -86,7 +86,12 @@ on('click', 'body', (body, e) => {
 })
 
 // Touching the field by hand starts the fresh cycle over: the next key clears again.
+//
+// Focus returning from a key is not a hand. A key takes focus when it is pressed and the
+// handler above hands it straight back, so treating that as a fresh touch cleared the field
+// on every keystroke and left only the last one: a fresh pad could not be typed into at all.
 on('focusin', 'body', (body, e) => {
+	if (e.relatedTarget?.closest?.('[data-numpad-key]')) return
 	if (e.target.dataset?.numpadTyped) delete e.target.dataset.numpadTyped
 })
 </script>
