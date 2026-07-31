@@ -15,4 +15,11 @@ prop min = 0
 method label($record) => number_format($record->{$this->name}, $this->decimals, comma, dot)
 method input($record) => input(type: 'number', name: $this->name, value: $record->{$this->name} ?? $this->default, step: $this->decimals ? dot.str_repeat('0', $this->decimals - 1).'1' : null, min: $this->min, class: 'field')
 
+method parse($record){
+	$name = $this->name
+	if (!%payload->hasData($name)) return
+	$value = %payload->$name
+	$record->$name = ($value === null || (is_string($value) && trim($value) === void)) ? ($this->default ?? 0) : $value
+}
+
 prop objColumns => [$this->name]

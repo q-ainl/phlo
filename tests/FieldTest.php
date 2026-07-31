@@ -58,4 +58,16 @@ final class FieldTest extends TestCase {
 		$r = self::fetch('fieldprobe::parsing');
 		$this->assertSame('kept', $r['absentLeavesRecord'], 'saving a record without a password value leaves the stored hash alone');
 	}
+
+	// An emptied number input submits an empty string, which a numeric column refuses. The
+	// absence of a number is the default, or zero; anything actually typed is left alone.
+	public function testNumberParseTurnsAnEmptyInputIntoANumber():void {
+		$r = self::fetch('fieldprobe::parsing');
+		$this->assertSame(0, $r['emptyBecomesZero'], 'an emptied number field stores zero, not an empty string');
+		$this->assertSame(0, $r['blankBecomesZero'], 'whitespace is empty too');
+		$this->assertSame(2, $r['emptyTakesDefault'], 'a declared default is what empty means for that field');
+		$this->assertSame('4.50', $r['priceKeepsValue'], 'a price the user typed is stored as typed');
+		$this->assertSame('9', $r['numberKeepsValue'], 'so is a plain number');
+		$this->assertSame(3, $r['absentIsUntouched'], 'a column the payload never mentioned is not ours to rewrite');
+	}
 }

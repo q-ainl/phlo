@@ -28,5 +28,20 @@ static rendering => [
 static parsing {
 	$record = new obj(pass: 'kept')
 	field(type: 'password', name: 'pass')->parse($record)
-	return ['absentLeavesRecord' => $record->pass]
+	$out = ['absentLeavesRecord' => $record->pass]
+	%payload->objImport(qty: void, rate: '4.50', spaces: '   ', kept: '9', fallback: void)
+	$numbers = new obj(qty: 12, rate: 1, spaces: 5, kept: 1, fallback: 1, absent: 3)
+	field(type: 'number', name: 'qty')->parse($numbers)
+	field(type: 'price', name: 'rate')->parse($numbers)
+	field(type: 'number', name: 'spaces')->parse($numbers)
+	field(type: 'number', name: 'kept')->parse($numbers)
+	field(type: 'number', name: 'fallback', default: 2)->parse($numbers)
+	field(type: 'number', name: 'absent')->parse($numbers)
+	$out['emptyBecomesZero'] = $numbers->qty
+	$out['blankBecomesZero'] = $numbers->spaces
+	$out['emptyTakesDefault'] = $numbers->fallback
+	$out['priceKeepsValue'] = $numbers->rate
+	$out['numberKeepsValue'] = $numbers->kept
+	$out['absentIsUntouched'] = $numbers->absent
+	return $out
 }
