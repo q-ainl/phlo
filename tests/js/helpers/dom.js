@@ -31,6 +31,7 @@ function mount(html, resources = ['DOM/store']){
 	// app.mod is what an apply() would reach for; the bindings lean on inner, attr and value.
 	const context = env.context
 	context.app.mod.inner = (els, content) => context.objects(els).forEach(el => el.innerHTML = content)
+	context.app.mod.append = (els, content) => context.objects(els).forEach(el => el.insertAdjacentHTML('beforeend', content))
 	context.app.mod.value = (els, value) => context.objects(els).forEach(el => el.value = value)
 	context.app.mod.attr = (els, attrs) => context.objects(els).forEach(el => Object.keys(attrs).forEach(key => {
 		attrs[key] === null ? el.removeAttribute(key) : el.setAttribute(key, attrs[key])

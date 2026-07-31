@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  On-screen keyboard for touch devices, with selectable layout
-@ advice:   Put data-keyboard on a field to open a docked keyboard on focus; data-keyboard="azerty" picks the layout. phlo.keyboard.layouts takes extra layouts.
+@ advice:   Put data-keyboard on a field to open a keyboard on focus; data-keyboard="azerty" picks the layout. Inside a dialog the keys mount in that dialog; data-keyboard-dock on an element there places them in the flow. phlo.keyboard.layouts takes extra layouts.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -39,10 +39,17 @@ phlo.keyboard = {
 		html += '<div class="keyboard__row">' + [key('-'), key(cast("'")), key(' ', phlo.keyboard.labels.space, 'keyboard__key--space'), key(cast(',')), key(cast('.')), key('close', phlo.keyboard.labels.close, 'keyboard__key--close')].join('') + '</div>'
 		return html
 	},
+	host(target){
+		const root = target?.closest('dialog[open]') || document.body
+		return obj('[data-keyboard-dock]', root) || root
+	},
 	render(){
 		const target = phlo.keyboard.open
 		if (!target) return
-		obj('#keyboard') || app.mod.append('body', '<div id="keyboard" class="keyboard" role="group" aria-label="On-screen keyboard"></div>')
+		const host = phlo.keyboard.host(target)
+		const docked = host !== document.body && host.matches('[data-keyboard-dock]')
+		if (obj('#keyboard')?.parentElement !== host) obj('#keyboard')?.remove()
+		obj('#keyboard') || app.mod.append(host, '<div id="keyboard" class="keyboard' + (docked ? ' keyboard--docked' : '') + '" role="group" aria-label="On-screen keyboard"></div>')
 		app.mod.inner('#keyboard', phlo.keyboard.rows(phlo.keyboard.layout(target)))
 	},
 	show(target){
@@ -68,6 +75,7 @@ phlo.keyboard = {
 	press(name){
 		const target = phlo.keyboard.open
 		if (!target) return
+		if (!target.isConnected) return phlo.keyboard.hide()
 		if (name === 'close') return phlo.keyboard.hide()
 		if (name === 'shift'){
 			phlo.keyboard.caps = !phlo.keyboard.caps
@@ -111,11 +119,17 @@ on('click', 'body', (body, e) => {
 on('pointerdown', 'body', (el, e) => {
 	if (!phlo.keyboard.open) return
 	if (e.target.closest('#keyboard') || e.target === phlo.keyboard.open) return
+	const surface = phlo.keyboard.open.closest('dialog[open]')
+	if (surface && surface.contains(e.target)) return
 	phlo.keyboard.hide()
 })
 
 on('keydown', 'body', (el, e) => {
 	if (e.key === 'Escape') phlo.keyboard.hide()
+})
+
+on('close', 'dialog', dialog => {
+	if (phlo.keyboard.open && dialog.contains(phlo.keyboard.open)) phlo.keyboard.hide()
 })
 </script>
 
@@ -134,6 +148,12 @@ on('keydown', 'body', (el, e) => {
 	box-shadow: 0 -2px 12px #0006
 	touch-action: manipulation
 	user-select: none
+}
+.keyboard--docked {
+	position: static
+	box-shadow: none
+	padding: var(--keyboard-dock-pad, 0)
+	background: var(--keyboard-dock-bg, transparent)
 }
 .keyboard__row {
 	display: flex
