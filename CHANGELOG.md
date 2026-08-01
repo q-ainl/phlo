@@ -42,6 +42,14 @@ tagged release onward. The engine version constant lives in `phlo.php`
   sales invoices behind the standard connector contract. The first call
   exchanges the configured `api_token` for a session token (cached per
   instance); pass `source` to label the e-Boekhouden audit trail.
+- Keyboard control on the presentation player: a document keymap steers the
+  fullscreen, focused or only player on the page. Space and `k` toggle
+  playback, the horizontal arrows seek five seconds, the vertical arrows step
+  the volume, `m` mutes, `c` toggles subtitles, `f` fullscreen and Home/End
+  jump to the edges. The player root is focusable, so an embedded player takes
+  the keys after a click or a tab stop, while keys typed into a form field
+  elsewhere on the page never steer a presentation. Covered by the frontend
+  `presentation.test.js`.
 
 ### Changed
 - Trace no longer records internal Control Center requests (paths under the

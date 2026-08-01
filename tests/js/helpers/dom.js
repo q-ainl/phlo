@@ -10,7 +10,7 @@ const {environment} = require('./frontend')
 
 // A stand-in for what app.js does after a response: run every registered onExist over the
 // document, then bind the events. Enough for the bindings to attach and redraw.
-function mount(html, resources = ['DOM/store']){
+function mount(html, resources = ['DOM/store'], over = {}){
 	const dom = new JSDOM(`<!doctype html><body>${html}</body>`)
 	const {window} = dom
 	const env = environment({
@@ -20,12 +20,14 @@ function mount(html, resources = ['DOM/store']){
 		HTMLElement: window.HTMLElement,
 		NodeList: window.NodeList,
 		Event: window.Event,
+		MutationObserver: window.MutationObserver,
 		obj: (el, root = window.document) => typeof el === 'string' ? root.querySelector(el) : el,
 		objects: (els, root = window.document) => {
 			if (typeof els === 'string') els = root.querySelectorAll(els)
 			return 'forEach' in els ? els : [els]
 		},
 		addEventListener: (...a) => window.addEventListener(...a),
+		...over,
 	})
 
 	// app.mod is what an apply() would reach for; the bindings lean on inner, attr and value.
