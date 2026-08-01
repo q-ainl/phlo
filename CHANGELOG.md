@@ -7,7 +7,7 @@ and Phlo adheres to [Semantic Versioning](https://semver.org/) from the first
 tagged release onward. The engine version constant lives in `phlo.php`
 (`const phlo`).
 
-## [Unreleased]
+## [1.0.1] - 2026-08-01
 
 ### Added
 - A `manifest` resource: declare the web-app-manifest body once
