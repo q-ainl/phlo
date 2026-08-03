@@ -7,6 +7,26 @@ and Phlo adheres to [Semantic Versioning](https://semver.org/) from the first
 tagged release onward. The engine version constant lives in `phlo.php`
 (`const phlo`).
 
+## [Unreleased]
+
+### Added
+- A `manual` resource: `GET /manual` describes the app it runs in, from three
+  sources that follow the code by themselves: `data/app.md`, the live source
+  through `reflect` and `git log`. A layer under `paths.resources` becomes its
+  own section once it carries a `layer.json` in its repo root and a heading in
+  its README; a layer that does not announce itself stays out of sight, which
+  is how the framework stays out of the manuals of the apps built on it. The
+  markdown of the description is rendered server-side and the page inlines its
+  own css, so it carries no javascript and listing the resource is all
+  `data/app.json` needs: no namespace keys, no client-side parser. The AI
+  summary is optional and keyed on the description, so it costs nothing per
+  visit and the page works without a key or without the `AI` resource. Every
+  render whose content differs from what is stored is written to
+  `data/manual.html` without its session token, so the last state survives
+  without the app running. Put the route behind your auth gate and add
+  `manual` to `release.exclude`, since a manual carrying the source does not
+  belong on a customer server.
+
 ## [1.0.1] - 2026-08-01
 
 ### Added
