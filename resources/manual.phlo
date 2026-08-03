@@ -1,0 +1,571 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Self-writing manual at /manual: app description, source reflection and recent commits, plus an optional AI summary
+@ package:  docs
+@ frontend: true
+@ backend:  true
+@ requires: reflect @AI? DOM/markdown? creds:OpenAI?
+@ advice:   Nothing to configure: include the resource and the page describes the app it runs in. It reads data/app.md, reflects the live source and reads git log, so it never goes stale. A product layer under paths.resources appears as its own section once it carries a layer.json in its repo root and a heading in its README; without that file a layer stays out of sight, which is how the framework itself stays out. The page is standalone (inline assets, no layout) and every render that changes the content is stored as data/manual.html without its session token, so the last state survives without the app. The AI summary is optional and keyed on data/app.md, so it costs nothing per visit; without a key the rest of the page still works. Put the route behind your auth gate and add manual to release.exclude, since a manual carrying the source does not belong on a customer server.
+@ tags:     manual docs reflection ai
+
+static instruction = 'Summarise what this application does and what has changed recently. Write in the same language as the description, at most eight sentences, running text without lists or headings. Do not open with a sentence about what you are going to do.'
+
+prop translate => function_exists('en')
+prop labels => arr(
+	title:    'Manual',
+	lead:     'This page comes from the source itself: the description, what the code exposes and the latest changes.',
+	state:    'State',
+	unknown:  'unknown',
+	summary:  'In short',
+	about:    'What this app is',
+	files:    'Files',
+	routes:   'Routes',
+	changes:  'Recent changes',
+	why:      'Why',
+	own:      'Codebase',
+	shared:   'Shared with the sibling app',
+	noKey:    'No AI key is configured, so there is no summary. The rest of this page comes straight from the source and works without one.',
+	noAnswer: 'The model returned nothing.',
+	noSummary:'The summary could not be fetched: ',
+	noInfo:   'This app does not carry a data/app.md yet.',
+	noNodes:  'This file carries no nodes; it consists of markup or script.',
+)
+method label($key) => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
+
+static appInfo:string => (string)(reflect::appInfo() ?: void)
+
+static commits(string $path, int $limit = 12):array {
+	if (!$path || !is_dir($path)) return []
+	$field = perc.'x1f'
+	$record = perc.'x1e'
+	$format = perc.'h'.$field.perc.'ad'.$field.perc.'s'.$field.perc.'b'.$record
+	$command = 'git -C '.escapeshellarg($path).' log -'.(int)$limit.' --no-merges --date=iso --format='.$format.' 2>/dev/null'
+	$raw = (string)@shell_exec($command)
+	$out = []
+	foreach (array_filter(explode("\x1e", $raw), 'trim') AS $entry){
+		$parts = explode("\x1f", trim($entry))
+		if (count($parts) < 3) continue
+		$when = strtotime($parts[1]) ?: 0
+		$out[] = obj(
+			hash: $parts[0],
+			when: $when,
+			date: $when ? date('d-m-Y H:i', $when) : $parts[1],
+			subject: $parts[2],
+			body: trim((string)($parts[3] ?? void)),
+		)
+	}
+	return $out
+}
+
+static repos:array {
+	$path = app
+	$dirs = [%manual->label('own') => $path]
+	$config = json_decode((string)@file_get_contents($path.'data/app.json'), true)
+	foreach ((array)($config['paths']['resources'] ?? []) AS $dir){
+		$dir = rtrim((string)$dir, slash).slash
+		$label = is_dir($dir) ? static::dirLabel($dir) : void
+		if ($label === void || isset($dirs[$label])) continue
+		$dirs[$label] = $dir
+	}
+	$roots = []
+	$out = []
+	foreach ($dirs AS $label => $dir){
+		$root = trim((string)@shell_exec('git -C '.escapeshellarg($dir).' rev-parse --show-toplevel 2>/dev/null'))
+		if ($root === void || isset($roots[$root])) continue
+		$roots[$root] = true
+		$out[$label] = $dir
+	}
+	return $out
+}
+
+static commitList(int $limit = 20):array {
+	$all = []
+	foreach (static::repos() AS $label => $dir){
+		foreach (static::commits($dir) AS $commit){
+			$commit->origin = $label
+			$all[] = $commit
+		}
+	}
+	usort($all, fn($a, $b) => $b->when <=> $a->when)
+	return array_slice($all, 0, $limit)
+}
+
+static head:string {
+	$commits = static::commits(app, 1)
+	return (string)($commits[0]->hash ?? void)
+}
+
+static routes:array => (array)reflect::compactRoutes()
+
+static routeGroups:array {
+	$groups = []
+	foreach (static::routes() AS $route){
+		$file = basename((string)($route['file'] ?? 'unknown'))
+		$groups[$file][] = $route
+	}
+	ksort($groups)
+	return $groups
+}
+
+static nodesByFile:array {
+	if (isset(%req->docsNodes)) return (array)%req->docsNodes
+	$found = []
+	foreach (['route', 'view', 'static', 'method', 'prop'] AS $type){
+		foreach ((array)reflect::find($type, null, true, 'all') AS $row){
+			$row = (array)$row
+			$file = basename((string)($row['file'] ?? void), '.phlo')
+			if ($file === void) continue
+			$found[$file][] = obj(
+				type: $type,
+				name: (string)($row['name'] ?? void),
+				args: (string)($row['args'] ?? void),
+				summary: (string)($row['summary'] ?? void),
+			)
+		}
+	}
+	%req->docsNodes = $found
+	return $found
+}
+
+static fileRow(string $file):obj {
+	$head = (string)@file_get_contents($file, false, null, 0, 400)
+	preg_match('~@ summary:\s*(.+)~', $head, $match)
+	$key = basename($file, '.phlo')
+	return obj(
+		name: basename($file),
+		summary: trim((string)($match[1] ?? void)),
+		lines: count(file($file) ?: []),
+		nodes: static::nodesByFile()[$key] ?? [],
+	)
+}
+
+static sources:array {
+	$path = app
+	$own = %manual->label('own')
+	$config = json_decode((string)@file_get_contents($path.'data/app.json'), true)
+	if (!is_array($config)) return []
+
+	$dirs = [$path => $own]
+	foreach ((array)($config['paths']['resources'] ?? []) AS $dir){
+		$dir = rtrim((string)$dir, slash).slash
+		if (!is_dir($dir)) continue
+		$label = static::dirLabel($dir)
+		if ($label !== void) $dirs[$dir] = $label
+	}
+
+	$groups = []
+	foreach ($dirs AS $dir => $label) $groups[$label] = []
+	foreach (glob($path.'*.phlo') ?: [] AS $file) $groups[$own][] = static::fileRow($file)
+	foreach ((array)($config['resources'] ?? []) AS $name){
+		foreach ($dirs AS $dir => $label){
+			if ($label === $own) continue
+			$file = $dir.$name.'.phlo'
+			if (!is_file($file)) continue
+			$groups[$label][] = static::fileRow($file)
+			break
+		}
+	}
+	return array_filter($groups)
+}
+
+static dirLabel(string $dir):string {
+	$root = trim((string)@shell_exec('git -C '.escapeshellarg($dir).' rev-parse --show-toplevel 2>/dev/null'))
+	$marker = $root === void ? null : json_decode((string)@file_get_contents($root.slash.'layer.json'), true)
+	if (is_array($marker) && ($marker['docs'] ?? true) !== false){
+		$label = trim((string)($marker['label'] ?? void))
+		if ($label !== void) return $label
+		preg_match('~^#\s+(.+)~m', (string)@file_get_contents($root.slash.'README.md'), $match)
+		if (($label = trim((string)($match[1] ?? void))) !== void) return $label
+	}
+	if (str_starts_with(rtrim($dir, slash), rtrim(dirname(rtrim(app, slash)), slash))) return %manual->label('shared')
+	return void
+}
+
+static cacheFile:string => data.'manual.json'
+
+static cached:?obj {
+	$file = static::cacheFile()
+	if (!is_file($file)) return null
+	$row = json_decode((string)file_get_contents($file))
+	return $row instanceof \stdClass ? obj(...(array)$row) : null
+}
+
+static configured:bool => (string)(%creds->OpenAI ?? void) !== void || (string)(%creds->Claude ?? void) !== void
+
+static appName:string => defined('id') ? (string)id : (string)%app->title
+
+static model:string {
+	$set = class_exists('setting') ? (string)(setting::value('docs.model') ?: void) : void
+	return $set ?: 'gpt-5.4-mini'
+}
+
+static summary:obj {
+	$info = static::appInfo()
+	$head = $info === void ? void : md5($info)
+	$row = static::cached()
+	if ($row && (string)$row->hash === $head && $head !== void) return $row
+	if (!static::configured()) return obj(hash: $head, text: void, missing: true)
+
+	$lines = ['This is the description of the app:']
+	$lines[] = mb_substr(static::appInfo(), 0, 4000)
+	$lines[] = 'And these are the latest changes:'
+	foreach (static::commits(app) AS $commit) $lines[] = $commit->date.space.$commit->subject
+	try {
+		$answer = %AI->chat(model: static::model(), system: static::$instruction, user: implode(lf, $lines))
+		$text = trim((string)($answer->answer ?? void))
+	}
+	catch (\Throwable $e){
+		return obj(hash: $head, text: void, error: mb_substr($e->getMessage(), 0, 200))
+	}
+	if ($text === void) return obj(hash: $head, text: void, error: %manual->label('noAnswer'))
+	@file_put_contents(static::cacheFile(), json_encode(['hash' => $head, 'text' => $text, 'written' => time()]))
+	return obj(hash: $head, text: $text)
+}
+
+static pageFile:string => data.'manual.html'
+
+static store(string $body, string $page):bool {
+	$mark = '<!-- manual '.md5($body).' -->'
+	$file = static::pageFile()
+	if (is_file($file) && str_contains((string)@file_get_contents($file), $mark)) return false
+	return (bool)@file_put_contents($file, preg_replace('~<meta name="csrf"[^>]*>\s*~', void, $page).lf.$mark.lf)
+}
+
+route both GET manual {
+	%app->title = static::appName()
+	%app->css = []
+	%app->js = []
+	%app->defer = []
+	$body = %manual->page()
+	$page = view($body, title: %manual->label('title'), css: [], js: [], inline: true, ns: 'manual')
+	static::store($body, $page)
+	return $page
+}
+
+view page:
+<main.docs>
+	<header.docs__head>
+		<h1>{{ manual::appName() }}</h1>
+		<p.docs__sub>{{ %manual->label('lead') }} {{ %manual->label('state') }} {{ static::head() ?: %manual->label('unknown') }}.</p>
+	</header>
+	<div#docs-summary>{{ %manual->summaryBlock }}</div>
+	{{ %manual->infoBlock }}
+	{{ %manual->filesBlock }}
+	{{ %manual->routesBlock }}
+	{{ %manual->commitsBlock }}
+</main>
+
+view summaryBlock {
+	$row = static::summary()
+	if ($row->missing) return indentView(lf.'<section class="docs__box docs__box--quiet"><p>'.esc(%manual->label('noKey')).'</p></section>'.lf)
+	if ((string)($row->error ?? void) !== void) return indentView(lf.'<section class="docs__box docs__box--quiet"><p>'.esc(%manual->label('noSummary')).esc((string)$row->error).'</p></section>'.lf)
+	return indentView(lf.$this->summaryText($row).lf)
+}
+
+view summaryText($row):
+<section.docs__box>
+	<h2>{{ %manual->label('summary') }}</h2>
+	<p.docs__lead>{{ $row->text }}</p>
+</section>
+
+view infoBlock {
+	$info = static::appInfo()
+	if ($info === void) return indentView(lf.'<section class="docs__box"><p>'.esc(%manual->label('noInfo')).'</p></section>'.lf)
+	return indentView(lf.$this->infoText($info).lf)
+}
+
+view infoText(string $info):
+<details.docs__box open>
+	<summary.docs__summary>{{ %manual->label('about') }}</summary>
+	<div.docs__md data-markdown>{[ preg_replace('~^#[^\n]*\n~', void, $info) ]}</div>
+</details>
+
+view filesBlock {
+	$groups = static::sources()
+	if (!$groups) return void
+	return indentView(lf.$this->filesTable($groups).lf)
+}
+
+view filesTable(array $groups):
+<details.docs__box>
+	<summary.docs__summary>{{ %manual->label('files') }} ({{ array_sum(array_map('count', $groups)) }})</summary>
+	<foreach $groups AS $label => $files>
+		<h3>{{ $label }} <span.docs__num>{{ count($files) }}</span></h3>
+		<foreach $files AS $file>
+			{{ %manual->fileNodes($file) }}
+		</foreach>
+	</foreach>
+</details>
+
+view fileNodes($file):
+<details.docs__file>
+	<summary.docs__summary>
+		<span.docs__mono>{{ $file->name }}</span>
+		<span.docs__filesum>{{ $file->summary ?: void }}</span>
+		<span.docs__num>{{ count($file->nodes) }}</span>
+	</summary>
+	<if !$file->nodes>
+		<p.docs__meta>{{ %manual->label('noNodes') }}</p>
+	</if>
+	<foreach $file->nodes AS $node>
+		<div.docs__node>
+			<span.docs__kind>{{ $node->type }}</span>
+			<span.docs__mono>{{ $node->name }}{( $node->args !== void ? '('.$node->args.')' : void )}</span>
+			<if $node->summary !== void>
+				<p.docs__meta>{{ mb_substr($node->summary, 0, 240) }}</p>
+			</if>
+		</div>
+	</foreach>
+</details>
+
+view routesBlock {
+	$groups = static::routeGroups()
+	if (!$groups) return void
+	return indentView(lf.$this->routesTable($groups).lf)
+}
+
+view routesTable(array $groups):
+<details.docs__box>
+	<summary.docs__summary>{{ %manual->label('routes') }} ({{ array_sum(array_map('count', $groups)) }})</summary>
+	<foreach $groups AS $file => $routes>
+		<h3>{{ $file }} <span.docs__num>{{ count($routes) }}</span></h3>
+		<foreach $routes AS $route>
+			{{ %manual->routeRow($route) }}
+		</foreach>
+	</foreach>
+</details>
+
+view routeRow(array $route) {
+	$whole = (string)($route['route'] ?? void)
+	$space = strpos($whole, space)
+	$method = $space === false ? void : substr($whole, 0, $space)
+	$path = $space === false ? $whole : substr($whole, $space + 1)
+	return indentView(lf.$this->routeLine($method, $path, (string)($route['summary'] ?? void)).lf)
+}
+
+view routeLine(string $method, string $path, string $summary):
+<div.docs__route>
+	<span.docs__origin>{{ $method ?: 'GET' }}</span>
+	<span.docs__path>/{{ str_replace(space, slash, trim($path)) }}</span>
+	<if $summary !== void>
+		<p.docs__meta>{{ $summary }}</p>
+	</if>
+</div>
+
+view commitsBlock {
+	$commits = static::commitList()
+	if (!$commits) return void
+	return indentView(lf.$this->commitsList($commits).lf)
+}
+
+view commitsList(array $commits):
+<details.docs__box>
+	<summary.docs__summary>{{ %manual->label('changes') }} ({{ count($commits) }})</summary>
+	<foreach $commits AS $commit>
+		<article.docs__commit>
+			<h4>{{ $commit->subject }}</h4>
+			<p.docs__meta>
+				<span.docs__origin>{{ $commit->origin }}</span>
+				{{ $commit->date }} &middot; <span.docs__mono>{{ $commit->hash }}</span>
+			</p>
+			<if $commit->body !== void>
+				<details.docs__more>
+					<summary.docs__summary>{{ %manual->label('why') }}</summary>
+					<pre.docs__pre>{{ $commit->body }}</pre>
+				</details>
+			</if>
+		</article>
+	</foreach>
+</details>
+
+<style ns=manual>
+.docs {
+	max-width: 54rem
+	margin: 0 auto
+	padding: 2rem 1.2rem 4rem
+	font: 16px/1.6 system-ui, sans-serif
+	color: #1d2126
+}
+.docs__head {
+	margin-bottom: 1.4rem
+}
+.docs h1 {
+	margin: 0 0 .3rem
+	font-size: 1.5rem
+}
+.docs__sub {
+	margin: 0 0 .9rem
+	color: #68727d
+	font-size: .92rem
+}
+.docs__box {
+	margin: 0 0 1rem
+	padding: 1rem 1.1rem
+	border: 1px solid #e2e6ea
+	border-radius: 10px
+	background: #fff
+}
+.docs__box--quiet {
+	background: #f6f8f9
+	color: #68727d
+	font-size: .92rem
+}
+.docs__box h2 {
+	margin: 0 0 .5rem
+	font-size: 1.05rem
+}
+.docs__summary {
+	cursor: pointer
+	font-weight: 600
+	font-size: .98rem
+	display: flex
+	align-items: baseline
+	gap: .5rem
+	list-style: none
+	\::-webkit-details-marker: display: none
+}
+.docs__summary::before {
+	content: '\25b8'
+	color: #9aa4ae
+	font-weight: 400
+	transition: transform .12s ease
+}
+.docs__file[open] > .docs__summary::before {
+	transform: rotate(90deg)
+}
+.docs__lead {
+	margin: 0 0 .8rem
+}
+.docs__md h2 {
+	margin: 1.1rem 0 .4rem
+	font-size: 1rem
+}
+.docs__md p, .docs__md ul {
+	margin: 0 0 .7rem
+}
+.docs__md input[type="checkbox"] {
+	display: none
+}
+.docs__md li:has(input[type="checkbox"]) {
+	list-style: none
+	margin-left: -1.1rem
+}
+.docs__md li:has(input[type="checkbox"])::before {
+	content: '\25cb\a0'
+	color: #68727d
+}
+.docs__md li:has(input[type="checkbox"]:checked)::before {
+	content: '\25cf\a0'
+	color: #1d2126
+}
+.docs__table {
+	width: 100%
+	border-collapse: collapse
+	font-size: .9rem
+	margin: .4rem 0 1rem
+}
+.docs__table td {
+	padding: .28rem .5rem .28rem 0
+	border-bottom: 1px solid #eef1f3
+	vertical-align: top
+}
+.docs__mono {
+	font-family: ui-monospace, monospace
+	font-size: .86rem
+	white-space: nowrap
+}
+.docs__num {
+	text-align: right
+	color: #68727d
+}
+.docs h3 {
+	margin: 1rem 0 .2rem
+	font-size: .9rem
+	color: #68727d
+}
+.docs__file {
+	margin: .15rem 0
+	padding: .3rem .5rem
+	border: 1px solid #eef1f3
+	border-radius: 8px
+}
+.docs__filesum {
+	color: #68727d
+	font-size: .86rem
+	font-weight: 400
+	margin-left: auto
+	text-align: right
+}
+.docs__node {
+	padding: .3rem 0 .3rem .8rem
+	border-left: 2px solid #eef1f3
+	margin: .3rem 0
+}
+.docs__kind {
+	display: inline-block
+	min-width: 4rem
+	color: #68727d
+	font-size: .78rem
+	text-transform: uppercase
+}
+.docs__origin {
+	display: inline-block
+	margin-right: .4rem
+	padding: .05rem .4rem
+	border-radius: 4px
+	background: #eef1f3
+	color: #4a5560
+	font-size: .74rem
+	text-transform: uppercase
+	letter-spacing: .02em
+}
+.docs__route {
+	padding: .3rem 0
+	border-bottom: 1px solid #eef1f3
+}
+.docs__path {
+	font-family: ui-monospace, monospace
+	font-size: .86rem
+	word-break: break-word
+}
+.docs__commit {
+	padding: .6rem 0
+	border-bottom: 1px solid #eef1f3
+}
+.docs__commit h4 {
+	margin: 0 0 .15rem
+	font-size: .95rem
+}
+.docs__meta {
+	margin: 0
+	color: #68727d
+	font-size: .84rem
+}
+.docs__pre {
+	margin: .4rem 0 0
+	padding: .6rem .7rem
+	border-radius: 8px
+	background: #f6f8f9
+	font-family: ui-monospace, monospace
+	font-size: .84rem
+	white-space: pre-wrap
+}
+.docs__more {
+	margin-top: .3rem
+}
+.docs__btn {
+	padding: .35rem .8rem
+	border: 1px solid #d6dade
+	border-radius: 6px
+	background: #fff
+	font-size: .88rem
+	cursor: pointer
+}
+</style>
+
+<script ns=manual>
+objects('[data-markdown]').forEach(block => {
+	try { block.innerHTML = parse_markdown(block.textContent) }
+	catch (e){}
+})
+</script>
