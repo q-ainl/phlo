@@ -4,8 +4,8 @@
 @ package:  docs
 @ frontend: true
 @ backend:  true
-@ requires: reflect @AI? DOM/markdown? creds:OpenAI?
-@ advice:   Nothing to configure: include the resource and the page describes the app it runs in. It reads data/app.md, reflects the live source and reads git log, so it never goes stale. A product layer under paths.resources appears as its own section once it carries a layer.json in its repo root and a heading in its README; without that file a layer stays out of sight, which is how the framework itself stays out. The page is standalone (inline assets, no layout) and every render that changes the content is stored as data/manual.html without its session token, so the last state survives without the app. The AI summary is optional and keyed on data/app.md, so it costs nothing per visit; without a key the rest of the page still works. Put the route behind your auth gate and add manual to release.exclude, since a manual carrying the source does not belong on a customer server.
+@ requires: reflect @AI? creds:OpenAI?
+@ advice:   Nothing to configure: include the resource and the page describes the app it runs in. It reads data/app.md, reflects the live source and reads git log, so it never goes stale. A product layer under paths.resources appears as its own section once it carries a layer.json in its repo root and a heading in its README; without that file a layer stays out of sight, which is how the framework itself stays out. The page is standalone (inline css, no javascript, no layout) and every render that changes the content is stored as data/manual.html without its session token, so the last state survives without the app. The markdown of data/app.md is rendered server-side, so the page needs no runtime and no namespace configuration. The AI summary is optional and keyed on data/app.md, so it costs nothing per visit; without the AI resource or a key the rest of the page still works. Put the route behind your auth gate and add manual to release.exclude, since a manual carrying the source does not belong on a customer server.
 @ tags:     manual docs reflection ai
 
 static instruction = 'Summarise what this application does and what has changed recently. Write in the same language as the description, at most eight sentences, running text without lists or headings. Do not open with a sentence about what you are going to do.'
@@ -190,7 +190,10 @@ static cached:?obj {
 	return $row instanceof \stdClass ? obj(...(array)$row) : null
 }
 
-static configured:bool => (string)(%creds->OpenAI ?? void) !== void || (string)(%creds->Claude ?? void) !== void
+static configured:bool {
+	if (!class_exists('AI') || !class_exists('creds')) return false
+	return (string)(%creds->OpenAI ?? void) !== void || (string)(%creds->Claude ?? void) !== void
+}
 
 static appName:string => defined('id') ? (string)id : (string)%app->title
 
@@ -211,7 +214,7 @@ static summary:obj {
 	$lines[] = 'And these are the latest changes:'
 	foreach (static::commits(app) AS $commit) $lines[] = $commit->date.space.$commit->subject
 	try {
-		$answer = %AI->chat(model: static::model(), system: static::$instruction, user: implode(lf, $lines))
+		$answer = phlo('AI')->chat(model: static::model(), system: static::$instruction, user: implode(lf, $lines))
 		$text = trim((string)($answer->answer ?? void))
 	}
 	catch (\Throwable $e){
@@ -229,6 +232,151 @@ static store(string $body, string $page):bool {
 	$file = static::pageFile()
 	if (is_file($file) && str_contains((string)@file_get_contents($file), $mark)) return false
 	return (bool)@file_put_contents($file, preg_replace('~<meta name="csrf"[^>]*>\s*~', void, $page).lf.$mark.lf)
+}
+
+static mdBlocks(string $md):array {
+	$lines = explode(lf, str_replace(cr, void, $md))
+	$count = count($lines)
+	$blocks = []
+	$para = []
+	$i = 0
+	while ($i < $count){
+		$line = $lines[$i]
+		if (trim($line) === void){
+			static::mdPara($para, $blocks)
+			$i++
+			continue
+		}
+		if (preg_match('/^ {0,3}(`{3,}|~{3,})/', $line, $match)){
+			static::mdPara($para, $blocks)
+			$fence = '/^ {0,3}'.preg_quote($match[1][0], slash).'{3,}\s*$/'
+			$body = []
+			$i++
+			while ($i < $count && !preg_match($fence, $lines[$i])){
+				$body[] = $lines[$i]
+				$i++
+			}
+			$i++
+			$blocks[] = obj(type: 'code', text: implode(lf, $body))
+			continue
+		}
+		if (preg_match('/^ {0,3}(#{1,6})\s+(.*?)\s*#*$/', $line, $match)){
+			static::mdPara($para, $blocks)
+			$blocks[] = obj(type: 'heading', depth: min(4, max(2, strlen($match[1]))), text: trim($match[2]))
+			$i++
+			continue
+		}
+		if (preg_match('/^ {0,3}([-*_])(?:\s*\1){2,}\s*$/', $line)){
+			static::mdPara($para, $blocks)
+			$blocks[] = obj(type: 'hr')
+			$i++
+			continue
+		}
+		if (preg_match('/^ {0,3}>/', $line)){
+			static::mdPara($para, $blocks)
+			$body = []
+			while ($i < $count && preg_match('/^ {0,3}>\s?(.*)$/', $lines[$i], $match)){
+				$body[] = $match[1]
+				$i++
+			}
+			$blocks[] = obj(type: 'quote', text: trim(implode(lf, $body)))
+			continue
+		}
+		if (str_contains($line, pipe) && preg_match('/^ {0,3}\|? *:?-+:? *(?:\| *:?-+:? *)*\|? *$/', (string)($lines[$i + 1] ?? void))){
+			static::mdPara($para, $blocks)
+			$head = static::mdCells($line)
+			$rows = []
+			$i += 2
+			while ($i < $count && str_contains($lines[$i], pipe)){
+				$rows[] = static::mdCells($lines[$i])
+				$i++
+			}
+			$blocks[] = obj(type: 'table', head: $head, rows: $rows)
+			continue
+		}
+		if (($marker = static::mdMarker($line)) !== null){
+			static::mdPara($para, $blocks)
+			$raw = []
+			while ($i < $count){
+				if (trim($lines[$i]) === void){
+					if (static::mdBreaks(static::mdMarker((string)($lines[$i + 1] ?? void)), $marker)) break
+					$raw[] = void
+					$i++
+					continue
+				}
+				$here = static::mdMarker($lines[$i])
+				if ($here === null && !preg_match('/^ {2,}\S/', $lines[$i])) break
+				if ($here !== null && static::mdBreaks($here, $marker)) break
+				$raw[] = $lines[$i]
+				$i++
+			}
+			$blocks[] = obj(type: 'list', ordered: $marker->ordered, items: static::mdItems($raw, $marker->indent))
+			continue
+		}
+		$para[] = $line
+		$i++
+	}
+	static::mdPara($para, $blocks)
+	return $blocks
+}
+
+static mdMarker(string $line):?obj {
+	if (!preg_match('/^( *)([*+-]|\d{1,9}\.)\s+/', $line, $match)) return null
+	return obj(indent: strlen($match[1]), ordered: ctype_digit($match[2][0]))
+}
+
+static mdBreaks(?obj $here, obj $marker):bool => $here === null || ($here->indent <= $marker->indent && $here->ordered !== $marker->ordered)
+
+static mdPara(array &$para, array &$blocks):void {
+	$text = trim(implode(lf, $para))
+	$para = []
+	if ($text !== void) $blocks[] = obj(type: 'para', text: $text)
+}
+
+static mdCells(string $line):array => array_map('trim', explode(pipe, trim(trim($line), pipe)))
+
+static mdItems(array $lines, int $indent):array {
+	$groups = []
+	$group = null
+	foreach ($lines AS $line){
+		if (preg_match('/^( *)([*+-]|\d{1,9}\.)\s+(.*)$/', $line, $match) && strlen($match[1]) <= $indent){
+			if ($group !== null) $groups[] = $group
+			$group = [$match[3]]
+			continue
+		}
+		if ($group === null) continue
+		$group[] = preg_replace('/^ {1,'.($indent + 2).'}/', void, $line)
+	}
+	if ($group !== null) $groups[] = $group
+	$items = []
+	foreach ($groups AS $group){
+		$raw = trim(implode(lf, $group))
+		$checked = null
+		if (preg_match('/^\[([ xX])\]\s*(.*)$/s', $raw, $match)){
+			$checked = strtolower($match[1]) === 'x'
+			$raw = $match[2]
+		}
+		$sub = static::mdBlocks($raw)
+		$text = void
+		if ($sub && $sub[0]->type === 'para') $text = array_shift($sub)->text
+		$items[] = obj(text: $text, checked: $checked, blocks: $sub)
+	}
+	return $items
+}
+
+static mdInline(string $text):string {
+	$out = void
+	foreach (preg_split('/(`+[^`]*`+)/', $text, -1, PREG_SPLIT_DELIM_CAPTURE) AS $index => $part){
+		if ($index % 2) $out .= '<code>'.esc(trim($part, bt)).'</code>'
+		else $out .= static::mdFormat($part)
+	}
+	return $out
+}
+
+static mdFormat(string $text):string {
+	$out = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', esc($text))
+	$out = preg_replace('/(?<![*\w])\*([^*\n]+)\*(?![*\w])/', '<em>$1</em>', $out)
+	return preg_replace('/\[([^\]]+)\]\(\s*((?:https?:|mailto:|[\/#])\S*?)\s*\)/', '<a href="$2">$1</a>', $out)
 }
 
 route both GET manual {
@@ -271,14 +419,93 @@ view summaryText($row):
 view infoBlock {
 	$info = static::appInfo()
 	if ($info === void) return indentView(lf.'<section class="docs__box"><p>'.esc(%manual->label('noInfo')).'</p></section>'.lf)
-	return indentView(lf.$this->infoText($info).lf)
+	return indentView(lf.$this->infoText(static::mdBlocks(preg_replace('~^#[^\n]*\n~', void, $info))).lf)
 }
 
-view infoText(string $info):
+view infoText(array $blocks):
 <details.docs__box open>
 	<summary.docs__summary>{{ %manual->label('about') }}</summary>
-	<div.docs__md data-markdown>{[ preg_replace('~^#[^\n]*\n~', void, $info) ]}</div>
+	<div.docs__md>
+		<foreach $blocks AS $block>
+			{{ %manual->mdBlock($block) }}
+		</foreach>
+	</div>
 </details>
+
+view mdBlock($block):
+<if $block->type === 'heading' && $block->depth === 2>
+	<h2>{{ %manual->mdInline($block->text) }}</h2>
+<elseif $block->type === 'heading' && $block->depth === 3>
+	<h3>{{ %manual->mdInline($block->text) }}</h3>
+<elseif $block->type === 'heading'>
+	<h4>{{ %manual->mdInline($block->text) }}</h4>
+<elseif $block->type === 'code'>
+	<pre.docs__pre>{[ $block->text ]}</pre>
+<elseif $block->type === 'quote'>
+	<blockquote>{{ %manual->mdInline($block->text) }}</blockquote>
+<elseif $block->type === 'hr'>
+	<hr>
+<elseif $block->type === 'list'>
+	{{ %manual->mdList($block) }}
+<elseif $block->type === 'table'>
+	{{ %manual->mdTable($block) }}
+<else>
+	<p>{{ %manual->mdInline($block->text) }}</p>
+</if>
+
+view mdList($block) {
+	$items = $block->items
+	return $block->ordered ? $this->mdOrdered($items) : $this->mdBullets($items)
+}
+
+view mdBullets(array $items):
+<ul>
+	<foreach $items AS $item>
+		{{ %manual->mdItem($item) }}
+	</foreach>
+</ul>
+
+view mdOrdered(array $items):
+<ol>
+	<foreach $items AS $item>
+		{{ %manual->mdItem($item) }}
+	</foreach>
+</ol>
+
+view mdItem($item):
+<if $item->checked === true>
+	<li.docs__task.docs__task--done>{{ %manual->mdBody($item) }}</li>
+<elseif $item->checked === false>
+	<li.docs__task>{{ %manual->mdBody($item) }}</li>
+<else>
+	<li>{{ %manual->mdBody($item) }}</li>
+</if>
+
+view mdBody($item) {
+	$out = static::mdInline((string)$item->text)
+	foreach ($item->blocks AS $block) $out .= lf.$this->mdBlock($block)
+	return $out
+}
+
+view mdTable($block):
+<table.docs__table>
+	<thead>
+		<tr>
+			<foreach $block->head AS $cell>
+				<th>{{ %manual->mdInline($cell) }}</th>
+			</foreach>
+		</tr>
+	</thead>
+	<tbody>
+		<foreach $block->rows AS $row>
+			<tr>
+				<foreach $row AS $cell>
+					<td>{{ %manual->mdInline($cell) }}</td>
+				</foreach>
+			</tr>
+		</foreach>
+	</tbody>
+</table>
 
 view filesBlock {
 	$groups = static::sources()
@@ -443,18 +670,15 @@ view commitsList(array $commits):
 .docs__md p, .docs__md ul {
 	margin: 0 0 .7rem
 }
-.docs__md input[type="checkbox"] {
-	display: none
-}
-.docs__md li:has(input[type="checkbox"]) {
+.docs__task {
 	list-style: none
 	margin-left: -1.1rem
 }
-.docs__md li:has(input[type="checkbox"])::before {
+.docs__task::before {
 	content: '\25cb\a0'
 	color: #68727d
 }
-.docs__md li:has(input[type="checkbox"]:checked)::before {
+.docs__task--done::before {
 	content: '\25cf\a0'
 	color: #1d2126
 }
@@ -464,10 +688,14 @@ view commitsList(array $commits):
 	font-size: .9rem
 	margin: .4rem 0 1rem
 }
-.docs__table td {
+.docs__table th, .docs__table td {
 	padding: .28rem .5rem .28rem 0
 	border-bottom: 1px solid #eef1f3
 	vertical-align: top
+}
+.docs__table th {
+	text-align: left
+	color: #68727d
 }
 .docs__mono {
 	font-family: ui-monospace, monospace
@@ -478,7 +706,7 @@ view commitsList(array $commits):
 	text-align: right
 	color: #68727d
 }
-.docs h3 {
+.docs h3, .docs__md h4 {
 	margin: 1rem 0 .2rem
 	font-size: .9rem
 	color: #68727d
@@ -562,10 +790,3 @@ view commitsList(array $commits):
 	cursor: pointer
 }
 </style>
-
-<script ns=manual>
-objects('[data-markdown]').forEach(block => {
-	try { block.innerHTML = parse_markdown(block.textContent) }
-	catch (e){}
-})
-</script>
