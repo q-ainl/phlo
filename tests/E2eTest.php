@@ -174,6 +174,18 @@ final class E2eTest extends TestCase {
 			[$status, $body] = self::post("http://127.0.0.1:$port/payload", '{"name":"x"}', ['Content-Type: application/json']);
 			$this->assertSame(200, $status, $body);
 			$this->assertSame(['name'], json_decode($body, true)['keys'] ?? null, "a valid JSON body parses: $body");
+
+			// A numeric field name is legal HTTP, but the payload imported $_POST through argument
+			// unpacking, and PHP forbids a positional argument after a named one: "a=1&0=x" threw and
+			// turned every such POST into a 500, while "0=x&a=1" passed. Order must not matter.
+			$form = ['Content-Type: application/x-www-form-urlencoded'];
+			[$status, $body] = self::post("http://127.0.0.1:$port/payload", 'a=1&0=x', $form);
+			$this->assertSame(200, $status, "a numeric field name after a named one must not error: $body");
+			$this->assertSame(['a', 0], json_decode($body, true)['keys'] ?? null, "both fields reach the payload: $body");
+
+			[$status, $body] = self::post("http://127.0.0.1:$port/payload", '0=x&a=1', $form);
+			$this->assertSame(200, $status, "the reverse order must parse too: $body");
+			$this->assertSame([0, 'a'], json_decode($body, true)['keys'] ?? null, "both fields reach the payload: $body");
 		}
 		finally {
 			proc_terminate($server);
