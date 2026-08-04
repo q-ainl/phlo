@@ -160,16 +160,16 @@ OK  <a class="card {( $active ? 'is-active' : void )}">
 OK  <button data-target="{{ $this->target() }}">
 ```
 
-### 8. Never combine class/id shorthand with an explicit class or id attribute
+### 8. Class/id shorthand composes with explicit class and id attributes
 
-A tag uses EITHER the `.class`/`#id` shorthand OR an explicit attribute for that same property, never both. Combining them can emit a duplicate attribute (`class="a" class="b"`) and the browser keeps only the first, silently dropping the dynamic one. When part of the class is dynamic, write the whole thing as one attribute; keep shorthands for fully static tags, and prefer `#id` shorthand for static ids:
+The view compiler merges `.class`/`#id` shorthand with an explicit attribute for the same property into one HTML attribute. This is useful when a static base class has a dynamic addition. Prefer a single notation when composition adds no value, and remember that two ids still produce one space-separated `id` value, which is usually not meaningful HTML:
 
 ```
 OK  <a.site-logo href="/">                          (fully static: shorthand)
 OK  <nav#index-nav.sidebar-nav>                     (static id + class shorthand)
 OK  <a class="site-logo {{ $this->extra }}" href="/">  (dynamic: one class attribute)
-NO  <a.site-logo class="{{ $this->extra }}">        <- duplicate class attribute
-NO  <div.panel id="panel-$key">                     -> write class in the attribute too
+OK  <a.site-logo class="{{ $this->extra }}">        (compiled as one merged class attribute)
+OK  <div.panel id="panel-$key">                     (class shorthand plus explicit id)
 ```
 
 ---
@@ -1093,7 +1093,7 @@ Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syn
 | Runtime values (`host`, `debug`, `cli`) in `data/app.json` | Put them in `www/app.php` |
 | Relative paths in `data/app.json` | Use `%app/` or `%phlo/` prefixes |
 | Literal `%name` in `.phlo` string literals | External `.txt`/`.md` files; the transpiler rewrites `%name` even inside strings |
-| `.class`/`#id` shorthand combined with a `class=`/`id=` attribute | One full attribute when any part is dynamic |
+| Assuming shorthand plus an explicit `class=`/`id=` emits duplicate attributes | The compiler merges both into one attribute; use composition deliberately |
 | `{{ %x->prop }}` in view attributes | Direct interpolation: `href="%x->prop/suffix"` |
 | Multiline ternary without continuations | End each continued line with `\` |
 | Multiline `prop x => [ ... ]` | Open with a parenthesis: `arr(...)` or `array_merge(...)` |
