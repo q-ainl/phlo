@@ -54,6 +54,17 @@ final class FieldTest extends TestCase {
 		$this->assertStringContainsString('2025', (string)$r['dateLabel'], 'date label is formatted and keeps the year');
 	}
 
+	// A nullable amount has no number to format. Text and datetime answer that with a dash, and
+	// the number field now does the same, so a column that is simply empty can be listed instead
+	// of ending the request. Zero is a number and keeps its own rendering.
+	public function testNumberLabelRendersAnEmptyValueAsADash():void {
+		$r = self::fetch('fieldprobe::rendering');
+		$this->assertSame('-', $r['numberLabelEmpty'], 'an empty number is a dash, not a formatting error');
+		$this->assertSame('-', $r['priceLabelEmpty'], 'price inherits that from number');
+		$this->assertSame('0', $r['numberLabelZero'], 'zero is a value and still renders as one');
+		$this->assertSame('1.234,50', $r['numberLabel'], 'a number keeps its decimals and separators');
+	}
+
 	public function testPasswordParseSkipsAnAbsentPayloadKey():void {
 		$r = self::fetch('fieldprobe::parsing');
 		$this->assertSame('kept', $r['absentLeavesRecord'], 'saving a record without a password value leaves the stored hash alone');

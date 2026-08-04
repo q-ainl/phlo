@@ -21,6 +21,10 @@ static rendering => [
 	'selectInput' => field(type: 'select', name: 'status', options: ['draft', 'live'])->input(new obj(status: 'live')),
 	'emailLabel' => field(type: 'email', name: 'email')->label(new obj(email: 'a@b.com')),
 	'numberInput' => field(type: 'number', name: 'qty')->input(new obj(qty: 5)),
+	'numberLabel' => field(type: 'number', name: 'qty', decimals: 2)->label(new obj(qty: 1234.5)),
+	'numberLabelZero' => field(type: 'number', name: 'qty')->label(new obj(qty: 0)),
+	'numberLabelEmpty' => field(type: 'number', name: 'qty')->label(new obj(qty: null)),
+	'priceLabelEmpty' => field(type: 'price', name: 'rate')->label(new obj(rate: null)),
 	'passwordLabel' => field(type: 'password', name: 'pass')->label(new obj(pass: 'secret')),
 	'dateLabel' => field(type: 'date', name: 'created')->label(new obj(created: '2025-09-01')),
 ]
