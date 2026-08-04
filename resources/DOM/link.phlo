@@ -9,7 +9,7 @@
 
 <script>
 on('click', 'a', (a, e) => {
-	if (e.ctrlKey || e.shiftKey || e.metaKey || a.dataset.confirm) return false
+	if (e.ctrlKey || e.shiftKey || e.metaKey || a.target || a.dataset.confirm) return false
 	const isAsync = a.classList.contains('async')
 	const [uri, hash] = a.getAttribute('href').split('#')
 	if (isAsync || hash) e.preventDefault()
