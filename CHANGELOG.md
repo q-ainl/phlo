@@ -27,6 +27,21 @@ tagged release onward. The engine version constant lives in `phlo.php`
   `manual` to `release.exclude`, since a manual carrying the source does not
   belong on a customer server.
 
+### Fixed
+- `payload` turned a POST into a 500 whenever a text field preceded a numeric
+  field name (`a=1&0=x`): the import unpacked `$_POST` into named arguments and
+  PHP forbids a positional argument after a named one, so survival depended on
+  field order and any bot could provoke it. Numeric field names are legal HTTP
+  and are now assigned the same way `objImport` does it internally. The parsed
+  urlencoded body and `$_FILES` were unpacked the same way and follow suit.
+- `seo` advertised `og:image` and `twitter:image` even when the app had no
+  image: the `icon.webp` fallback is a convention, not a promise, so every
+  crawler and link preview was pointed at a 404. The fallback now applies only
+  when the file is really there, and without an image the tags stay out.
+- `DOM/link` intercepted a link that carried a `target`, so `class=async` and
+  `target=_blank` on one element resolved differently on a plain click than on
+  a ctrl or cmd click. Browser semantics win whenever a target is set.
+
 ## [1.0.1] - 2026-08-01
 
 ### Added

@@ -29,7 +29,8 @@ method locale {
 
 prop ogTitle => title()
 prop ogDescr => %app->description ?? void
-prop ogImage => %req->base.slash.ltrim(%app->image ?? 'icon.webp', slash)
+prop ogImageFile => (string)(%app->image ?? (is_file(www.'icon.webp') ? 'icon.webp' : void))
+prop ogImage => $this->ogImageFile === void ? void : %req->base.slash.ltrim($this->ogImageFile, slash)
 prop canonical => %req->url
 prop ogType = 'website'
 prop siteName => %app->title ?? id
@@ -70,13 +71,17 @@ view head:
 <meta property=og:description content="$this->ogDescr">
 <meta property=og:type content="$this->ogType">
 <meta property=og:url content="{[ $this->canonical ]}">
-<meta property=og:image content="$this->ogImage">
+<if $this->ogImage>
+	<meta property=og:image content="$this->ogImage">
+</if>
 <meta property=og:locale content="$this->locale">
 <if $this->twitterCard>
 	<meta name=twitter:card content=summary_large_image>
 	<meta name=twitter:title content="{[ $this->ogTitle ]}">
 	<meta name=twitter:description content="$this->ogDescr">
-	<meta name=twitter:image content="$this->ogImage">
+	<if $this->ogImage>
+		<meta name=twitter:image content="$this->ogImage">
+	</if>
 </if>
 <if !$this->noIndex>
 	<link rel=canonical href="{[ $this->canonical ]}">
