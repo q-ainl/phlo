@@ -34,6 +34,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   field order and any bot could provoke it. Numeric field names are legal HTTP
   and are now assigned the same way `objImport` does it internally. The parsed
   urlencoded body and `$_FILES` were unpacked the same way and follow suit.
+- `seo` raised a 500 on `sitemap.xml` for an app that declared neither `pages` nor
+  `langs`, which is the normal shape of a single-page or placeholder site. Both
+  are optional now: without `pages` the sitemap lists the site root, without
+  `langs` it leaves the hreflang alternates out. `robots` already guarded the
+  same way, so the resource is consistent with itself again.
 - `seo` advertised `og:image` and `twitter:image` even when the app had no
   image: the `icon.webp` fallback is a convention, not a promise, so every
   crawler and link preview was pointed at a 404. The fallback now applies only

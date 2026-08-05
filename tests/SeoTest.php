@@ -34,6 +34,17 @@ final class SeoTest extends TestCase {
 		$this->assertStringContainsString('Sitemap:', $r);
 	}
 
+	public function testSitemapWithoutPagesOrLangs():void {
+		// A single-page site declares neither: the sitemap must still list its root and skip the
+		// hreflang alternates, instead of raising on a null foreach behind the URL robots advertises.
+		$src = 'phlo(\'app\')->pages = null'."\n".'phlo(\'app\')->langs = null'."\n".'return [phlo(\'seo\')->sitemapPages, phlo(\'seo\')->sitemapLangs]';
+		[$code, $out, $err] = self::cli('app-indexed.php', 'phlo_eval', $src);
+		$this->assertSame(0, $code, $err);
+		$r = json_decode(trim($out), true);
+		$this->assertSame([''], $r[0] ?? null, "an app without pages still lists its root: $out");
+		$this->assertSame([], $r[1] ?? null, "an app without langs gets no hreflang alternates: $out");
+	}
+
 	public function testHeadShape():void {
 		[$code, $out, $err] = self::cli('app.php', 'seo.head');
 		$this->assertSame(0, $code, $err);

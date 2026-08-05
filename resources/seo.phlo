@@ -33,6 +33,8 @@ prop ogImageFile => (string)(%app->image ?? (is_file(www.'icon.webp') ? 'icon.we
 prop ogImage => $this->ogImageFile === void ? void : %req->base.slash.ltrim($this->ogImageFile, slash)
 prop canonical => %req->url
 prop ogType = 'website'
+prop sitemapPages => (array)(%app->pages ?? [''])
+prop sitemapLangs => array_keys((array)(%app->langs ?? []))
 prop siteName => %app->title ?? id
 prop twitterCard = false
 prop noIndex => %app->noLink ?? %app->noIndex ?? false
@@ -40,7 +42,7 @@ prop noIndex => %app->noLink ?? %app->noIndex ?? false
 view:
 <?xml version=1.0 encoding="UTF-8"?>
 <urlset xmlns=http://www.sitemaps.org/schemas/sitemap/0.9 xmlns:xhtml=http://www.w3.org/1999/xhtml xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance xsi:schemaLocation=http://www.sitemaps.org/schemas/sitemap/0.9+http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd>
-	<foreach %app->pages AS $uri>
+	<foreach $this->sitemapPages AS $uri>
 		{{ $this->page($uri) }}
 	</foreach>
 </urlset>
@@ -48,7 +50,7 @@ view:
 view page($uri):
 <url>
 	<loc>%req->base{( $uri ?: slash )}</loc>
-	<foreach array_keys(%app->langs) AS $lang>
+	<foreach $this->sitemapLangs AS $lang>
 		<if $lang === %app->lang>
 			{{ $this->xlink('x-default', $uri ?: slash) }}
 		</if>
