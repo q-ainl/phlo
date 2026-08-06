@@ -28,6 +28,11 @@ tagged release onward. The engine version constant lives in `phlo.php`
   belong on a customer server.
 
 ### Fixed
+- `app.stream()` could throw while turning a blob into a `File` when a plain
+  download filename contained a literal percent sign, and cut a quoted name at
+  its first semicolon. It now parses the plain and RFC 5987 forms separately,
+  keeps compatibility with the encoded names from `output(filename:)`, and
+  prefers `filename*` when a response carries both forms.
 - `payload` turned a POST into a 500 whenever a text field preceded a numeric
   field name (`a=1&0=x`): the import unpacked `$_POST` into named arguments and
   PHP forbids a positional argument after a named one, so survival depended on

@@ -28,6 +28,16 @@ function stream($data = null, string $type = 'application/octet-stream', ?string
 }
 
 <script>
+const streamFilename = disposition => {
+	const extended = disposition.match(/(?:^|;)\s*filename\*\s*=\s*UTF-8'[^']*'([^;]+)/i)
+	const plain = disposition.match(/(?:^|;)\s*filename\s*=\s*(?:"((?:\\.|[^"])*)"|([^;]+))/i)
+	const value = extended?.[1] ?? plain?.[1] ?? plain?.[2]
+	if (!value) return null
+	const name = value.trim().replace(/\\(.)/g, '$1')
+	try { return decodeURIComponent(name) }
+	catch (_) { return name }
+}
+
 app.stream = async (path, onData = null, async = false, type = null, data = null) => {
 	const url = `${location.origin}/${path}`
 	const headers = {}
@@ -49,8 +59,8 @@ app.stream = async (path, onData = null, async = false, type = null, data = null
 	}
 	if (kind === 'blob'){
 		const blob = await res.blob()
-		const hit = (res.headers.get('content-disposition') ?? '').match(/filename\*?=(?:UTF-8''|")?([^";]+)"?/i)
-		const value = hit ? new File([blob], decodeURIComponent(hit[1].trim())) : blob
+		const name = streamFilename(res.headers.get('content-disposition') ?? '')
+		const value = name ? new File([blob], name) : blob
 		emit(value)
 		return value
 	}
