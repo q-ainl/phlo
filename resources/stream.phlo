@@ -48,7 +48,9 @@ app.stream = async (path, onData = null, async = false, type = null, data = null
 		return value
 	}
 	if (kind === 'blob'){
-		const value = await res.blob()
+		const blob = await res.blob()
+		const hit = (res.headers.get('content-disposition') ?? '').match(/filename\*?=(?:UTF-8''|")?([^";]+)"?/i)
+		const value = hit ? new File([blob], decodeURIComponent(hit[1].trim())) : blob
 		emit(value)
 		return value
 	}
