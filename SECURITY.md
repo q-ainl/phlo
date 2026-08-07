@@ -12,7 +12,7 @@ Report vulnerabilities privately to **j@rdi.nu** (or via GitHub's
 "Report a vulnerability" if enabled on the repository). Include:
 
 - A description of the issue and where it lives (engine file, resource,
-  dashboard section).
+  Control Center section).
 - Reproduction steps or a proof of concept.
 - The impact as you understand it.
 
@@ -22,8 +22,8 @@ anonymous.
 
 ## Scope notes
 
-- The dashboard and the `build::`/`reflect::` CLI are **development tools**:
-  they are only active when `build: true` (and the dashboard additionally
+- The Control Center and the `build::`/`reflect::` CLI are **development tools**:
+  they are only active when `build: true` (and the Control Center additionally
   requires `debug: true`). Running a production app with `build: true` is
   itself a misconfiguration, but reports about the engine failing to enforce
   these gates are very much in scope.

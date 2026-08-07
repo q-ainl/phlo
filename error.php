@@ -178,11 +178,11 @@ function phlo_error_render_debug(string $type, string $message, int $code, strin
 
 function phlo_error_location_html(string $file, int $line):string {
 	$label = esc(shortpath($file).':'.$line);
-	$url = phlo_error_dashboard_url($file, $line);
+	$url = phlo_error_control_url($file, $line);
 	return $url ? '<a class="file-link" href="'.esc($url).'">'.$label.'</a>' : $label;
 }
 
-function phlo_error_dashboard_url(string $file, int $line):?string {
+function phlo_error_control_url(string $file, int $line):?string {
 	if (!defined('control') || !is_string(control) || !control) return null;
 	$base   = slash.control;
 	$full   = phlo_error_resolve_file($file);

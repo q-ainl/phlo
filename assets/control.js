@@ -127,7 +127,7 @@ const onExist = (() => {
 onExist('#rg-canvas', canvas => {
 	const ctx      = canvas.getContext('2d')
 	const raw      = JSON.parse(atob(canvas.dataset.graph))
-	const dashBase = (canvas.dataset.dashboard || '').replace(/\/$/, '')
+	const controlBase = (canvas.dataset.control || '').replace(/\/$/, '')
 	const mode     = canvas.dataset.mode || 'backend'
 
 	const palette = ['#2f9fa8','#4a7db5','#9b6dbf','#c97b3c','#5cb8a0','#a07840','#7a5a9a','#5a9a5a','#9a5a5a','#5a7a9a']
@@ -241,20 +241,20 @@ onExist('#rg-canvas', canvas => {
 
 	function sourceHref(fileKey, mode, anchor){
 		const qs = mode && mode !== 'app' ? '?mode=' + encodeURIComponent(mode) : ''
-		return dashBase.replace(/^\//, '') + '/source/' + encodeURIComponent(fileKey) + qs + (anchor || '')
+		return controlBase.replace(/^\//, '') + '/source/' + encodeURIComponent(fileKey) + qs + (anchor || '')
 	}
 	function openNode(n){
-		if (!n || !dashBase) return
+		if (!n || !controlBase) return
 		if (n.file){
 			app.get(sourceHref(n.file, n.mode, n.line ? '#L' + n.line : ''))
 		}
 		else if (n.mode === 'native'){
-			app.get(dashBase.replace(/^\//, '') + '/source?mode=native' + (n.line ? '#L' + n.line : ''))
+			app.get(controlBase.replace(/^\//, '') + '/source?mode=native' + (n.line ? '#L' + n.line : ''))
 		}
 	}
 
-	const dimKey   = 'phlo-graph:dim:'   + (dashBase || location.pathname)
-	const traceKey = 'phlo-graph:trace:' + (dashBase || location.pathname)
+	const dimKey   = 'phlo-graph:dim:'   + (controlBase || location.pathname)
+	const traceKey = 'phlo-graph:trace:' + (controlBase || location.pathname)
 	let is3D = localStorage.getItem(dimKey) !== '2d'
 	let tracePlay = !!canvas.dataset.trace && localStorage.getItem(traceKey) !== 'off'
 	let traceEvents = []
@@ -618,7 +618,7 @@ onExist('#rg-canvas', canvas => {
 		ctx.globalAlpha = 1
 		ctx.restore()
 	}
-	const posKey = 'phlo-graph:' + mode + ':' + (dashBase || location.pathname)
+	const posKey = 'phlo-graph:' + mode + ':' + (controlBase || location.pathname)
 	function savePositions(){
 		try {
 			const pos = {_zoom: zoom, _rotY: rotY, _rotX: rotX}
@@ -1098,7 +1098,7 @@ onExist('#rg-canvas', canvas => {
 			autoRotate = true
 			if (!tid) start()
 		}
-		if (tracePlay && !traceParticle && !phlo.delays['trace-poll']) app.get(dashBase.slice(1) + '/trace', false)
+		if (tracePlay && !traceParticle && !phlo.delays['trace-poll']) app.get(controlBase.slice(1) + '/trace', false)
 	})
 	canvas.addEventListener('click', e => {
 		if (didDrag) return

@@ -9,6 +9,16 @@ tagged release onward. The engine version constant lives in `phlo.php`
 
 ## [Unreleased]
 
+### Changed
+- **Breaking:** the Control Center reads its credentials from the `[control]`
+  section of `data/auth.ini`; the old `[dashboard]` section is no longer read
+  and there is no fallback. Rename the section in every app that mounts the
+  Control Center, otherwise it answers with `Missing auth config section
+  [control] in data/auth.ini`. The site-wide gate keeps using `[site]`. The
+  handler class is renamed from `phlo_dashboard` to `phlo_control` in the same
+  pass, so the last of the old naming is gone: the feature is the Control
+  Center, and Phlo Dashboard stays the name of the separate fleet app.
+
 ### Added
 - A `manual` resource: `GET /manual` describes the app it runs in, from three
   sources that follow the code by themselves: `data/app.md`, the live source

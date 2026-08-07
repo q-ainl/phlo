@@ -11,7 +11,7 @@ between the core and the ecosystem) is written down in [GOVERNANCE.md](GOVERNANC
    its own CSS transpiler, its own JS minifier, lazy Composer integration.
    A PR that adds a runtime dependency to the engine will not be merged.
 2. **The closed loop.** Source → build → lint → sourcemap → error page →
-   dashboard → reflection. Every error must point back to the `.phlo` line.
+   Control Center → reflection. Every error must point back to the `.phlo` line.
    Changes that break this loop (e.g. output that can't be source-mapped)
    need a very good reason.
 3. **Agent-first.** `docs/SKILL.md` and the `reflect::` CLI are part of the

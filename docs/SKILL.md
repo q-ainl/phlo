@@ -825,7 +825,7 @@ phlo_app (
 );
 ```
 
-- `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`).
+- `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`, section `[site]`; the Control Center reads `[control]` from the same file, each with a `user` and a `password` key).
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
 - `control` - URL prefix for the built-in **Phlo Control Center**. Auto-defaults to `'phlo'` (so `/phlo`) whenever `build: true` and `debug: true`; set `control: 'admin'` to move it or `control: false` to disable. This is NOT the Phlo Dashboard, which is the separate fleet-management app.
 - `daemon` - the port the Phlo Daemon listens on. Phlo Realtime, the WebSocket layer built into the daemon, handles both `/websocket` upgrades and `/message` casts on that one port.
@@ -890,7 +890,7 @@ Control Center POST actions should use the Phlo SPA response protocol where prac
 
 There are no separate `nodes`, `api`, or `reflection` Control Center sections. Use CLI `reflect::` methods for callable surface area, routes, views, resources, and raw introspection.
 
-Debug error pages may link file locations back to Control Center source/build views when `dashboard` is enabled and the file can be mapped to an app `.phlo` source file or transpiled `php/`/`www/` output.
+Debug error pages may link file locations back to Control Center source/build views when the Control Center is enabled and the file can be mapped to an app `.phlo` source file or transpiled `php/`/`www/` output.
 
 ### Custom path constants
 

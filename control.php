@@ -1,6 +1,6 @@
 <?php
 
-class phlo_dashboard {
+class phlo_control {
 
 	public static function handle(string $req):void {
 		if ($req === 'logo.png'){
@@ -22,7 +22,7 @@ class phlo_dashboard {
 			$res->body = $js;
 			return;
 		}
-		if (!phlo_auth('dashboard', 'Phlo Control - '.host)) return;
+		if (!phlo_auth('control', 'Phlo Control - '.host)) return;
 
 		if ($req === 'trace' || str_starts_with($req, 'trace/') || $req === 'traces'){
 			$res     = phlo('res');
@@ -121,7 +121,7 @@ class phlo_dashboard {
 		$errRows = void;
 		foreach ($errors as $id => $err){
 			$ref   = esc((string)$id);
-			$file  = static::dashboardFileLink((string)($err['file'] ?? ''));
+			$file  = static::controlFileLink((string)($err['file'] ?? ''));
 			$msg   = esc((string)($err['msg'] ?? ''));
 			$count = (int)($err['count'] ?? 0);
 			$last  = esc((string)($err['lastOccurred'] ?? ''));
@@ -141,7 +141,7 @@ class phlo_dashboard {
 		$routeRows = void;
 		foreach ($routes as $route){
 			$r    = esc(($route['route'] ?? ''));
-			$link = static::dashboardFileLink(($route['file'] ?? ''));
+			$link = static::controlFileLink(($route['file'] ?? ''));
 			$routeRows .= "<tr class=\"row\"><td><code>$r</code></td><td class=\"muted\">$link</td></tr>\n";
 		}
 		if (!$routeRows) $routeRows = "<tr class=\"row\"><td colspan=\"2\" class=\"muted\">No routes</td></tr>\n";
@@ -149,7 +149,7 @@ class phlo_dashboard {
 		$viewRows = void;
 		foreach ($views as $view){
 			$vname = esc(($view['name'] ?? 'view'));
-			$link  = static::dashboardFileLink(($view['file'] ?? ''));
+			$link  = static::controlFileLink(($view['file'] ?? ''));
 			$viewRows .= "<tr class=\"row\"><td><code>$vname</code></td><td class=\"muted\">$link</td></tr>\n";
 		}
 		if (!$viewRows) $viewRows = "<tr class=\"row\"><td colspan=\"2\" class=\"muted\">No views</td></tr>\n";
@@ -359,7 +359,7 @@ class phlo_dashboard {
 			."</div>\n"
 			."<div class=\"dash-graph-layout\">\n"
 			."<div class=\"dash-graph-wrap\">\n"
-			."<canvas id=\"rg-canvas\" data-graph=\"$b64E\" data-dashboard=\"".esc($base)."\" data-mode=\"$mode\"$traceAttr></canvas>\n"
+			."<canvas id=\"rg-canvas\" data-graph=\"$b64E\" data-control=\"".esc($base)."\" data-mode=\"$mode\"$traceAttr></canvas>\n"
 			."$controls"
 			."<div id=\"rg-timeline\"></div>\n"
 			."<div id=\"rg-hit-label\" class=\"rg-hit-label\" hidden></div>\n"
@@ -616,7 +616,7 @@ class phlo_dashboard {
 		foreach ($errors as $id => $err){
 			$filter = esc(json_encode(['id' => $id] + $err, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: void);
 			$ref    = esc((string)$id);
-			$file   = static::dashboardFileLink((string)($err['file'] ?? ''));
+			$file   = static::controlFileLink((string)($err['file'] ?? ''));
 			$msg    = esc((string)($err['msg'] ?? ''));
 			$count  = (int)($err['count'] ?? 0);
 			$last   = esc((string)($err['lastOccurred'] ?? ''));
@@ -803,7 +803,7 @@ class phlo_dashboard {
 		return $phpFiles + $assetFiles;
 	}
 
-	private static function dashboardFileLink(string $file):string {
+	private static function controlFileLink(string $file):string {
 		// $file may be "shortpath:line" as stored by phlo_error_log
 		$line = 0;
 		if (preg_match('/^(.+):(\d+)$/', $file, $m)){
@@ -816,12 +816,12 @@ class phlo_dashboard {
 		$base  = slash.control;
 		$clean = str_replace(bs, slash, $file);
 
-		$link = static::dashboardFileTarget($clean);
+		$link = static::controlFileTarget($clean);
 		if ($link) return "<a href=\"".esc("$base$link$anchor")."\" data-nav=\"file\">$label</a>";
 		return $label;
 	}
 
-	private static function dashboardFileTarget(string $file):?string {
+	private static function controlFileTarget(string $file):?string {
 		$full = static::resolveFilePath($file);
 		if (!$full) return null;
 		$clean = str_replace(bs, slash, $full);

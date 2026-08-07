@@ -126,14 +126,14 @@ function phlo_thread():void {
 			phlo_cli($req->args);
 			return;
 		}
-		$isDashboard = build && debug && control && str_starts_with($req->path.slash, control.slash);
-		if (auth && !$isDashboard){
+		$isControl = build && debug && control && str_starts_with($req->path.slash, control.slash);
+		if (auth && !$isControl){
 			phlo_auth('site', 'Phlo App - '.host);
 			if (phlo('res')->done) return;
 		}
-		if ($isDashboard){
+		if ($isControl){
 			require_once engine.'control.php';
-			phlo_dashboard::handle(substr($req->path, strlen(control) + 1));
+			phlo_control::handle(substr($req->path, strlen(control) + 1));
 			phlo('res')->render();
 			return;
 		}
