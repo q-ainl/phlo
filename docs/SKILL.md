@@ -7,7 +7,7 @@ description: "Work with Phlo projects: write and edit source files, trigger buil
 
 ## Overview
 
-Phlo is a transpile-to-PHP framework. Source files have the `.phlo` extension and transpile to PHP, CSS, and JS. **Never edit generated files** in `php/`, `www/app.js`, `www/app.css`, or release output such as `release/php/`, `release/www/app.js`, and `release/www/app.css`.
+Phlo is a transpile-to-PHP framework. Source files have the `.phlo` extension and transpile to PHP, CSS, and JS. **Never edit generated files** in `php/`, `www/app.js`, `www/app.css`, or release output such as `release/*.php`, `release/www/app.js`, and `release/www/app.css`.
 
 Each `.phlo` file transpiles to exactly one PHP class. The class name is derived from the file name: dots become underscores (`page.home.phlo` -> class `page_home`). File names use dots as separators - **never underscores**.
 
@@ -528,9 +528,9 @@ In strict security mode the nonce-based CSP is a second line of defense - an inj
 </foreach>
 ```
 
-**Rendering - `view()` and `apply()` are terminating.** They send output and end the request. Never call either more than once per request path.
+**Rendering - `view()` and `apply()` do not terminate PHP execution.** They prepare or send output, so return them from a route guard or otherwise let the routine end immediately afterwards. Never call either more than once per request path.
 
-Inside route guards, always return the terminating call:
+Inside route guards, always return the response call so the routine ends there:
 ```phlo
 route async GET item $id {
   if (!$item = item::record(id: $id)) return apply(remove: '#item')
@@ -799,7 +799,7 @@ On servers where `php` is not in PATH, use `/usr/bin/php-zts` for CLI checks and
 ```bash
 php www/app.php phlo_eval "user::recordCount()"            # 38, no return keyword
 php www/app.php phlo_eval "%app->title"                    # "App"
-php www/app.php phlo_eval "echo %app->error('boom')"       # <div class="app-error">boom</div>
+php www/app.php phlo_eval "echo '<strong>boom</strong>'"   # <strong>boom</strong>
 ```
 
 - A single line auto-returns, exactly like a `=>` arrow body, so you write just the expression, no `return`. The exceptions are lines starting with `return`/`apply`/`echo`/`unset`/`yield`. Only a multiline block needs its own `return`.
@@ -1085,7 +1085,7 @@ Never edit the generated PHP. Find the corresponding `.phlo` source, fix the syn
 | `app.uri` in JS | `app.path` |
 | `die()` or `exit()` in HTTP request path | `return` |
 | `.then()` or `await` on frontend API calls | Fire-and-forget - no return value |
-| Multiple `view()` or `apply()` calls per request | One terminating call per request path |
+| Multiple `view()` or `apply()` calls per request | One final response call per request path, then end the routine |
 | Treating `cli` as a boolean | `cli` is the PHP binary path string |
 | Inline `<if>` or `<foreach>` inside HTML | Control tags always on their own line |
 | `route GET /` for the homepage | `route GET => $this->home` |
