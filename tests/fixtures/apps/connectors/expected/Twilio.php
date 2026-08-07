@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Twilio connector: send SMS and read message status
-// advice:   Needs account_sid and auth_token, plus either a from_number in E.164 or a messaging_service_sid; without one of the two the send is refused before it leaves. Twilio speaks form encoding rather than JSON, which sms() handles, so pass extra fields in Twilio's own capitalized names. A returned sid says it was accepted, not delivered; message() tells you what became of it.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

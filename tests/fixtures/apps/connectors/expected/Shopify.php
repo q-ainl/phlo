@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Shopify Admin API connector: read customers, orders and products; create draft orders and products; update inventory
-// advice:   Needs shop_domain including myshopify.com and an admin access token; api_version defaults to 2024-01 and a Shopify version is supported for a limited time, so set the one you tested against rather than leaning on the default. setInventory() writes an absolute level, not a difference, so read the current one first when you mean to add. A draft order is not an order until it is completed in Shopify.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

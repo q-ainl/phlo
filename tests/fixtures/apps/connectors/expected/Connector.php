@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Base class for API connectors: credentials, JSON requests, retries, pagination and a normalized result contract
-// advice:   Make one with Connector::make(); it reads its own section from %creds, so keys live in data/creds.ini or in PHLO__Section__key in the environment and never in your code. Every call answers in the same shape, ok with status and data or ok false with error, and nothing is thrown, so test ->ok rather than catching. Raise retries above zero to let GET, HEAD and QUERY back off and try again on 429 and 5xx; writes are never retried, because a repeated POST would book twice.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // package:  connectors
 // frontend: false
 // backend:  true
@@ -54,7 +54,7 @@ class Connector extends obj {
 		if ($query) $url .= (str_contains($url, qm) ? '&' : qm).http_build_query($query);
 		$body = null;
 		if ($json !== null){
-			$body = is_string($json) ? $json : json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$body = is_string($json) ? $json : json_encode($json, jsonFlat);
 			$headers[] = 'Content-Type: application/json';
 		}
 		elseif ($form !== null){
@@ -97,10 +97,10 @@ class Connector extends obj {
 		$after = (int)($response->headers['retry-after'] ?? 0);
 		return $after > 0 ? min($after, 30) * 1000000 : 200000 * $attempt;
 	}
-	// Retries only what retryable() allows, and waits as long as the server asked for.
-	// A Retry-After header is honoured up to thirty seconds; without one the wait grows with
-	// the attempt. Everything else comes back as it arrived, so a write that may already have
-	// booked something is never sent a second time.
+	// %TEXT%
+	// %TEXT%
+	// %TEXT%
+	// %TEXT%
 	protected function dispatch(array $req):obj {
 		$method = $req['method'];
 		$body = $req['body'];

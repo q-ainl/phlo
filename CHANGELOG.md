@@ -10,6 +10,12 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** the `jsonFlags` constant is now `jsonPretty`, and `jsonFlat` joins it for
+  the set without `JSON_PRETTY_PRINT`. `jsonFlags` is gone with no alias, so rename it
+  where you used it. The pair exists because both sets were already in use and only one
+  had a name: 36 places in the engine spelled the flags out by hand, and which of the two
+  they meant was invisible. Use `jsonPretty` for anything a person opens and `jsonFlat`
+  for payloads.
 - **Breaking:** `view()` no longer links a manifest when `www/manifest.json`
   happens to exist. The manifest resource owns that output now: it serves
   `/manifest.json` from `%manifest->body` and puts the link on the page with

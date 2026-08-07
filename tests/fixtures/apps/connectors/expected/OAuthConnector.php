@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Base class for OAuth2 connectors: stored, auto-refreshed bearer access tokens via TokenStore, on the OAuth2 primitive
-// advice:   Use this instead of Connector when the provider hands out access tokens that expire. Give it client_id, client_secret and a refresh_token and TokenStore keeps the access token and renews it in time; a subclass only names its section and tokenUrl.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

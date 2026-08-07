@@ -25,7 +25,7 @@ class res extends obj {
 
 	public function json(mixed ...$data):static {
 		$this->type = 'application/json';
-		$this->body = json_encode($data ?: new \stdClass(), JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+		$this->body = json_encode($data ?: new \stdClass(), jsonFlat);
 		return $this;
 	}
 

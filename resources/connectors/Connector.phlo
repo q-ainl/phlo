@@ -47,7 +47,7 @@ static build(string $method, string $url, ?array $query = null, array $headers =
 	if ($query) $url .= (str_contains($url, qm) ? '&' : qm).http_build_query($query)
 	$body = null
 	if ($json !== null){
-		$body = is_string($json) ? $json : json_encode($json, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+		$body = is_string($json) ? $json : json_encode($json, jsonFlat)
 		$headers[] = 'Content-Type: application/json'
 	}
 	elseif ($form !== null){

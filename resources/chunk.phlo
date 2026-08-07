@@ -22,6 +22,6 @@ function chunk(...$cmds):void {
 		$res->header('X-Content-Type-Options', 'nosniff')
 		$res->render()
 	}
-	print(json_encode($cmds, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf)
+	print(json_encode($cmds, jsonFlat).lf)
 	$cli || [@ob_flush(), flush()]
 }

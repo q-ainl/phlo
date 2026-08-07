@@ -23,7 +23,7 @@ static log($model, $action, $before = [], $after = [], $exclude = []):void {
 		$class,
 		(string)$id,
 		$action,
-		json_encode($changes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+		json_encode($changes, jsonFlat),
 		(string)($_SERVER['REMOTE_ADDR'] ?? null),
 	)
 }

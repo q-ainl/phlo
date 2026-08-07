@@ -1,7 +1,7 @@
 <?php
 // source:  %SRC%/app.phlo
 // phlo:    %VERSION%
-// summary: Golden fixture app
+// summary: %TEXT%
 class app extends obj {
 	public $title = 'Fixture';
 	public $version = '.7';

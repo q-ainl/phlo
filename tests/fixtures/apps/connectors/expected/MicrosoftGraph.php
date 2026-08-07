@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Microsoft Graph connector (app-only client credentials): read users and calendars, send mail, create events
-// advice:   This is the app-only flow: the token belongs to the registration, not to a person, so it needs admin-consented application permissions and every call names the mailbox it acts on. Tokens are cached in APCu for their lifetime, so a run without APCu fetches one per request. Set mailbox to spare yourself passing a user each time.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false
@@ -34,9 +34,9 @@ class MicrosoftGraph extends Connector {
 	protected function _token():string {
 		return $this->fetchToken();
 	}
-	// Caches the app-only token in APCu until a minute before it expires, keyed on tenant and
-	// client, so a burst of requests spends one token fetch instead of one each. Without APCu
-	// it simply fetches per request, which works but costs a round trip every time.
+	// %TEXT%
+	// %TEXT%
+	// %TEXT%
 	protected function fetchToken():string {
 		$tenant = $this->config['tenant_id'] ?? void;
 		$id = $this->config['client_id'] ?? void;

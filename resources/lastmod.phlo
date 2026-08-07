@@ -33,7 +33,7 @@ static stamp($dir = null):array {
 	foreach ((array)(%app->pages ?? []) AS $page) ($d = static::day(static::resolve(static::uriOf($page)))) && $map[static::uriOf($page)] = $d
 	foreach ((array)%lastmod->sources AS $uri => $file) ($d = static::day($file)) && $map[$uri] = $d
 	ksort($map)
-	file_put_contents($target = static::file($dir), json_encode($map, jsonFlags))
+	file_put_contents($target = static::file($dir), json_encode($map, jsonPretty))
 	return ['file' => $target, 'pages' => count($map)]
 }
 

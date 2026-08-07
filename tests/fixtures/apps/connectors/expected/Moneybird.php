@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Moneybird connector: read contacts and invoices, create sales invoices
-// advice:   Needs an administration_id and a personal access token with rights for contacts and invoices. findContact() searches on one match, so use it to look up rather than to list. An invoice is created as a draft: sending or booking it is a separate step in Moneybird.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

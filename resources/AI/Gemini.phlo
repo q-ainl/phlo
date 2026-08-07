@@ -58,7 +58,7 @@ method chat(...$args):obj {
 }
 
 method parseSSE(string $url, array $headers, array $payload):Generator {
-	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+	$json = json_encode($payload, jsonFlat)
 	$ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode(nl, [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)]), 'content' => $json, 'timeout' => 300, 'ignore_errors' => true]])
 	$stream = fopen($url, 'r', false, $ctx)
 	$stream || error('SSE connection failed')

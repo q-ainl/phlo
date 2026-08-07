@@ -1,7 +1,7 @@
 <?php
 // source:  %SRC%/app.phlo
 // phlo:    %VERSION%
-// summary: Connector compile coverage
+// summary: %TEXT%
 class app extends obj {
 	public static function route():bool {
 		return route('GET', cb: 'app::GETHome');

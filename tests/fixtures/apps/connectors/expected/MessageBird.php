@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  MessageBird connector: send SMS
-// advice:   Needs access_key and an originator, the sender shown to the recipient; some countries refuse an alphanumeric originator, so a real number is the safer choice. Pass an array as the recipient to send one message to several numbers at once.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

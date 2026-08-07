@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Resend connector: send transactional email via the HTTP API
-// advice:   Needs api_key and a from_email on a domain you verified with Resend, otherwise the send is refused. send() takes HTML; leave it out for a plain text mail and add anything else Resend accepts through extra.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

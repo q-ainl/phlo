@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Google Calendar connector (OAuth2): read events and create events
-// advice:   Shares the Google section with Sheets, so one refresh token has to carry both scopes. calendarId defaults to primary, which is the mailbox of the account that authorized, not a shared agenda; give a calendar address for those. Google returns times as RFC3339 with an offset, so keep the timezone rather than casting to a local timestamp.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  OAuthConnector
 // package:  connectors
 // frontend: false

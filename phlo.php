@@ -23,7 +23,8 @@ const sq    = '\'';
 const tab   = "\t";
 const us    = '_';
 const void  = '';
-const jsonFlags = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+const jsonPretty = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+const jsonFlat   = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 
 class PhloException extends RuntimeException {
 	public function __construct(string $message, int $code = 0, public array $data = []){ parent::__construct($message, $code); }
@@ -191,7 +192,7 @@ function phlo_cli(array $args):void {
 	if (!$args) return;
 	$target = array_shift($args);
 	$result = phlo_dispatch($target, $args);
-	if (isset($result)) print(json_encode($result, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+	if (isset($result)) print(json_encode($result, jsonFlat).lf);
 }
 
 function phlo_serve():void {
@@ -212,7 +213,7 @@ function phlo_serve():void {
 			while (($pos = strpos($lineBuf, lf)) !== false){
 				$out = substr($lineBuf, 0, $pos);
 				$lineBuf = substr($lineBuf, $pos + 1);
-				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], jsonFlat).lf);
 			}
 			return void;
 		};
@@ -222,14 +223,14 @@ function phlo_serve():void {
 				ob_start($emit, 1);
 				$result = phlo_dispatch($target, $args);
 				while (ob_get_level()) ob_end_flush();
-				if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+				if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], jsonFlat).lf);
 			}
 			else $result = phlo_dispatch($target, $args);
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done', 'result' => $result], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done', 'result' => $result], jsonFlat).lf);
 		}
 		catch (Throwable $e){
 			while (ob_get_level()) ob_end_clean();
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES).lf);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], jsonFlat).lf);
 		}
 		phlo('tech/reset');
 		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();

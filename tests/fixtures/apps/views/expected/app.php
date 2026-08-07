@@ -1,7 +1,7 @@
 <?php
 // source:  %SRC%/app.phlo
 // phlo:    %VERSION%
-// summary: View compiler golden cases
+// summary: %TEXT%
 class app extends obj {
 	public $title = 'Views';
 	public $ready = true;

@@ -36,5 +36,5 @@ method verify(string $token):array {
 }
 
 method sig(string $body):string => $this->encode(hash_hmac('sha256', $body, $this->secret, true))
-method encode($data):string => rtrim(strtr(base64_encode(is_string($data) ? $data : (string)json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), '+/', '-_'), eq)
+method encode($data):string => rtrim(strtr(base64_encode(is_string($data) ? $data : (string)json_encode($data, jsonFlat)), '+/', '-_'), eq)
 method decode(string $data):string => (string)base64_decode(strtr($data, '-_', '+/'))

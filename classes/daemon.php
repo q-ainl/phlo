@@ -14,7 +14,7 @@ class daemon {
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',
 			'header'        => 'Content-Type: application/json',
-			'content'       => json_encode($body, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'content'       => json_encode($body, jsonFlat),
 			'timeout'       => 30,
 			'ignore_errors' => true,
 		]]);
@@ -44,7 +44,7 @@ class daemon {
 				CURLOPT_POST => true,
 				CURLOPT_RETURNTRANSFER => true,
 				CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-				CURLOPT_POSTFIELDS => json_encode(['app' => self::app(), 'target' => $cb, 'args' => array_values($args), 'build' => build], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+				CURLOPT_POSTFIELDS => json_encode(['app' => self::app(), 'target' => $cb, 'args' => array_values($args), 'build' => build], jsonFlat),
 				CURLOPT_CONNECTTIMEOUT => 5,
 				CURLOPT_TIMEOUT => 300,
 			]);
@@ -70,7 +70,7 @@ class daemon {
 		$ctx = stream_context_create(['http' => [
 			'method'        => 'POST',
 			'header'        => 'Content-Type: application/json',
-			'content'       => json_encode(['app' => self::app(), 'target' => $target, 'args' => $args, 'build' => build, 'stream' => true], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'content'       => json_encode(['app' => self::app(), 'target' => $target, 'args' => $args, 'build' => build, 'stream' => true], jsonFlat),
 			'timeout'       => 300,
 			'ignore_errors' => true,
 		]]);

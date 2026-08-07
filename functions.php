@@ -15,7 +15,7 @@ function loop(iterable $data, Closure|array $cb, ?string $implode = null):mixed 
 
 function files(string|array $paths, string $ext = '*.*'):array { return array_merge(...loop((array)$paths, fn($path) => glob("$path$ext") ?: [])); }
 function dirs(string $path):array { return glob("$path*", GLOB_MARK | GLOB_ONLYDIR) ?: []; }
-function json_write(string $file, $data, $flags = null):int|false { return file_put_contents($file, json_encode($data, $flags ?? jsonFlags), LOCK_EX); }
+function json_write(string $file, $data, $flags = null):int|false { return file_put_contents($file, json_encode($data, $flags ?? jsonPretty), LOCK_EX); }
 function json_read(string $file, ?bool $assoc = null):mixed { return json_decode((string)file_get_contents($file), $assoc) ?? error('Error reading '.esc($file)); }
 function regex(string $pattern, string $subject, int $flags = 0, int $offset = 0):array { return preg_match($pattern, $subject, $match, $flags, $offset) ? $match : []; }
 function regex_all(string $pattern, string $subject, int $flags = 0, int $offset = 0):array { return preg_match_all($pattern, $subject, $matches, $flags, $offset) ? $matches : []; }
@@ -203,7 +203,7 @@ function apply(...$cmds):string {
 		$dbg[] = '['.$d['mem'].'] ['.$d['dur'].']';
 		$cmds['debug'] = isset($cmds['debug']) ? [...(array)$cmds['debug'], ...$dbg] : $dbg;
 	}
-	$body = (string)json_encode($cmds, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+	$body = (string)json_encode($cmds, jsonFlat);
 	if ($req->cli){
 		$res->outputted = true;
 		$res->done = true;
@@ -231,7 +231,7 @@ function output(mixed $content = null, ?string $filename = null, ?bool $attachme
 	$res  = phlo('res');
 	// Arrays are unambiguously JSON; objects only when application/json is explicitly requested (obj is both Stringable and JsonSerializable, so the type cannot be inferred safely).
 	if (is_array($content) || ($type === 'application/json' && !is_string($content) && !is_null($content))){
-		$content = json_encode($content, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$content = json_encode($content, jsonFlat);
 		$type ??= 'application/json';
 	}
 	$name = $filename ?? basename($file ?? $req->path);

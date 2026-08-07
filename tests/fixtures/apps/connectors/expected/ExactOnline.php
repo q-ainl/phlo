@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Exact Online connector (OAuth2): read sales invoices and accounts, create sales invoices
-// advice:   The division number sits in the base URL, so a connector speaks to exactly one administration and a second administration needs a second connector with its own config. Exact rotates the refresh token on every refresh, which is why the token store locks; running two apps on one refresh token logs both out.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  OAuthConnector
 // package:  connectors
 // frontend: false

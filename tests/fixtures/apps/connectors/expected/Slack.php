@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Slack connector: post messages, read channel history and list channels
-// advice:   Needs a bot token, and the bot has to be invited into the channel it posts in, else the call comes back ok false with not_in_channel. Slack answers HTTP 200 even when it refuses, so read the outcome from the result, never from the status.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

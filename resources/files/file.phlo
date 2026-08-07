@@ -55,7 +55,7 @@ method type:string => substr($this->mime, 0, strpos($this->mime, slash))
 method touch:bool => touch($this->file)
 method writable:bool => is_writable($this->file)
 method writeINI($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? loop($data, fn($value, $key) => $key.' = '.dq.strtr($value, [dq => bs.dq, lf => '\n']).dq, lf).lf : void, $deleteEmpty)
-method writeJSON($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? json_encode($data, jsonFlags) : void, $deleteEmpty)
+method writeJSON($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? json_encode($data, jsonPretty) : void, $deleteEmpty)
 method writeJSONplain($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? json_encode($data) : void, $deleteEmpty)
 method write(string $data, bool $deleteEmpty = false):bool {
 	if (!$data && $deleteEmpty) return $this->delete

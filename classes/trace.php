@@ -45,7 +45,7 @@ class trace {
 		$dir = data.'trace'.slash;
 		if (!is_dir($dir) && !@mkdir($dir, 0750, true)) return;
 		$out = self::build();
-		file_put_contents($dir.self::$id.'.json', json_encode($out, jsonFlags), LOCK_EX);
+		file_put_contents($dir.self::$id.'.json', json_encode($out, jsonPretty), LOCK_EX);
 		self::indexUpdate($dir, $out);
 		self::prune($dir);
 	}
@@ -115,7 +115,7 @@ class trace {
 		$index = is_file($file) ? (json_decode((string)file_get_contents($file), true) ?: []) : [];
 		$index[] = ['id' => $out['id'], 'ts' => $out['ts'], 'route' => $out['route'], 'path' => $out['path'], 'method' => $out['method'], 'ms' => $out['ms'], 'count' => $out['count']];
 		usort($index, fn($a, $b) => $b['ts'] <=> $a['ts']);
-		file_put_contents($file, json_encode($index, jsonFlags), LOCK_EX);
+		file_put_contents($file, json_encode($index, jsonPretty), LOCK_EX);
 	}
 
 	private static function prune(string $dir, int $keep = 100):void {
@@ -125,6 +125,6 @@ class trace {
 		if (count($index) <= $keep) return;
 		foreach (array_slice($index, $keep) as $entry) @unlink($dir.$entry['id'].'.json');
 		$index = array_slice($index, 0, $keep);
-		file_put_contents($file, json_encode($index, jsonFlags), LOCK_EX);
+		file_put_contents($file, json_encode($index, jsonPretty), LOCK_EX);
 	}
 }

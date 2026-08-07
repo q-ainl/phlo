@@ -30,14 +30,14 @@ class phlo_control {
 			$index   = is_file($dir.'index.json') ? (json_decode((string)file_get_contents($dir.'index.json'), true) ?: []) : [];
 			$res->type = 'application/json';
 			if ($req === 'traces'){
-				$res->body = json_encode(['index' => $index], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+				$res->body = json_encode(['index' => $index], jsonFlat);
 				return;
 			}
 			$id = str_starts_with($req, 'trace/') ? substr($req, 6) : ($index[0]['id'] ?? null);
 			$file = $id ? $dir.$id.'.json' : null;
 			$data = ($file && is_file($file)) ? json_decode((string)file_get_contents($file)) : null;
 			if (!$data && $req === 'trace' && is_file(data.'trace.json')) $data = json_decode((string)file_get_contents(data.'trace.json'));
-			$res->body = json_encode(['trace' => $data, 'index' => $index], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$res->body = json_encode(['trace' => $data, 'index' => $index], jsonFlat);
 			return;
 		}
 
@@ -296,7 +296,7 @@ class phlo_control {
 		$req        = phlo('req');
 		$isFrontend = $arg === 'frontend';
 		$data       = $isFrontend ? reflect::selectorGraph() : reflect::graph();
-		$b64        = base64_encode((string)json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+		$b64        = base64_encode((string)json_encode($data, jsonFlat));
 		$b64E       = esc($b64);
 		$mode       = $isFrontend ? 'frontend' : 'backend';
 		$base       = '/'.ltrim(control, '/');
@@ -614,7 +614,7 @@ class phlo_control {
 		$errors   = reflect::errors(0);
 		$rows     = void;
 		foreach ($errors as $id => $err){
-			$filter = esc(json_encode(['id' => $id] + $err, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: void);
+			$filter = esc(json_encode(['id' => $id] + $err, jsonFlat) ?: void);
 			$ref    = esc((string)$id);
 			$file   = static::controlFileLink((string)($err['file'] ?? ''));
 			$msg    = esc((string)($err['msg'] ?? ''));
@@ -664,7 +664,7 @@ class phlo_control {
 		}
 		natcasesort($cfg['resources']);
 		$cfg['resources'] = array_values($cfg['resources']);
-		$newJson = json_encode($cfg, jsonFlags);
+		$newJson = json_encode($cfg, jsonPretty);
 		file_put_contents($file, $newJson);
 		try { build::run(); } catch (\Throwable $e){
 			file_put_contents($file, $backup);
@@ -1142,7 +1142,7 @@ class phlo_control {
 	private static function returnDetail($return):string {
 		if ($return === null || is_scalar($return) && (is_bool($return) || strlen((string)$return) <= 40)) return '';
 		if (is_string($return)) return "<pre class=\"code\">".esc($return)."</pre>\n";
-		return "<pre class=\"code\">".esc(json_encode($return, jsonFlags))."</pre>\n";
+		return "<pre class=\"code\">".esc(json_encode($return, jsonPretty))."</pre>\n";
 	}
 
 	private static function ago(int $ts):string {

@@ -1,7 +1,7 @@
 <?php
 // source:  %SRC%/page.items.phlo
 // phlo:    %VERSION%
-// summary: Items page fixture
+// summary: %TEXT%
 class page_items extends obj {
 	public $items = ['alpha', 'beta'];
 	protected function label($x){

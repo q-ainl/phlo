@@ -162,7 +162,7 @@ function debug_render(?int $contentLength = null):string {
 	if ($c = count($d['phlo'])) $out .= ";console.log('%cphlo ($c)','font-weight:bold','\\n".strtr(implode(space, $d['phlo']), [sq => bs.sq])."')";
 	if ($dc = count($d['debug'])) $out .= ";console.log('%cdebug ($dc)','font-weight:bold','\\n".strtr(implode(lf, $d['debug']), [lf => '\n', sq => bs.sq])."')";
 	foreach ($d['dump'] as $dump){
-		$json = json_encode($dump, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$json = json_encode($dump, jsonFlat);
 		$out .= ";console.log('%cdump','font-weight:bold',$json)";
 	}
 	$out .= ";document.getElementById('debugScript').remove()";

@@ -30,7 +30,7 @@ function phlo_error_handle(Throwable $e):void {
 		if ($res->dump)  $cmds['dump']  = $res->dump;
 		if ($res->debug) $cmds['debug'] = $res->debug;
 		if ($req->cli){
-			$payload = json_encode($cmds, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+			$payload = json_encode($cmds, jsonFlat);
 			@fwrite(STDERR, ($payload ?: '{"error":"Error"}').lf);
 			$res->outputted = true;
 			exit($code > 0 && $code < 256 ? $code : 1);
@@ -50,7 +50,7 @@ function phlo_error_handle(Throwable $e):void {
 		if ($res->dump)  $payload['dump']  = $res->dump;
 		if ($res->debug) $payload['debug'] = $res->debug;
 		$res->type = 'application/json';
-		$res->body = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+		$res->body = json_encode($payload, jsonFlat);
 		$res->render($code);
 		return;
 	}
@@ -95,7 +95,7 @@ function phlo_error_log(string $id, string $path, string $msg):int|false {
 	if (count($map) > 200) $map = array_slice($map, 0, 200, true);
 	rewind($fh);
 	ftruncate($fh, 0);
-	$written = fwrite($fh, json_encode($map, jsonFlags));
+	$written = fwrite($fh, json_encode($map, jsonPretty));
 	fflush($fh);
 	flock($fh, LOCK_UN);
 	fclose($fh);

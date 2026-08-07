@@ -1,7 +1,7 @@
 <?php
 // source:  %SRC%/app.phlo
 // phlo:    %VERSION%
-// summary: Resource fixture app
+// summary: %TEXT%
 class app extends obj {
 	public static function route():bool {
 		return route('GET', 'w', cb: 'app::GETW');

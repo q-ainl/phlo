@@ -3,8 +3,8 @@
 // phlo:     %VERSION%
 // version:  1.0
 // creator:  q-ai.nl
-// summary:  Lightspeed Retail (V3) connector: read customers and sales, create customers
-// advice:   Retail V3, so cluster_id names the account and the key and secret authenticate. Lightspeed rate limits per account with a leaky bucket, so raise retries rather than firing calls in a loop. findCustomer() picks its search field from what you pass: an address with an at sign searches on email, anything else on phone.
+// summary:  %TEXT%
+// advice:   %TEXT%
 // extends:  Connector
 // package:  connectors
 // frontend: false

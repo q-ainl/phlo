@@ -596,6 +596,15 @@ method dashboard {
 
 **view() parameter glossary** (all optional, named): `title` (page title, combined via `title()`), `css`/`js`/`defer` (extra assets next to the ns bundles), `options` (body class list), `settings` (body `data-*` attributes), `ns` (bundle namespace, default `app`), `path` (browser URL; `false` keeps current), `inline` (embed local css/js into the HTML instead of linking), `bodyAttrs`/`htmlAttrs` (extra attributes), `lang`, `code` (HTTP status for a sync page, for example `view(body, code: 404)`; dropped on async since the apply transport must stay 200), plus any apply command (`scroll: 0`, `trans: 'fade'`) as trailing named args. App-level defaults come from `%app` props with the same names; the `<head>` is further fed by `%app->description`, `%app->viewport`, `%app->themeColor`, `%app->nonce`, `%app->head`, `%app->link` and `%app->version` (asset cache-buster).
 
+**JSON flags.** Two constants cover every `json_encode()` in an app, and the choice is
+about the reader, not about taste. `jsonPretty` (pretty print, unescaped unicode and
+slashes) is for anything a person opens: a file on disk, a config, an export, a document
+served at a URL. `jsonFlat` is the same minus the pretty printing, for payloads nobody
+reads by hand: apply and chunk commands, request bodies to an API, a token, a column in a
+database. Spelling the flags out by hand is a smell; if neither constant fits, the call
+wants something specific (`JSON_HEX_TAG` inside a `<script>`, `JSON_THROW_ON_ERROR`) and
+that is worth a comment saying why.
+
 `view()` links `www/favicon.ico` by itself, with `%app->version` behind it. That version is the point: a browser asks for `/favicon.ico` whether or not a page links it, so the tag exists to make a *replaced* icon show up rather than to show one at all. That is also the rule for anything else it might link automatically: only when the tag adds a cache-busted URL the browser's own request cannot produce. A manifest does not qualify, which is why the manifest resource links itself through `%manifest->head` and controls its own freshness with a `Cache-Control` header.
 
 **`output()` - files, blobs and JSON with a status.** `output($content, $filename = null, $attachment = null, $file = null, $code = null, $type = null)` sends one response body and renders. Use it for anything that is not an HTML page or an `apply()` batch:

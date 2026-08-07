@@ -1,7 +1,7 @@
 <?php
 // source:  %RSRC%/widget.phlo
 // phlo:    %VERSION%
-// summary: Widget resource fixture
+// summary: %TEXT%
 class widget extends obj {
 	public static $theme = 'light';
 	protected function render(){
