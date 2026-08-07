@@ -664,7 +664,7 @@ class phlo_control {
 		}
 		natcasesort($cfg['resources']);
 		$cfg['resources'] = array_values($cfg['resources']);
-		$newJson = json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		$newJson = json_encode($cfg, jsonFlags);
 		file_put_contents($file, $newJson);
 		try { build::run(); } catch (\Throwable $e){
 			file_put_contents($file, $backup);
@@ -1142,7 +1142,7 @@ class phlo_control {
 	private static function returnDetail($return):string {
 		if ($return === null || is_scalar($return) && (is_bool($return) || strlen((string)$return) <= 40)) return '';
 		if (is_string($return)) return "<pre class=\"code\">".esc($return)."</pre>\n";
-		return "<pre class=\"code\">".esc(json_encode($return, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES))."</pre>\n";
+		return "<pre class=\"code\">".esc(json_encode($return, jsonFlags))."</pre>\n";
 	}
 
 	private static function ago(int $ts):string {
