@@ -52,6 +52,10 @@ static images($gapX, $gapY):array {
 	return arr(bg: 'data:image/png;base64,'.$bgData, piece: 'data:image/png;base64,'.$pieceData)
 }
 
+// Judges the drag as much as where it ended.
+// A movement under 200ms or over a minute, a path of fewer than five points, or one with
+// almost no variation between steps reads as a script rather than a hand. The endpoint
+// alone is not enough, because that is the one thing a script gets right.
 static verify($x, $telemetry):bool {
 	$c = %session->captcha ?? null
 	if (!$c || time() > (int)($c['exp'] ?? 0)) return false

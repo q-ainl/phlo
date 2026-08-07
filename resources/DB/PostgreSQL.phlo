@@ -14,6 +14,10 @@ prop fieldQuotes:string = dq
 prop insertIgnore:string = void
 prop insertOnConflict:string = ' ON CONFLICT DO NOTHING'
 
+// Asks for the last id inside a savepoint, because Postgres aborts the whole transaction
+// when lastval() is called before any sequence has been used in the session. Without it,
+// one insert into a table without a sequence would take every later statement in the same
+// transaction down with it.
 method lastId {
 	$savepoint = $this->PDO->inTransaction()
 	$savepoint && $this->PDO->exec('SAVEPOINT phlo_lastid')

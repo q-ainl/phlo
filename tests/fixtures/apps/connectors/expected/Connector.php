@@ -97,6 +97,10 @@ class Connector extends obj {
 		$after = (int)($response->headers['retry-after'] ?? 0);
 		return $after > 0 ? min($after, 30) * 1000000 : 200000 * $attempt;
 	}
+	// Retries only what retryable() allows, and waits as long as the server asked for.
+	// A Retry-After header is honoured up to thirty seconds; without one the wait grows with
+	// the attempt. Everything else comes back as it arrived, so a write that may already have
+	// booked something is never sent a second time.
 	protected function dispatch(array $req):obj {
 		$method = $req['method'];
 		$body = $req['body'];

@@ -30,6 +30,10 @@ class tasks extends obj {
 	public static function saveRun($name, $do, $schedule, $return){
 		return json_write(static::dir().$name.'.json', arr(do: $do, schedule: $schedule, return: $return));
 	}
+	// daily and weekly match the exact minute the task names.
+	// The runner fires once a minute, so a minute that is missed, by a reboot or by a previous
+	// run still holding the lock, means the task does not run that day at all. every counts
+	// from the last run instead, so it catches up by itself.
 	public static function due($name, $task, $now):bool {
 		$last = static::lastRun($name);
 		if (isset($task->every)){

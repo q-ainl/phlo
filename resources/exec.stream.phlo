@@ -7,6 +7,9 @@
 @ backend:  true
 @ tags:     stream shell cli process yield
 
+// Reads stdout and stderr in one select loop rather than one after the other.
+// A command that fills the pipe nobody is reading blocks forever, so draining one stream to
+// the end before touching the other deadlocks exactly the commands that say the most.
 function exec_stream(string $cmd, ?int $timeoutSec = 0):Generator {
 	$desc = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']]
 	$proc = proc_open($cmd, $desc, $pipes)

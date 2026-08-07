@@ -8,6 +8,11 @@
 @ requires: php-ext:zip
 @ tags:     file xlsx excel reader
 
+// Reads the sheets straight out of the zip with regular expressions instead of an XML
+// parser, which keeps the resource free of dependencies and fast enough for a file a person
+// would open by hand. A text cell holds an index into the shared strings table rather than
+// the text itself, which is what the t="s" check resolves. The first row of each sheet is
+// taken as the header.
 method __construct(string $file){
 	$sheets = []
 	$shared = []

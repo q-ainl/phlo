@@ -34,6 +34,9 @@ class MicrosoftGraph extends Connector {
 	protected function _token():string {
 		return $this->fetchToken();
 	}
+	// Caches the app-only token in APCu until a minute before it expires, keyed on tenant and
+	// client, so a burst of requests spends one token fetch instead of one each. Without APCu
+	// it simply fetches per request, which works but costs a round trip every time.
 	protected function fetchToken():string {
 		$tenant = $this->config['tenant_id'] ?? void;
 		$id = $this->config['client_id'] ?? void;

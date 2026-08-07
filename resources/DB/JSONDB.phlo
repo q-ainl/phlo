@@ -64,6 +64,9 @@ method objSelect(string $where = void, string $limit = void, string $order = voi
 	return $data
 }
 
+// ignore scans the whole file and compares ids loosely, so the string "7" and the number 7
+// count as one row. An obj passed as a value is stored as its id, which is what lets a
+// parent relation work in a driver that knows nothing about relations.
 method create(string $table, ...$data){
 	if ($ignore = $data['ignore'] ?? false) unset($data['ignore'])
 	$all = $this->objRead()

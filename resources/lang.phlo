@@ -46,6 +46,11 @@ method readAll($file):array {
 	return $items
 }
 
+// Finds one line with a binary search over the raw bytes of the translation file.
+// The file is a sorted key = value list, which save() guarantees with ksort, so a lookup
+// costs a few seeks instead of reading a file that grows with every phrase in the app.
+// It only holds while the file stays sorted; lookup() falls back to readAll() when this
+// returns nothing, so a hand-edited file still resolves.
 method search($file, $hash):?string {
 	$size = (int)@filesize($file)
 	if (!$size) return null
@@ -103,6 +108,10 @@ method lookup($hash):?string {
 	return $cache['items'][$hash] = $value
 }
 
+// Writes the whole file under a temporary name and renames it into place.
+// A rename within one filesystem is atomic, so a reader never catches a half-written file,
+// and the pid in the temporary name keeps two workers from sharing one. The in-memory
+// cache for this file is dropped afterwards, because its mtime has just changed.
 method save($lang, $pairs):void {
 	$file = $this->file($lang)
 	$items = $this->readAll($file)

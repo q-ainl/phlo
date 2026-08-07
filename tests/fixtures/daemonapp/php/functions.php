@@ -85,6 +85,11 @@ function wsCast($wsTarget = 'all', $wsHost = host, $wsPort = daemon, $wsExcept =
 	);
 }
 
+// Follows redirects on its own and raises only when the transport fails, so a 404 or a 500
+// comes back as a body with no error at all. Pass $response by reference to see the status,
+// the headers and whether it counted as a success; that is the only way to tell an empty
+// answer from a failed one. Connecting is capped at five seconds regardless of $timeout,
+// which bounds the request as a whole once the connection stands.
 function HTTP(string $url, array $headers = [], bool $JSON = false, $POST = null, $PUT = null, $PATCH = null, $QUERY = null, bool $DELETE = false, string|bool|null $agent = null, string|bool $cookies = false, int $timeout = 15, &$response = null){
 	$curl = curl_init($url);
 	if ($POST !== null || $PUT !== null || $PATCH !== null || $QUERY !== null){

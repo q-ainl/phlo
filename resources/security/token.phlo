@@ -7,6 +7,11 @@
 @ requires:    php-ext:openssl
 @ tags:        token random deterministic security
 
+// Bytes from the last incomplete block of 256 are thrown away rather than wrapped around.
+// A plain modulo over an alphabet that does not divide 256 would make the first letters
+// more likely than the last, which is exactly the bias a token must not have. With an
+// input the bytes come from a sha256 chain instead of the random source, so the same
+// input always yields the same token.
 function token(int $length = 8, ?string $input = null):string {
 	$length || error('Token must have a minimum length above 0', 500)
 	$alphabet = 'abcdefghijklmnopqrstuvwxyz'
