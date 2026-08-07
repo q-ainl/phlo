@@ -10,6 +10,17 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Changed
+- `phlo_auth($section, $realm = null)` moved from `classes/changed.php` into
+  `functions.php`, so an app can gate anything with its own section of
+  `data/auth.ini` on a release node too. It used to load only in build mode,
+  which made a gate of your own fatal with an undefined function in
+  production. Without a realm it returns a bool and renders nothing; with one
+  it renders the 401 challenge, or a 500 naming the section that is missing.
+- The installer writes `data/auth.ini` with a `[control]` section and a
+  generated password (mode 600), prints it once at the end, and adds
+  `data/auth.ini` and `data/creds.ini` to the generated `.gitignore`. A fresh
+  app used to answer 500 on its own Control Center until someone wrote that
+  file by hand, and nothing kept credentials out of the first commit.
 - **Breaking:** the Control Center reads its credentials from the `[control]`
   section of `data/auth.ini`; the old `[dashboard]` section is no longer read
   and there is no fallback. Rename the section in every app that mounts the
