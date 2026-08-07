@@ -309,7 +309,34 @@ class build_builder {
 		exec(cli.' -l '.$files.' 2>&1', $out, $code);
 		if ($code === 0) return;
 		$errors = array_values(array_filter($out, fn($l) => preg_match('/^(?:PHP\s+)?(Parse|Fatal) error:/', $l)));
-		error('Build error: PHP lint failed'.lf.implode(lf, $errors ?: $out));
+		error('Build error: PHP lint failed'.lf.implode(lf, array_map($this->lint_source(...), $errors ?: $out)));
+	}
+
+	private function lint_source(string $line):string {
+		return (string)preg_replace_callback('/ in (\S+\.php) on line (\d+)/', function(array $match):string {
+			$source = $this->phlo_line($match[1], (int)$match[2]);
+			return $source === null ? $match[0] : ' in '.$source;
+		}, $line);
+	}
+
+	private function phlo_line(string $file, int $line):?string {
+		$entry = $this->sourcemap[$file] ?? null;
+		if (!$entry) return null;
+		$source = $entry['source'] ?? void;
+		$best   = $next = null;
+		foreach ($entry['map'] ?? [] as $row){
+			if (($row['php'] ?? 0) > $line) $next = !$next || $row['php'] < $next['php'] ? $row : $next;
+			elseif (!$best || $row['php'] > $best['php']) $best = $row;
+		}
+		if ($best){
+			$source = $best['source'] ?? $source;
+			$line   = $best['phlo'] + ($line - $best['php']);
+			$ceiling = $next['phlo'] ?? null ? $next['phlo'] - 1 : null;
+			$lines   = $source === void ? 0 : count(@file($source) ?: []);
+			if ($lines) $ceiling = $ceiling === null ? $lines : min($ceiling, $lines);
+			if ($ceiling !== null) $line = max($best['phlo'], min($line, $ceiling));
+		}
+		return $source === void ? null : $source.colon.$line;
 	}
 
 	private function cleanup_classes():void {

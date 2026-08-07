@@ -24,6 +24,16 @@ tagged release onward. The engine version constant lives in `phlo.php`
   configuration property was typed, because a typed property must keep its
   type in every subclass and that would make a migration out of every
   `static table` and `static objCache`.
+- A failing build lint now names the `.phlo` line instead of the generated PHP
+  file. `php -l` reports what it was handed, and the builder still holds the
+  sourcemap of that same build, so the location is rewritten before the error
+  is raised: `security.phlo:16` rather than `php/security.php on line 19`. One
+  source line becomes several lines of PHP, so the mapped line is capped by the
+  next node and by the end of the file. A release build carries no sourcemap
+  and keeps the original wording.
+- `phlo_auth()` compares both the user and the password with `hash_equals()`
+  and evaluates both before combining them, so neither the length of a correct
+  prefix nor a wrong username is readable from how long the answer takes.
 - `session` takes an overridable `options` array and passes it to
   `session_start()`, so an app can steer the session cookie without working
   around the resource. A flow that returns with a cross-site POST, such as an

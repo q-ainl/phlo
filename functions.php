@@ -266,7 +266,9 @@ function phlo_auth(string $name, ?string $realm = null):bool {
 	$section = is_array($cache[$name] ?? null) ? $cache[$name] : [];
 	$user    = $section['user']     ?? void;
 	$pass    = $section['password'] ?? void;
-	$ok = $user !== void && $pass !== void && isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && $_SERVER['PHP_AUTH_USER'] === $user && $_SERVER['PHP_AUTH_PW'] === $pass;
+	$okUser = $user !== void && isset($_SERVER['PHP_AUTH_USER']) && hash_equals($user, (string)$_SERVER['PHP_AUTH_USER']);
+	$okPass = $pass !== void && isset($_SERVER['PHP_AUTH_PW']) && hash_equals($pass, (string)$_SERVER['PHP_AUTH_PW']);
+	$ok = $okUser && $okPass;
 	if ($ok || $realm === null) return $ok;
 	$res = phlo('res');
 	if (!$section){
