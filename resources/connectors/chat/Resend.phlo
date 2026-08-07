@@ -11,11 +11,11 @@
 
 const section = 'Resend'
 
-method base => 'https://api.resend.com'
+method base:string => 'https://api.resend.com'
 
-method headers => [static::bearer($this->config['api_key'] ?? void)]
+method headers:array => [static::bearer($this->config['api_key'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Resend',
 	config: arr(from_email: 'Default sender, e.g. "App <noreply@yourdomain.com>"'),
 	secret: arr(api_key: 'API key (re_...)'),

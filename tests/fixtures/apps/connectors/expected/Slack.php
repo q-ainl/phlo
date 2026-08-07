@@ -14,10 +14,10 @@
 class Slack extends Connector {
 	public const section = 'Slack';
 	public const api = 'https://slack.com/api';
-	protected function headers(){
+	protected function headers():array {
 		return [static::bearer($this->config['bot_token'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Slack',
 			secret: arr(

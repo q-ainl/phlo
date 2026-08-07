@@ -8,7 +8,7 @@
 @ requires: @MySQL
 @ tags:     rate limit throttle abuse
 
-static check($key, $limit, $windowSeconds, $storage = 'db'){
+static check($key, $limit, $windowSeconds, $storage = 'db'):bool {
 	if ($storage === 'apcu') return static::checkApcu($key, $limit, $windowSeconds)
 	$now = time()
 	// One atomic upsert: increment within the window or reset to a new one, and carry the
@@ -18,14 +18,14 @@ static check($key, $limit, $windowSeconds, $storage = 'db'){
 	return (int)%MySQL->query('SELECT LAST_INSERT_ID()')->fetchColumn() <= $limit
 }
 
-static checkApcu($key, $limit, $windowSeconds){
+static checkApcu($key, $limit, $windowSeconds):bool {
 	$window = (int)floor(time() / $windowSeconds) * $windowSeconds
 	$apcuKey = 'phlo.rate.'.$key.':'.$window
 	apcu_add($apcuKey, 0, $windowSeconds)
 	return apcu_inc($apcuKey, 1) <= $limit
 }
 
-static status($key, $limit, $windowSeconds){
+static status($key, $limit, $windowSeconds):obj {
 	$now = time()
 	$row = %MySQL->query('SELECT count, window_start FROM rate_limit WHERE rkey=?', $key)->fetchObject('obj') ?: null
 	if (!$row || ($now - (int)$row->window_start) >= $windowSeconds) return obj(used: 0, limit: $limit, resetIn: 0)

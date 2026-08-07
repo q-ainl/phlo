@@ -12,9 +12,9 @@
 const section = 'SumUp'
 const api = 'https://api.sumup.com'
 
-method headers => [static::bearer($this->config['api_key'] ?? void)]
+method headers:array => [static::bearer($this->config['api_key'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'SumUp',
 	config: arr(
 		merchant_code: 'Merchant code (profile > merchant profile)',
@@ -23,7 +23,7 @@ static fields => arr(
 	secret: arr(api_key: 'API key (developer.sumup.com > API keys)'),
 )
 
-method merchant => 'v0.1/merchants/'.($this->config['merchant_code'] ?? void)
+method merchant:string => 'v0.1/merchants/'.($this->config['merchant_code'] ?? void)
 
 // The merchant's paired readers.
 // A reader id changes when a device is re-paired, so resolve by name and store the id;

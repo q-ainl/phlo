@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     audit log compliance traceability
 
-static log($model, $action, $before = [], $after = [], $exclude = []){
+static log($model, $action, $before = [], $after = [], $exclude = []):void {
 	$class = is_object($model) ? get_class($model) : (string)$model
 	$pk = (is_string($class) && class_exists($class) && property_exists($class, 'idColumn')) ? $class::$idColumn : 'id'
 	$id = is_object($model) ? ($model->$pk ?? $model->id ?? null) : null
@@ -28,7 +28,7 @@ static log($model, $action, $before = [], $after = [], $exclude = []){
 	)
 }
 
-static diff($before, $after){
+static diff($before, $after):array {
 	$changed = []
 	foreach ($after AS $col => $newVal){
 		$oldVal = $before[$col] ?? null
@@ -37,7 +37,7 @@ static diff($before, $after){
 	return $changed
 }
 
-static history($model, $recordId, $limit = 50){
+static history($model, $recordId, $limit = 50):array {
 	$class = is_object($model) ? get_class($model) : (string)$model
 	return $class::DB()->query(
 		'SELECT * FROM audit_log WHERE model=? AND record_id=? ORDER BY ts DESC LIMIT ?',
@@ -45,7 +45,7 @@ static history($model, $recordId, $limit = 50){
 	)->fetchAll(\PDO::FETCH_OBJ)
 }
 
-static byUser($model, $userId, $fromTs = 0, $limit = 100){
+static byUser($model, $userId, $fromTs = 0, $limit = 100):array {
 	return $model::DB()->query(
 		'SELECT * FROM audit_log WHERE '.$model::DB()->quoteId('user').'=? AND ts >= ? ORDER BY ts DESC LIMIT ?',
 		(int)$userId, (int)$fromTs, (int)$limit,

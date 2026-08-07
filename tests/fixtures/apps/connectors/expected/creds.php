@@ -16,7 +16,7 @@ class creds extends obj {
 			$this->$key = is_array($value) ? new static($value) : new \SensitiveParameterValue((string)$value);
 		}
 	}
-	protected function resolve(){
+	protected function resolve():array {
 		$data = [];
 		$this->merge($data, $this->loadINI(data.'creds.ini'));
 		$this->merge($data, $this->envValues(false));
@@ -46,7 +46,7 @@ class creds extends obj {
 		}
 		return $out;
 	}
-	protected function hostKey(){
+	protected function hostKey():string {
 		$host = strtoupper(phlo('req')->host);
 		$host = preg_replace('/[^A-Z0-9]+/', us, $host);
 		return trim($host, us);
@@ -78,7 +78,7 @@ class creds extends obj {
 		if ($key === 'toArray') return loop($this->objData, fn($value) => is_a($value, 'SensitiveParameterValue') ? $value->getValue() : $value);
 		if (isset($this->objData[$key]) && is_a($this->objData[$key], '\SensitiveParameterValue')) return $this->objData[$key]->getValue();
 	}
-	public function objInfo(){
+	public function objInfo():array {
 		return loop($this->objData, fn($value) => is_a($value, '\SensitiveParameterValue') ? str_repeat('*', strlen($value->getValue())) : $value);
 	}
 }

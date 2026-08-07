@@ -10,11 +10,11 @@
 @ tags:     field text
 
 prop length = 100
-prop multiline => $this->length > 250
+prop multiline:bool => $this->length > 250
 
-method label($record) => ($value = $record->{$this->name}) === null ? dash : strtr(esc(strlen($value) > 100 ? substr($value, 0, 80).'...' : $value), [lf => br])
-method input($record) => $this->multiline ? $this->inputMulti($record) : $this->inputField($record)
-method inputField($record) => input(type: $this->type, name: $this->name, value: ($value = $record->{$this->name}) ? esc($value) : $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
-method inputMulti($record) => textarea(name: $this->name, inner: ($value = $record->{$this->name}) ? esc($value) : $this->default ?? void, placeholder: $this->placeholder, class: 'field')
+method label($record):string => ($value = $record->{$this->name}) === null ? dash : strtr(esc(strlen($value) > 100 ? substr($value, 0, 80).'...' : $value), [lf => br])
+method input($record):string => $this->multiline ? $this->inputMulti($record) : $this->inputField($record)
+method inputField($record):string => input(type: $this->type, name: $this->name, value: ($value = $record->{$this->name}) ? esc($value) : $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
+method inputMulti($record):string => textarea(name: $this->name, inner: ($value = $record->{$this->name}) ? esc($value) : $this->default ?? void, placeholder: $this->placeholder, class: 'field')
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]

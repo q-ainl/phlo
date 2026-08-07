@@ -12,9 +12,9 @@
 const section = 'ExactOnline'
 const tokenUrl = 'https://start.exactonline.nl/api/oauth2/token'
 
-method base => 'https://start.exactonline.nl/api/v1/'.($this->config['division'] ?? void)
+method base:string => 'https://start.exactonline.nl/api/v1/'.($this->config['division'] ?? void)
 
-static fields => arr(
+static fields:array => arr(
 	section: 'ExactOnline',
 	config: arr(division: 'Division (administration) number'),
 	secret: arr(
@@ -25,7 +25,7 @@ static fields => arr(
 	scopes: 'OAuth2 authorization code flow; token endpoint refreshes automatically',
 )
 
-method guard => $this->missing('division', 'client_id', 'client_secret', 'refresh_token')
+method guard:?obj => $this->missing('division', 'client_id', 'client_secret', 'refresh_token')
 
 method invoices(array $query = []):obj {
 	if ($m = $this->guard) return $m

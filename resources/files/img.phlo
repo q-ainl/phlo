@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     image gd file graphics
 
-static detect($data){
+static detect($data):?string {
 	$header = substr($data, 0, 12)
 	if (substr($header, 0, 3) === "\xFF\xD8\xFF") return 'jpg'
 	if (substr($header, 0, 8) === "\x89PNG\x0D\x0A\x1A\x0A") return 'png'
@@ -21,10 +21,10 @@ static __handle => "img/$file"
 method __construct(public string $file)
 
 prop src:GdImage => imagecreatefromstring(file_get_contents($this->file))
-prop width => imagesx($this->src)
-prop height => imagesy($this->src)
+prop width:int => imagesx($this->src)
+prop height:int => imagesy($this->src)
 
-method scale($width = null, $height = null, $crop = false){
+method scale($width = null, $height = null, $crop = false):static {
 	if (!$width && !$height) return $this
 	$srcW = $this->width
 	$srcH = $this->height
@@ -55,15 +55,15 @@ method scale($width = null, $height = null, $crop = false){
 	return $this
 }
 
-method ext($file = null) => strtolower(pathinfo($file ?? $this->file, PATHINFO_EXTENSION))
+method ext($file = null):string => strtolower(pathinfo($file ?? $this->file, PATHINFO_EXTENSION))
 
-method source($format = null){
+method source($format = null):string {
 	ob_start()
 	$this->write($format)
 	return ob_get_clean()
 }
 
-method save($file = null){
+method save($file = null):bool {
 	$file && $this->file = $file
 	return $this->write(null, $this->file)
 }

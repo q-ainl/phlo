@@ -11,10 +11,10 @@
 
 const tokenUrl = void
 
-method oauthKey => static::section
+method oauthKey:string => static::section
 
-prop token => TokenStore::access($this->oauthKey, static::tokenUrl, $this->config['client_id'] ?? void, $this->config['client_secret'] ?? void, ['refresh_token' => $this->config['refresh_token'] ?? null])
+prop token:?string => TokenStore::access($this->oauthKey, static::tokenUrl, $this->config['client_id'] ?? void, $this->config['client_secret'] ?? void, ['refresh_token' => $this->config['refresh_token'] ?? null])
 
-method headers => [static::bearer((string)$this->token)]
+method headers:array => [static::bearer((string)$this->token)]
 
-method authed => (string)$this->token !== void
+method authed:bool => (string)$this->token !== void

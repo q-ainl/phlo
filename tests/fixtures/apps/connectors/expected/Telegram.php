@@ -13,10 +13,10 @@
 // tags:     telegram bot messaging chat connector
 class Telegram extends Connector {
 	public const section = 'Telegram';
-	protected function base(){
+	protected function base():string {
 		return 'https://api.telegram.org/bot'.($this->config['bot_token'] ?? void);
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Telegram',
 			secret: arr(

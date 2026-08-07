@@ -11,11 +11,11 @@
 
 const section = 'MessageBird'
 
-method base => 'https://rest.messagebird.com'
+method base:string => 'https://rest.messagebird.com'
 
-method headers => ['Authorization: AccessKey '.($this->config['access_key'] ?? void)]
+method headers:array => ['Authorization: AccessKey '.($this->config['access_key'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'MessageBird',
 	config: arr(originator: 'Originator (sender number or name)'),
 	secret: arr(access_key: 'Access key'),

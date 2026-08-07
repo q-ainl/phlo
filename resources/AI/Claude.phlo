@@ -10,7 +10,7 @@
 
 const model = 'claude-opus-4-8'
 
-static context(...$args){
+static context(...$args):array {
 	$args['messages'] ??= []
 	if (isset($args['system'])){
 		$args['system'] = [['type' => 'text', 'text' => $args['system']]]
@@ -32,14 +32,14 @@ static tool($tool):array => [
 
 method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
 
-method vision($text, $image, $stream = false, ...$args){
+method vision($text, $image, $stream = false, ...$args):obj|Generator {
 	$data = is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image
 	$messages = [['role' => 'user', 'content' => [['type' => 'text', 'text' => $text], ['type' => 'image', 'source' => ['type' => 'base64', 'media_type' => 'image/jpeg', 'data' => base64_encode($data)]]]]]
 	if ($stream) return $this->stream(...$args, messages: $messages)
 	else return $this->chat(...$args, messages: $messages)
 }
 
-method chat(...$args){
+method chat(...$args):obj {
 	$args['model'] ??= static::model
 	$args['max_tokens'] ??= 4096
 	$token = $args['token'] ?? null

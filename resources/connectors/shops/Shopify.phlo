@@ -11,11 +11,11 @@
 
 const section = 'Shopify'
 
-method base => 'https://'.($this->config['shop_domain'] ?? void).'/admin/api/'.($this->config['api_version'] ?? '2024-01')
+method base:string => 'https://'.($this->config['shop_domain'] ?? void).'/admin/api/'.($this->config['api_version'] ?? '2024-01')
 
-method headers => ['X-Shopify-Access-Token: '.($this->config['access_token'] ?? void)]
+method headers:array => ['X-Shopify-Access-Token: '.($this->config['access_token'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Shopify',
 	config: arr(
 		shop_domain: 'Shop domain, e.g. your-store.myshopify.com',

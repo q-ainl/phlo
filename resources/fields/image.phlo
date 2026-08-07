@@ -19,9 +19,9 @@ prop placeholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
 
 prop record = 'preview'
 
-method label($record) => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->thumbUri.$url)) : dash
-method preview($record) => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->uri.$url, class: 'preview')) : dash
-method input($record){
+method label($record):string => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->thumbUri.$url)) : dash
+method preview($record):string => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.($url = $record->{$this->name.'_token'}.slash.rawurlencode($filename)), target: 'image', inner: tag('img', src: $this->uri.$url, class: 'preview')) : dash
+method input($record):string {
 	$input = void
 	$file = $record->{$this->name} ? $this->read($record, $this->thumbPath) : null
 	$input .= lf.tab.tag('img', src: $file ? $this->thumbUri.$record->{$this->name.'_token'}.slash.rawurlencode($record->{$this->name}) : $this->placeholder, class: 'image')
@@ -32,7 +32,7 @@ method input($record){
 
 method write($file) => %img($file->file)->scale($this->thumbSize, $this->thumbSize)->save($this->writePath($file, $this->thumbPath)) && $file->move($this->writePath($file))
 
-prop objColumns => [$this->name, $this->name.'_token']
+prop objColumns:array => [$this->name, $this->name.'_token']
 
 <script>
 on('click', '.input.image .image', img => img.nextElementSibling.click())

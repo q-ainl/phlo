@@ -11,9 +11,9 @@
 
 const section = 'Telegram'
 
-method base => 'https://api.telegram.org/bot'.($this->config['bot_token'] ?? void)
+method base:string => 'https://api.telegram.org/bot'.($this->config['bot_token'] ?? void)
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Telegram',
 	secret: arr(
 		bot_token: 'Bot token from BotFather',

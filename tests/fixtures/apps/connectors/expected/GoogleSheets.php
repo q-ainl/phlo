@@ -14,10 +14,10 @@
 class GoogleSheets extends OAuthConnector {
 	public const section = 'Google';
 	public const tokenUrl = 'https://oauth2.googleapis.com/token';
-	protected function base(){
+	protected function base():string {
 		return 'https://sheets.googleapis.com/v4/spreadsheets';
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Google',
 			secret: arr(
@@ -28,7 +28,7 @@ class GoogleSheets extends OAuthConnector {
 			scopes: 'https://www.googleapis.com/auth/spreadsheets',
 		);
 	}
-	protected function guard(){
+	protected function guard():?obj {
 		return $this->missing('client_id', 'client_secret', 'refresh_token');
 	}
 	protected function values($spreadsheetId, string $range):obj {

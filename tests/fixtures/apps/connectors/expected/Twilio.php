@@ -13,13 +13,13 @@
 // tags:     twilio sms messaging connector
 class Twilio extends Connector {
 	public const section = 'Twilio';
-	protected function base(){
+	protected function base():string {
 		return 'https://api.twilio.com/2010-04-01/Accounts/'.($this->config['account_sid'] ?? void);
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [static::basic($this->config['account_sid'] ?? void, $this->config['auth_token'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Twilio',
 			config: arr(

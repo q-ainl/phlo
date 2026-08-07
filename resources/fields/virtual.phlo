@@ -12,4 +12,4 @@
 prop create = false
 prop change = false
 
-prop objColumns => []
+prop objColumns:array => []

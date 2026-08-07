@@ -13,13 +13,13 @@
 // tags:     moneybird accounting invoices contacts connector
 class Moneybird extends Connector {
 	public const section = 'Moneybird';
-	protected function base(){
+	protected function base():string {
 		return 'https://moneybird.com/api/v2/'.($this->config['administration_id'] ?? void);
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [static::bearer($this->config['access_token'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Moneybird',
 			config: arr(administration_id: 'Administration ID'),

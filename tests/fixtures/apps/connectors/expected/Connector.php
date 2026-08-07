@@ -26,13 +26,13 @@ class Connector extends obj {
 	public static function make(?array $config = null):static {
 		return new static($config);
 	}
-	protected function base(){
+	protected function base():string {
 		return static::api;
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return [];
 	}
 	protected function configured(...$keys):bool {

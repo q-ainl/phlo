@@ -11,11 +11,11 @@
 
 const section = 'Microsoft'
 
-method base => 'https://graph.microsoft.com/v1.0'
+method base:string => 'https://graph.microsoft.com/v1.0'
 
-method headers => [static::bearer((string)$this->token)]
+method headers:array => [static::bearer((string)$this->token)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Microsoft',
 	config: arr(
 		tenant_id: 'Azure AD tenant ID',
@@ -26,9 +26,9 @@ static fields => arr(
 	scopes: 'Application permissions: User.Read.All, Calendars.ReadWrite, Mail.Send',
 )
 
-prop token => $this->fetchToken()
+prop token:string => $this->fetchToken()
 
-method fetchToken {
+method fetchToken:string {
 	$tenant = $this->config['tenant_id'] ?? void
 	$id = $this->config['client_id'] ?? void
 	$secret = $this->config['client_secret'] ?? void
@@ -46,7 +46,7 @@ method fetchToken {
 	return $token
 }
 
-method mailbox($user = null) => $user ?? ($this->config['mailbox'] ?? void)
+method mailbox($user = null):string => $user ?? ($this->config['mailbox'] ?? void)
 
 method users(array $query = []):obj {
 	if ($m = $this->missing('tenant_id', 'client_id', 'client_secret')) return $m

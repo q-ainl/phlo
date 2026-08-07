@@ -13,13 +13,13 @@
 // tags:     resend email transactional messaging connector
 class Resend extends Connector {
 	public const section = 'Resend';
-	protected function base(){
+	protected function base():string {
 		return 'https://api.resend.com';
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [static::bearer($this->config['api_key'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Resend',
 			config: arr(from_email: 'Default sender, e.g. "App <noreply@yourdomain.com>"'),

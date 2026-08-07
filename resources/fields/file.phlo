@@ -16,8 +16,8 @@ prop uri = '/files/'
 prop length = 100
 prop accept = null
 
-method label($record) => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.$record->{$this->name.'_token'}.slash.rawurlencode($filename), target: 'file', inner: tag('i', class: 'icon '.pathinfo($filename, PATHINFO_EXTENSION), inner: void).esc($filename)) : dash
-method input($record){
+method label($record):string => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.$record->{$this->name.'_token'}.slash.rawurlencode($filename), target: 'file', inner: tag('i', class: 'icon '.pathinfo($filename, PATHINFO_EXTENSION), inner: void).esc($filename)) : dash
+method input($record):string {
 	$input = void
 	$file = ($filename = $record->{$this->name}) ? $this->read($record) : null
 	$input .= lf.tab.tag('div', class: 'file', inner: $file ? tag('i', class: "icon $file->ext", inner: void).esc($filename) : '-select-')
@@ -26,7 +26,7 @@ method input($record){
 	return $input.lf
 }
 
-method parse($record){
+method parse($record):void {
 	$file = %payload->{$this->name};
 	if ($delete = %payload->{$this->name.'Delete'}) unset(%payload->{$this->name.'Delete'})
 	if ($record->{$this->name} && $delete && $this->canDelete) $record->{$this->name} = $record->{$this->name.'_token'} = null
@@ -38,21 +38,21 @@ method parse($record){
 	}
 }
 
-method read($record, $path = null){
+method read($record, $path = null):file {
 	$filename = $record->{$this->name};
 	$token = $record->{$this->name.'_token'};
 	return %file(($path ?? $this->path).($info = substr($token, 0, 2).slash.substr($token, 2).dot.pathinfo($filename, PATHINFO_EXTENSION)), name: $filename, info: $info)
 }
 
 method write($file) => file_exists($dest = $this->writePath($file)) || $file->move($dest) || error("Couldn't write: $dest")
-method writePath($file, $path = null){
+method writePath($file, $path = null):string {
 	$token = $file->token
 	$path = ($path ?? $this->path).substr($token, 0, 2)
 	is_dir($path) || mkdir($path) || error("Couldn't create: $path")
 	return $path.slash.substr($token, 2).dot.$file->ext
 }
 
-prop objColumns => [$this->name, $this->name.'_token']
+prop objColumns:array => [$this->name, $this->name.'_token']
 
 <script>
 on('click', '.input.file .file', file => file.nextElementSibling.click())

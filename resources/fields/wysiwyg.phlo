@@ -9,7 +9,7 @@
 @ backend:  true
 @ tags:     field wysiwyg editor
 
-method input($record){
+method input($record):string {
 	$value = $record->{$this->name} ?? $this->default ?? void
 	$toolbar = tag('div', class: 'toolbar', inner: tag('button', type: 'button', data_command: 'bold', inner: '<b>B</b>').tag('button', type: 'button', data_command: 'italic', inner: '<i>I</i>').tag('button', type: 'button', data_command: 'underline', inner: '<u>U</u>').tag('button', type: 'button', data_command: 'insertUnorderedList', inner: '•').tag('button', type: 'button', data_command: 'insertOrderedList', inner: '1.'))
 	$editor = tag('div', class: 'editor', contenteditable: 'true', inner: $value)
@@ -17,7 +17,7 @@ method input($record){
 	return tag('div', class: 'wysiwyg-container', inner: "$toolbar$editor$hiddenInput")
 }
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]
 
 <script>
 on('click', '.wysiwyg-container .toolbar button', (button, e) => {

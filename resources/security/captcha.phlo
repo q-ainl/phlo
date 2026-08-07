@@ -14,14 +14,14 @@ static P = 56
 static tol = 8
 static ttl = 600
 
-static issue(){
+static issue():array {
 	$gapX = random_int(static::$P + 14, static::$W - static::$P - 6)
 	$gapY = random_int(12, static::$H - static::$P - 12)
 	%session->captcha = arr(gap: $gapX, exp: time() + static::$ttl)
 	return arr(gapX: $gapX, gapY: $gapY)
 }
 
-static images($gapX, $gapY){
+static images($gapX, $gapY):array {
 	$w = static::$W
 	$h = static::$H
 	$p = static::$P
@@ -52,7 +52,7 @@ static images($gapX, $gapY){
 	return arr(bg: 'data:image/png;base64,'.$bgData, piece: 'data:image/png;base64,'.$pieceData)
 }
 
-static verify($x, $telemetry){
+static verify($x, $telemetry):bool {
 	$c = %session->captcha ?? null
 	if (!$c || time() > (int)($c['exp'] ?? 0)) return false
 	if (abs((int)round((float)$x) - (int)($c['gap'] ?? -999)) > static::$tol) return false
@@ -73,11 +73,11 @@ static verify($x, $telemetry){
 	return true
 }
 
-static consume(){
+static consume():void {
 	unset(%session->captcha)
 }
 
-method widget {
+method widget:string {
 	$ch = static::issue()
 	$img = static::images($ch['gapX'], $ch['gapY'])
 	return (string)$this->field($img['bg'], $img['piece'], $ch['gapY'], static::$W, static::$H, static::$P)

@@ -11,11 +11,11 @@
 
 const section = 'Moneybird'
 
-method base => 'https://moneybird.com/api/v2/'.($this->config['administration_id'] ?? void)
+method base:string => 'https://moneybird.com/api/v2/'.($this->config['administration_id'] ?? void)
 
-method headers => [static::bearer($this->config['access_token'] ?? void)]
+method headers:array => [static::bearer($this->config['access_token'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Moneybird',
 	config: arr(administration_id: 'Administration ID'),
 	secret: arr(access_token: 'Personal access token with read/write for contacts and invoices'),

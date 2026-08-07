@@ -28,7 +28,7 @@ prop creator = 'Phlo '.phlo.' (https://phlo.tech/)'
 prop filename = 'Download.pdf'
 prop mode = 'D'
 
-method fromHTML($HTML){
+method fromHTML($HTML):string {
 	$mpdf = new \Mpdf\Mpdf
 	$this->title && $mpdf->SetTitle($this->title)
 	$this->author && $mpdf->SetAuthor($this->author)

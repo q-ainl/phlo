@@ -8,9 +8,9 @@
 @ requires: HTTP
 @ tags:     oauth oauth2 token authorization refresh authentication
 
-static authorizeUrl($endpoint, array $params) => $endpoint.(str_contains($endpoint, '?') ? '&' : '?').http_build_query($params)
+static authorizeUrl($endpoint, array $params):string => $endpoint.(str_contains($endpoint, '?') ? '&' : '?').http_build_query($params)
 
-static token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = []){
+static token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = []):array {
 	$body = ['grant_type' => $grantType, 'client_id' => (string)$clientId, 'client_secret' => (string)$clientSecret]
 	foreach ($extra AS $key => $value){
 		if ($value !== null && $value !== void) $body[$key] = $value
@@ -24,6 +24,6 @@ static token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = [])
 	return json_decode((string)$res, true) ?: ['error' => 'Invalid token response']
 }
 
-static exchangeCode($tokenUrl, $clientId, $clientSecret, $code, $redirectUri = null, array $extra = []) => static::token($tokenUrl, $clientId, $clientSecret, 'authorization_code', ['code' => $code, 'redirect_uri' => $redirectUri] + $extra)
+static exchangeCode($tokenUrl, $clientId, $clientSecret, $code, $redirectUri = null, array $extra = []):array => static::token($tokenUrl, $clientId, $clientSecret, 'authorization_code', ['code' => $code, 'redirect_uri' => $redirectUri] + $extra)
 
-static refresh($tokenUrl, $clientId, $clientSecret, $refreshToken, array $extra = []) => static::token($tokenUrl, $clientId, $clientSecret, 'refresh_token', ['refresh_token' => $refreshToken] + $extra)
+static refresh($tokenUrl, $clientId, $clientSecret, $refreshToken, array $extra = []):array => static::token($tokenUrl, $clientId, $clientSecret, 'refresh_token', ['refresh_token' => $refreshToken] + $extra)

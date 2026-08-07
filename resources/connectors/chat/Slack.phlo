@@ -12,9 +12,9 @@
 const section = 'Slack'
 const api = 'https://slack.com/api'
 
-method headers => [static::bearer($this->config['bot_token'] ?? void)]
+method headers:array => [static::bearer($this->config['bot_token'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Slack',
 	secret: arr(
 		bot_token: 'Bot user OAuth token (xoxb-...)',

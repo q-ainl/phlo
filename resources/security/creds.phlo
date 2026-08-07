@@ -14,7 +14,7 @@ method __construct(?array $values = null){
 	}
 }
 
-method resolve {
+method resolve:array {
 	$data = []
 	$this->merge($data, $this->loadINI(data.'creds.ini'))
 	$this->merge($data, $this->envValues(false))
@@ -47,7 +47,7 @@ method envValues(bool $hostScoped = false):array {
 	return $out
 }
 
-method hostKey {
+method hostKey:string {
 	$host = strtoupper(%req->host)
 	$host = preg_replace('/[^A-Z0-9]+/', us, $host)
 	return trim($host, us)
@@ -83,4 +83,4 @@ method objGet($key){
 	if (isset($this->objData[$key]) && is_a($this->objData[$key], '\SensitiveParameterValue')) return $this->objData[$key]->getValue()
 }
 
-method objInfo => loop($this->objData, fn($value) => is_a($value, '\SensitiveParameterValue') ? str_repeat('*', strlen($value->getValue())) : $value)
+method objInfo:array => loop($this->objData, fn($value) => is_a($value, '\SensitiveParameterValue') ? str_repeat('*', strlen($value->getValue())) : $value)

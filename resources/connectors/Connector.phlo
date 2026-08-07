@@ -24,10 +24,10 @@ method __construct(?array $config = null){
 
 static make(?array $config = null):static => new static($config)
 
-method base => static::api
-method headers => []
+method base:string => static::api
+method headers:array => []
 
-static fields => []
+static fields:array => []
 
 method configured(...$keys):bool {
 	foreach ($keys AS $key){

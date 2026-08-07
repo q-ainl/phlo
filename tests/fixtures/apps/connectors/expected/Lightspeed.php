@@ -13,13 +13,13 @@
 // tags:     lightspeed webshop retail pos customers connector
 class Lightspeed extends Connector {
 	public const section = 'Lightspeed';
-	protected function base(){
+	protected function base():string {
 		return 'https://api.lightspeedapp.com/API/V3/Account/'.($this->config['cluster_id'] ?? void);
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [static::basic($this->config['api_key'] ?? void, $this->config['api_secret'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Lightspeed',
 			config: arr(

@@ -13,13 +13,13 @@ prop handle = true
 prop change => !in_array($this->name, ['created', 'changed'])
 prop create => !in_array($this->name, ['created', 'changed'])
 
-method label($record) => ($value = $record->{$this->name}) ? tag('i', class: 'icon clock-'.$this->labelIconClass(time() - $value), inner: void).tag('span', data_ts: $record->{$this->name}, inner: time_human($record->{$this->name})) : dash
-method labelIconClass($value) => $value > 86400 ? 'red' : ($value > 3600 ? 'yellow' : 'blue')
-method input($record) => input(type: 'datetime-local', name: $this->name, value: $record->{$this->name} ? date('Y-m-d\TH:i', $record->{$this->name}) : void, class: 'field')
-method parse($record){
+method label($record):string => ($value = $record->{$this->name}) ? tag('i', class: 'icon clock-'.$this->labelIconClass(time() - $value), inner: void).tag('span', data_ts: $record->{$this->name}, inner: time_human($record->{$this->name})) : dash
+method labelIconClass($value):string => $value > 86400 ? 'red' : ($value > 3600 ? 'yellow' : 'blue')
+method input($record):string => input(type: 'datetime-local', name: $this->name, value: $record->{$this->name} ? date('Y-m-d\TH:i', $record->{$this->name}) : void, class: 'field')
+method parse($record):void {
 	if ($this->name === 'created') $record->created ??= time()
 	elseif ($this->name === 'changed') $record->{$this->name} = time()
 	elseif ($payload = %payload->{$this->name}) $record->{$this->name} = strtotime($payload)
 }
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]

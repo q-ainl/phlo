@@ -11,11 +11,11 @@
 
 const section = 'Twilio'
 
-method base => 'https://api.twilio.com/2010-04-01/Accounts/'.($this->config['account_sid'] ?? void)
+method base:string => 'https://api.twilio.com/2010-04-01/Accounts/'.($this->config['account_sid'] ?? void)
 
-method headers => [static::basic($this->config['account_sid'] ?? void, $this->config['auth_token'] ?? void)]
+method headers:array => [static::basic($this->config['account_sid'] ?? void, $this->config['auth_token'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Twilio',
 	config: arr(
 		account_sid: 'Account SID (ACxxxx)',

@@ -8,18 +8,18 @@
 @ backend:  true
 @ tags:     field orm
 
-function field($type, ...$args) => phlo("field_$type", ...$args, type: $type)
+function field($type, ...$args):field => phlo("field_$type", ...$args, type: $type)
 
 static __handle => null
 
-prop title => ucfirst($this->name)
+prop title:string => ucfirst($this->name)
 
-method input($record) => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
+method input($record):string => input(type: $this->type, name: $this->name, value: $record->{$this->name} ?? $this->default, maxlength: $this->length, placeholder: $this->placeholder, class: 'field')
 method label($record) => $record->{$this->name};
 
-prop objColumns => []
+prop objColumns:array => []
 
-method objValidate($value){
+method objValidate($value):?string {
 	if (($value === null || $value === void) && $this->required) return $this->title.' is required'
 	if ($value === null || $value === void) return null
 	if ($this->length && is_string($value) && mb_strlen($value) > $this->length) return $this->title.' is too long (max '.$this->length.')'

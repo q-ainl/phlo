@@ -14,11 +14,11 @@ prop record = 'label'
 prop create = false
 prop change = false
 
-method count($record) => $record->getCount($this->name)
-method label($record) => loop($record->{$this->name}, fn($relation) => $this->link($relation), lf) ?: dash
-method link($record) => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}, class: 'async', inner: $record)
+method count($record):int => $record->getCount($this->name)
+method label($record):string => loop($record->{$this->name}, fn($relation) => $this->link($relation), lf) ?: dash
+method link($record):string => tag('a', href: slash.($record::$uriRecord ?? $record::class).slash.$record->{$record::idColumn()}, class: 'async', inner: $record)
 
-method input($record){
+method input($record):string {
 	$pk = $this->obj::idColumn()
 	$current = array_keys($record->{$this->name} ?: [])
 	$boxes = loop($this->obj::records(), fn($o) => tag('label', tag('input', type: 'checkbox', name: $this->name.'[]', value: $o->$pk, checked: in_array($o->$pk, $current) ? true : null).esc((string)$o), class: 'ms-opt'), void)
@@ -38,4 +38,4 @@ method objOwns($record, $parentId, $parentModel):bool {
 	return (bool)$parentModel::DB()->record($rel['table'], ...[$rel['localKey'] => $parentId, $rel['foreignKey'] => $record->{$record::idColumn()}])
 }
 
-prop objColumns => []
+prop objColumns:array => []

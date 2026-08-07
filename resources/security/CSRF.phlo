@@ -10,9 +10,9 @@
 @ tags:     csrf security async forms
 
 view: <meta name=csrf content="$this->token">
-prop token => %session->csrf ??= token(32)
-method verify => hash_equals($this->token, (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? void))
-method update => arr(csrf: $this->token = %session->csrf = token(32))
+prop token:string => %session->csrf ??= token(32)
+method verify:bool => hash_equals($this->token, (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? void))
+method update:array => arr(csrf: $this->token = %session->csrf = token(32))
 
 <script>
 app.mod.csrf = value => obj('meta[name="csrf"]').content = value

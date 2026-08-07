@@ -13,13 +13,13 @@
 // tags:     messagebird sms messaging connector
 class MessageBird extends Connector {
 	public const section = 'MessageBird';
-	protected function base(){
+	protected function base():string {
 		return 'https://rest.messagebird.com';
 	}
-	protected function headers(){
+	protected function headers():array {
 		return ['Authorization: AccessKey '.($this->config['access_key'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'MessageBird',
 			config: arr(originator: 'Originator (sender number or name)'),

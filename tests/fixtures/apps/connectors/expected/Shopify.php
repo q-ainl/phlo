@@ -13,13 +13,13 @@
 // tags:     shopify webshop ecommerce orders products connector
 class Shopify extends Connector {
 	public const section = 'Shopify';
-	protected function base(){
+	protected function base():string {
 		return 'https://'.($this->config['shop_domain'] ?? void).'/admin/api/'.($this->config['api_version'] ?? '2024-01');
 	}
-	protected function headers(){
+	protected function headers():array {
 		return ['X-Shopify-Access-Token: '.($this->config['access_token'] ?? void)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Shopify',
 			config: arr(

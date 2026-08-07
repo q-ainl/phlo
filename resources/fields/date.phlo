@@ -11,12 +11,12 @@
 
 prop handle = true
 prop format = null
-prop months => [
+prop months:array => [
 	'nl' => [1 => 'januari', 2 => 'februari', 3 => 'maart', 4 => 'april', 5 => 'mei', 6 => 'juni', 7 => 'juli', 8 => 'augustus', 9 => 'september', 10 => 'oktober', 11 => 'november', 12 => 'december'],
 	'en' => [1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April', 5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August', 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'],
 ]
 
-method label($record){
+method label($record):string {
 	$v = $record->{$this->name};
 	if ($v === null || $v === void) return dash
 	$ts = is_numeric($v) ? (int)$v : strtotime($v)
@@ -27,4 +27,4 @@ method label($record){
 	return date('j', $ts).space.(($this->months[$lang] ?? $this->months['en'])[(int)date('n', $ts)]).space.date('Y', $ts)
 }
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]

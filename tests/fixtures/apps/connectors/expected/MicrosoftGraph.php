@@ -13,13 +13,13 @@
 // tags:     microsoft graph office365 calendar mail connector
 class MicrosoftGraph extends Connector {
 	public const section = 'Microsoft';
-	protected function base(){
+	protected function base():string {
 		return 'https://graph.microsoft.com/v1.0';
 	}
-	protected function headers(){
+	protected function headers():array {
 		return [static::bearer((string)$this->token)];
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'Microsoft',
 			config: arr(
@@ -31,10 +31,10 @@ class MicrosoftGraph extends Connector {
 			scopes: 'Application permissions: User.Read.All, Calendars.ReadWrite, Mail.Send',
 		);
 	}
-	protected function _token(){
+	protected function _token():string {
 		return $this->fetchToken();
 	}
-	protected function fetchToken(){
+	protected function fetchToken():string {
 		$tenant = $this->config['tenant_id'] ?? void;
 		$id = $this->config['client_id'] ?? void;
 		$secret = $this->config['client_secret'] ?? void;
@@ -51,7 +51,7 @@ class MicrosoftGraph extends Connector {
 		if ($token !== void && function_exists('apcu_store')) apcu_store($key, $token, max(60, $expires - 60));
 		return $token;
 	}
-	protected function mailbox($user = null){
+	protected function mailbox($user = null):string {
 		return $user ?? ($this->config['mailbox'] ?? void);
 	}
 	protected function users(array $query = []):obj {

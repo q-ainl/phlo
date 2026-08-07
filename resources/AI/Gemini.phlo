@@ -11,7 +11,7 @@
 const model = 'gemini-2.0-flash'
 const endpoint = 'https://generativelanguage.googleapis.com/v1beta/models/'
 
-static context(...$args){
+static context(...$args):array {
 	$args['contents'] ??= []
 	if (isset($args['system'])){
 		$args['systemInstruction'] = ['parts' => [['text' => $args['system']]]]
@@ -34,7 +34,7 @@ static tool($tool):array => [
 
 method embedding($input, $model = 'text-embedding-004') => $this->request($model.':embedContent', POST: ['content' => ['parts' => [['text' => $input]]]])->embedding->values
 
-method vision($text, $image, $stream = false, ...$args){
+method vision($text, $image, $stream = false, ...$args):obj|Generator {
 	$model = $args['model'] ?? static::model
 	unset($args['model'])
 	$contents = [['role' => 'user', 'parts' => [['text' => $text], ['inline_data' => ['mime_type' => 'image/jpeg', 'data' => base64_encode(is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image)]]]]]
@@ -42,7 +42,7 @@ method vision($text, $image, $stream = false, ...$args){
 	else return $this->chat(...$args, model: $model, contents: $contents)
 }
 
-method chat(...$args){
+method chat(...$args):obj {
 	$model = $args['model'] ?? static::model
 	unset($args['model'])
 	$args = static::context(...$args)

@@ -9,6 +9,6 @@
 @ backend:  true
 @ tags:     field select
 
-method input($record) => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
+method input($record):string => select(name: $this->name, inner: loop($this->options, fn($option) => "<option".($record->{$this->name} === $option ? ' selected' : void).">$option", void))
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]

@@ -14,10 +14,10 @@
 class ExactOnline extends OAuthConnector {
 	public const section = 'ExactOnline';
 	public const tokenUrl = 'https://start.exactonline.nl/api/oauth2/token';
-	protected function base(){
+	protected function base():string {
 		return 'https://start.exactonline.nl/api/v1/'.($this->config['division'] ?? void);
 	}
-	public static function fields(){
+	public static function fields():array {
 		return arr(
 			section: 'ExactOnline',
 			config: arr(division: 'Division (administration) number'),
@@ -29,7 +29,7 @@ class ExactOnline extends OAuthConnector {
 			scopes: 'OAuth2 authorization code flow; token endpoint refreshes automatically',
 		);
 	}
-	protected function guard(){
+	protected function guard():?obj {
 		return $this->missing('division', 'client_id', 'client_secret', 'refresh_token');
 	}
 	protected function invoices(array $query = []):obj {

@@ -13,14 +13,14 @@ prop decimals = 0
 prop length = 5
 prop min = 0
 
-method label($record) => ($value = $record->{$this->name}) === null || $value === void ? dash : number_format($value, $this->decimals, comma, dot)
-method input($record) => input(type: 'number', name: $this->name, value: $record->{$this->name} ?? $this->default, step: $this->decimals ? dot.str_repeat('0', $this->decimals - 1).'1' : null, min: $this->min, class: 'field')
+method label($record):string => ($value = $record->{$this->name}) === null || $value === void ? dash : number_format($value, $this->decimals, comma, dot)
+method input($record):string => input(type: 'number', name: $this->name, value: $record->{$this->name} ?? $this->default, step: $this->decimals ? dot.str_repeat('0', $this->decimals - 1).'1' : null, min: $this->min, class: 'field')
 
-method parse($record){
+method parse($record):void {
 	$name = $this->name
 	if (!%payload->hasData($name)) return
 	$value = %payload->$name
 	$record->$name = ($value === null || (is_string($value) && trim($value) === void)) ? ($this->default ?? 0) : $value
 }
 
-prop objColumns => [$this->name]
+prop objColumns:array => [$this->name]

@@ -11,11 +11,11 @@
 
 const section = 'Lightspeed'
 
-method base => 'https://api.lightspeedapp.com/API/V3/Account/'.($this->config['cluster_id'] ?? void)
+method base:string => 'https://api.lightspeedapp.com/API/V3/Account/'.($this->config['cluster_id'] ?? void)
 
-method headers => [static::basic($this->config['api_key'] ?? void, $this->config['api_secret'] ?? void)]
+method headers:array => [static::basic($this->config['api_key'] ?? void, $this->config['api_secret'] ?? void)]
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Lightspeed',
 	config: arr(
 		cluster_id: 'Account / cluster ID',

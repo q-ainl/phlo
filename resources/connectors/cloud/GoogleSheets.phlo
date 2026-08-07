@@ -12,9 +12,9 @@
 const section = 'Google'
 const tokenUrl = 'https://oauth2.googleapis.com/token'
 
-method base => 'https://sheets.googleapis.com/v4/spreadsheets'
+method base:string => 'https://sheets.googleapis.com/v4/spreadsheets'
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Google',
 	secret: arr(
 		client_id: 'OAuth client ID',
@@ -24,7 +24,7 @@ static fields => arr(
 	scopes: 'https://www.googleapis.com/auth/spreadsheets',
 )
 
-method guard => $this->missing('client_id', 'client_secret', 'refresh_token')
+method guard:?obj => $this->missing('client_id', 'client_secret', 'refresh_token')
 
 method values($spreadsheetId, string $range):obj {
 	if ($m = $this->guard) return $m

@@ -12,11 +12,11 @@
 const section = 'EBoekhouden'
 const api = 'https://api.e-boekhouden.nl/v1'
 
-prop sessionToken = void
+prop sessionToken:string = void
 
-method headers => $this->sessionToken !== void ? ['Authorization: '.$this->sessionToken] : []
+method headers:array => $this->sessionToken !== void ? ['Authorization: '.$this->sessionToken] : []
 
-static fields => arr(
+static fields:array => arr(
 	section: 'EBoekhouden',
 	config: arr(source: 'Source label shown in the e-Boekhouden audit trail (optional)'),
 	secret: arr(api_token: 'API token (Beheer > Instellingen > API)'),

@@ -8,7 +8,7 @@
 @ requires: OAuth2 creds payload HTTP php-ext:openssl
 @ tags:     oauth oidc social login google microsoft apple authentication
 
-static providers => arr(
+static providers:array => arr(
 	google: arr(
 		label: 'Google',
 		authorize: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -35,7 +35,7 @@ static providers => arr(
 	),
 )
 
-static config($provider){
+static config($provider):?array {
 	$p = static::providers()[$provider] ?? null
 	if (!$p) return null
 	$section = %creds->{$provider} ?? null
@@ -47,12 +47,12 @@ static config($provider){
 	)
 }
 
-static configured($provider){
+static configured($provider):bool {
 	$c = static::config($provider)
 	return $c && $c['client_id'] !== void
 }
 
-static authUrl($provider, $state, $nonce = void){
+static authUrl($provider, $state, $nonce = void):string {
 	$c = static::config($provider)
 	$params = arr(
 		client_id: $c['client_id'],
@@ -83,16 +83,16 @@ static profile($provider, $code, $nonce = void){
 	return $profile
 }
 
-static decodeIdToken($jwt){
+static decodeIdToken($jwt):?array {
 	$parts = explode(dot, (string)$jwt)
 	if (count($parts) < 2) return null
 	$claims = json_decode(static::b64urlDecode($parts[1]), true)
 	return is_array($claims) ? $claims : null
 }
 
-static algs => arr(RS256: OPENSSL_ALGO_SHA256)
+static algs:array => arr(RS256: OPENSSL_ALGO_SHA256)
 
-static verifySignature($provider, $jwt){
+static verifySignature($provider, $jwt):bool {
 	$parts = explode(dot, (string)$jwt)
 	if (count($parts) !== 3) return false
 	$header = json_decode(static::b64urlDecode($parts[0]), true)
@@ -105,7 +105,7 @@ static verifySignature($provider, $jwt){
 	return openssl_verify($parts[0].dot.$parts[1], static::b64urlDecode($parts[2]), $pem, $alg) === 1
 }
 
-static jwks($provider){
+static jwks($provider):array {
 	$cached = %req->socialJwks ?? []
 	if (isset($cached[$provider])) return $cached[$provider]
 	$url = (string)(static::providers()[$provider]['jwks'] ?? void)
@@ -119,14 +119,14 @@ static jwks($provider){
 	return $keys
 }
 
-static key($provider, $kid){
+static key($provider, $kid):string {
 	foreach (static::jwks($provider) AS $jwk){
 		if ((string)($jwk['kid'] ?? void) === $kid) return static::jwkToPem((array)$jwk)
 	}
 	return void
 }
 
-static jwkToPem(array $jwk){
+static jwkToPem(array $jwk):string {
 	if ((string)($jwk['kty'] ?? void) !== 'RSA') return void
 	$n = static::b64urlDecode((string)($jwk['n'] ?? void))
 	$e = static::b64urlDecode((string)($jwk['e'] ?? void))
@@ -138,28 +138,28 @@ static jwkToPem(array $jwk){
 	return '-----BEGIN PUBLIC KEY-----'.lf.chunk_split(base64_encode($spki), 64, lf).'-----END PUBLIC KEY-----'.lf
 }
 
-static der($tag, $content){
+static der($tag, $content):string {
 	$len = strlen($content)
 	if ($len < 0x80) return chr($tag).chr($len).$content
 	$bytes = ltrim(pack('N', $len), "\x00")
 	return chr($tag).chr(0x80 | strlen($bytes)).$bytes.$content
 }
 
-static derInt($bytes){
+static derInt($bytes):string {
 	$bytes = ltrim((string)$bytes, "\x00")
 	if ($bytes === void) $bytes = "\x00"
 	if (ord($bytes[0]) & 0x80) $bytes = "\x00".$bytes
 	return static::der(0x02, $bytes)
 }
 
-static b64urlDecode($data){
+static b64urlDecode($data):string {
 	$data = strtr((string)$data, '-_', '+/')
 	$pad = strlen($data) % 4
 	if ($pad) $data .= str_repeat(eq, 4 - $pad)
 	return (string)base64_decode($data)
 }
 
-static verifyClaims($provider, array $cfg, array $claims, $nonce = void){
+static verifyClaims($provider, array $cfg, array $claims, $nonce = void):bool {
 	if ((int)($claims['exp'] ?? 0) <= time()) return false
 	$aud = $claims['aud'] ?? void
 	if (!in_array((string)($cfg['client_id'] ?? void), array_map('strval', is_array($aud) ? $aud : [$aud]), true)) return false
@@ -167,7 +167,7 @@ static verifyClaims($provider, array $cfg, array $claims, $nonce = void){
 	return static::verifyIssuer($provider, $claims)
 }
 
-static verifyIssuer($provider, array $claims){
+static verifyIssuer($provider, array $claims):bool {
 	$iss = (string)($claims['iss'] ?? void)
 	if ($provider === 'microsoft'){
 		$tid = (string)($claims['tid'] ?? void)
@@ -178,7 +178,7 @@ static verifyIssuer($provider, array $claims){
 	return $iss === $expected || ($provider === 'google' && $iss === 'accounts.google.com')
 }
 
-static normalize($provider, array $claims){
+static normalize($provider, array $claims):array {
 	$ev = $claims['email_verified'] ?? null
 	$verified = $ev === true || $ev === 'true'
 	if ($provider === 'microsoft'){
@@ -196,7 +196,7 @@ static normalize($provider, array $claims){
 	)
 }
 
-static b64url($data) => rtrim(strtr(base64_encode((string)$data), '+/', '-_'), eq)
+static b64url($data):string => rtrim(strtr(base64_encode((string)$data), '+/', '-_'), eq)
 
 static appleSecret {
 	$section = %creds->apple ?? null
@@ -216,7 +216,7 @@ static appleSecret {
 	return $input.dot.static::b64url(static::derToJose($der))
 }
 
-static derToJose($der){
+static derToJose($der):string {
 	$rlen = ord($der[3])
 	$r = substr((string)$der, 4, $rlen)
 	$slen = ord($der[4 + $rlen + 1])
@@ -224,7 +224,7 @@ static derToJose($der){
 	return static::pad32($r).static::pad32($s)
 }
 
-static pad32($x){
+static pad32($x):string {
 	$x = ltrim((string)$x, "\x00")
 	return str_pad($x, 32, "\x00", STR_PAD_LEFT)
 }

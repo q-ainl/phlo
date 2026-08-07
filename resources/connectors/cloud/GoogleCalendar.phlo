@@ -12,9 +12,9 @@
 const section = 'Google'
 const tokenUrl = 'https://oauth2.googleapis.com/token'
 
-method base => 'https://www.googleapis.com/calendar/v3'
+method base:string => 'https://www.googleapis.com/calendar/v3'
 
-static fields => arr(
+static fields:array => arr(
 	section: 'Google',
 	secret: arr(
 		client_id: 'OAuth client ID',
@@ -24,7 +24,7 @@ static fields => arr(
 	scopes: 'https://www.googleapis.com/auth/calendar, https://www.googleapis.com/auth/spreadsheets',
 )
 
-method guard => $this->missing('client_id', 'client_secret', 'refresh_token')
+method guard:?obj => $this->missing('client_id', 'client_secret', 'refresh_token')
 
 method events(string $calendarId = 'primary', array $query = []):obj {
 	if ($m = $this->guard) return $m

@@ -11,10 +11,10 @@
 // requires: HTTP
 // tags:     oauth oauth2 token authorization refresh authentication
 class OAuth2 extends obj {
-	public static function authorizeUrl($endpoint, array $params){
+	public static function authorizeUrl($endpoint, array $params):string {
 		return $endpoint.(str_contains($endpoint, '?') ? '&' : '?').http_build_query($params);
 	}
-	public static function token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = []){
+	public static function token($tokenUrl, $clientId, $clientSecret, $grantType, array $extra = []):array {
 		$body = ['grant_type' => $grantType, 'client_id' => (string)$clientId, 'client_secret' => (string)$clientSecret];
 		foreach ($extra AS $key => $value){
 			if ($value !== null && $value !== void) $body[$key] = $value;
@@ -27,10 +27,10 @@ class OAuth2 extends obj {
 		}
 		return json_decode((string)$res, true) ?: ['error' => 'Invalid token response'];
 	}
-	public static function exchangeCode($tokenUrl, $clientId, $clientSecret, $code, $redirectUri = null, array $extra = []){
+	public static function exchangeCode($tokenUrl, $clientId, $clientSecret, $code, $redirectUri = null, array $extra = []):array {
 		return static::token($tokenUrl, $clientId, $clientSecret, 'authorization_code', ['code' => $code, 'redirect_uri' => $redirectUri] + $extra);
 	}
-	public static function refresh($tokenUrl, $clientId, $clientSecret, $refreshToken, array $extra = []){
+	public static function refresh($tokenUrl, $clientId, $clientSecret, $refreshToken, array $extra = []):array {
 		return static::token($tokenUrl, $clientId, $clientSecret, 'refresh_token', ['refresh_token' => $refreshToken] + $extra);
 	}
 }

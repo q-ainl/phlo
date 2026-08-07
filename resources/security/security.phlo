@@ -8,17 +8,17 @@
 @ requires: @session token
 @ tags:     security csp nonce headers
 
-prop whitelist = []
-prop sources = []
+prop whitelist:array = []
+prop sources:array = []
 
-method setNonce => %app->nonce = token(8)
+method setNonce:string => %app->nonce = token(8)
 
 method frameProtect($mode = 'DENY') => %res->header('X-Frame-Options', $mode)
-method frameWhitelist => $this->whitelist ? ' '.implode(space, array_map(fn($d) => "https://*.$d", (array)$this->whitelist)) : void
+method frameWhitelist:string => $this->whitelist ? ' '.implode(space, array_map(fn($d) => "https://*.$d", (array)$this->whitelist)) : void
 // Extra origins the app loads content from (images, media, fetch), e.g. a CDN; full origins, applied verbatim.
-method sourceList => $this->sources ? ' '.implode(space, (array)$this->sources) : void
+method sourceList:string => $this->sources ? ' '.implode(space, (array)$this->sources) : void
 
-method strict {
+method strict:void {
 	$this->base
 	if (%req->async) return
 	%res->header('Cache-Control', 'no-store')
@@ -27,24 +27,24 @@ method strict {
 }
 // Under debug, basic/marketing relax script-src to 'unsafe-inline' so the inline debug console runs.
 // Whether debug is on in production is the app's own responsibility, so this is tied to debug by design.
-method basic {
+method basic:void {
 	$this->base
 	if (%req->async) return
 	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data:$this->sourceList; media-src 'self' blob:$this->sourceList; font-src 'self'; connect-src 'self'$this->sourceList; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
-method marketing {
+method marketing:void {
 	$this->base
 	if (%req->async) return
 	%res->header('Content-Security-Policy', "default-src 'self'; script-src 'self'".(debug ? " 'unsafe-inline'" : void)."; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob:$this->sourceList; font-src 'self'; connect-src 'self'$this->sourceList; form-action 'self'; object-src 'none'; frame-src 'self'$this->frameWhitelist; frame-ancestors 'none'; base-uri 'self'")
 }
-method api {
+method api:void {
 	%res->api = true
 	%res->header('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'")
 	%res->header('X-Content-Type-Options', 'nosniff')
 	%res->header('Referrer-Policy', 'no-referrer')
 }
 
-method base {
+method base:void {
 	%res->header('Referrer-Policy', 'strict-origin-when-cross-origin')
 	%res->header('X-Content-Type-Options', 'nosniff')
 	%req->async || %res->header('Cross-Origin-Opener-Policy', 'same-origin')
