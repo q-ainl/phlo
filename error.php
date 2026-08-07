@@ -104,12 +104,7 @@ function phlo_error_log(string $id, string $path, string $msg):int|false {
 
 function phlo_error_sourcemap(string $phpFile, int $phpLine):?array {
 	if (!is_file($mapFile = php.'sourcemap.php')) return null;
-	static $map = null, $mtime = null;
-	$time = filemtime($mapFile);
-	if ($map === null || $mtime !== $time){
-		$map   = require $mapFile;
-		$mtime = $time;
-	}
+	$map = require $mapFile;
 	if (!isset($map[$phpFile])) return null;
 	$entry = $map[$phpFile];
 	$source = $entry['source'] ?? null;
