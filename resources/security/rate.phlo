@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Rate-limit (fixed window) on the rate_limit table. Schema: resources/security/rate.sql
-@ advice:   A fixed window, counted in one atomic statement, so two requests arriving together cannot both slip past the limit. Storage db survives a restart and is shared across machines; apcu is faster but lives per process, so a pool of workers each keeps their own count. Because the window is fixed rather than sliding, a caller can spend a full limit at the end of one window and again at the start of the next.
+@ advice:   A fixed window, counted in one atomic statement, so two requests arriving together cannot both slip past the limit. Storage db survives a restart and is shared across machines; apcu is faster but lives in one server's shared memory, so it is gone after a restart and says nothing about a second machine. Because the window is fixed rather than sliding, a caller can spend a full limit at the end of one window and again at the start of the next.
 @ package:  security
 @ frontend: false
 @ backend:  true
@@ -12,8 +12,8 @@ static check($key, $limit, $windowSeconds, $storage = 'db'):bool {
 	if ($storage === 'apcu') return static::checkApcu($key, $limit, $windowSeconds)
 	$now = time()
 	// One atomic upsert: increment within the window or reset to a new one, and carry the
-	// resulting per-request count out via LAST_INSERT_ID so the check needs no separate
-	// read-then-write (which let parallel requests both pass the limit).
+	// resulting per-request count out via LAST_INSERT_ID. A separate read-then-write would
+	// let two requests arriving together both pass the limit.
 	%MySQL->query('INSERT INTO rate_limit (rkey, count, window_start) VALUES (?, LAST_INSERT_ID(1), ?) ON DUPLICATE KEY UPDATE count = LAST_INSERT_ID(IF(? - window_start < ?, count + 1, 1)), window_start = IF(? - window_start < ?, window_start, ?)', $key, $now, $now, $windowSeconds, $now, $windowSeconds, $now)
 	return (int)%MySQL->query('SELECT LAST_INSERT_ID()')->fetchColumn() <= $limit
 }

@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  ffmpeg-wasm for the DOM: encode a canvas timeline to MP4, decode source frames via WebCodecs (seek fallback), transcode/run arbitrary ffmpeg. Exposes the ready singleton `ffmpeg` (and class `Ffmpeg`).
-@ advice:   Encodes and converts video in the browser through ffmpeg-wasm, so no file has to leave the machine and no server has to be equipped for it. That comes at a price: several megabytes of wasm on first use, and encoding costs real time and memory, so it fits a clip rather than an hour of video. It needs cross-origin isolation for its threads, which the headers have to allow.
+@ advice:   Encodes and converts video in the browser through ffmpeg-wasm, so no file has to leave the machine and no server has to be equipped for it. That comes at a price: several megabytes of wasm on first use, and encoding costs real time and memory, so it fits a clip rather than an hour of video. It loads the multithreaded core only on a cross-origin isolated page and falls back to a single-threaded one otherwise, which still works but is markedly slower.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -29,7 +29,6 @@ class Ffmpeg {
 		this.demuxVal = null
 	}
 
-	// self-contained script loader (works in runtime-less ns bundles too)
 	loadScript(src){
 		if (this.scripts[src]) return this.scripts[src]
 		this.scripts[src] = new Promise((resolve, reject) => {
@@ -47,18 +46,12 @@ class Ffmpeg {
 		return this.scripts[src]
 	}
 
-	// Frame source: WebCodecs (MP4Box demux + VideoDecoder) with a seek fallback.
-	// src is a File or a URL string; getFrame(t) returns a drawable (VideoFrame or
-	// <video>). Falls back to seek for non-MP4 containers or unsupported codecs.
-	// The demux is cached in one slot so a multithreaded->single-threaded retry
-	// does not re-read or re-demux the same source.
 	async frameSource(src, opts = {}){
 		const from = opts.from || 0
 		const to = opts.to || 0
 		const mp4boxURL = opts.mp4boxURL || this.mp4boxURL
 		const log = opts.log || this.log
 		const isFile = (typeof File !== 'undefined') && src instanceof File
-		// only materialise an object URL when the seek fallback actually needs one
 		const seek = () => this.seekSource(isFile ? URL.createObjectURL(src) : src, isFile)
 		if (!('VideoDecoder' in window)) return seek()
 		let wc = null
@@ -79,7 +72,6 @@ class Ffmpeg {
 				return seek()
 			}
 			log('[ffmpeg] WebCodecs ' + demuxed.config.codec + ', ' + demuxed.samples.length + ' frames, ' + Math.round(size / 1048576) + ' MiB streamed')
-			// probe one frame so a decoder that configures but never decodes falls back to seek
 			const build = async acceleration => {
 				const config = acceleration ? Object.assign({}, demuxed.config, {hardwareAcceleration: acceleration}) : demuxed.config
 				const source = this.webCodecsSource(src, size, config, demuxed.samples, from, to)
@@ -250,7 +242,6 @@ class Ffmpeg {
 			mode: 'webcodecs',
 			async getFrame(t){
 				const tM = Math.round(t * 1e6)
-				// a stuck decoder must not hang the render forever; fail cleanly instead
 				await Promise.race([pump(tM), new Promise((res, rej) => setTimeout(() => rej(new Error('WebCodecs decode timeout')), 20000))])
 				if (error) throw error
 				let idx = 0
@@ -317,9 +308,6 @@ class Ffmpeg {
 		}
 	}
 
-	// Core: ffmpeg-wasm load (multithreaded core with single-threaded fallback),
-	// watched exec and a fallback wrapper. `log` is passed per call (this.log is
-	// only the default) so concurrent operations do not fight over one logger.
 	drop(){
 		if (!this.ffmpeg) return
 		try {
@@ -367,7 +355,6 @@ class Ffmpeg {
 		}
 	}
 
-	// run fn; if the multithreaded core stalls, retry once single-threaded
 	async withFallback(fn, onProgress, log){
 		log = log || this.log
 		try {
@@ -383,9 +370,6 @@ class Ffmpeg {
 		}
 	}
 
-	// High level.
-	// generic ffmpeg run: writes `input` (Blob | Uint8Array | url) as inputName,
-	// runs args, reads `output` -> Blob. `args` should reference inputName/output.
 	async run(opts){
 		const log = opts.log || this.log
 		return this.withFallback(async () => {
@@ -413,7 +397,6 @@ class Ffmpeg {
 		}, opts.onProgress, log)
 	}
 
-	// transcode a Blob/Uint8Array/url (e.g. a MediaRecorder webm) to mp4 (default)
 	async transcode(input, opts = {}){
 		const to = opts.to || 'mp4'
 		const inName = 'tc-in'
@@ -425,7 +408,6 @@ class Ffmpeg {
 		return this.run({input, inputName: inName, output: outName, args, type: opts.type || 'video/' + to, log: opts.log, onProgress: opts.onProgress})
 	}
 
-	// encode a drawn canvas timeline to an MP4 Blob (WebCodecs encoder, ffmpeg fallback)
 	async encode(opts){
 		this.demuxKey = null
 		this.demuxVal = null

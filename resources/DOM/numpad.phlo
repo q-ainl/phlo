@@ -29,8 +29,6 @@ phlo.numpad = {
 		fresh: el.dataset.numpadFresh !== undefined,
 		max: parseInt(el.dataset.numpadMax) || 0,
 	}),
-	// The field a pad writes to: the given selector, otherwise the first field of the form
-	// the pad itself sits in.
 	target: el => obj(el.dataset.numpad) || el.closest('form')?.querySelector('input, textarea') || null,
 	keys(options){
 		const key = (value, label, cls) => `<button class="numpad__key${cls ? ' ' + cls : ''}" type="button" data-numpad-key="${value}">${label ?? value}</button>`
@@ -41,17 +39,12 @@ phlo.numpad = {
 		options.keys.forEach(name => html += key(name, phlo.numpad.labels[name] ?? name, 'numpad__key--' + name))
 		return html
 	},
-	// Keys already in the markup are left alone; a pad that needs its own order or extra
-	// buttons writes them itself and only borrows the behaviour. An empty container is
-	// filled with the standard set.
 	build(el){
 		if (el.dataset.numpadReady) return
 		el.dataset.numpadReady = '1'
 		el.classList.add('numpad')
 		if (!el.querySelector('[data-numpad-key]')) app.mod.inner(el, phlo.numpad.keys(phlo.numpad.options(el)))
 	},
-	// Every change goes through the field itself and fires input, so validation, mirrors and
-	// bindings see it like a keystroke.
 	write(target, value){
 		target.value = value
 		target.dispatchEvent(new Event('input', {bubbles: true}))
@@ -89,7 +82,6 @@ on('click', 'body', (body, e) => {
 	target?.focus({preventScroll: true})
 })
 
-// Touching the field by hand starts the fresh cycle over: the next key clears again.
 on('focusin', 'body', (body, e) => {
 	if (e.relatedTarget?.closest?.('[data-numpad-key]')) return
 	if (e.target.dataset?.numpadTyped) delete e.target.dataset.numpadTyped

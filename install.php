@@ -213,9 +213,26 @@ main.wrap {
 </style>
 ");
 
+$controlUser = 'phlo';
+$controlPass = substr(str_replace(['+', '/', '='], '', base64_encode(random_bytes(18))), 0, 20);
+
+file_put_contents("$target/data/auth.ini", "; Credentials for the gates in front of this app, and nothing else.
+; Service keys belong in data/creds.ini, so a rotated password never touches them.
+; [control] guards the Phlo Control Center on /phlo while the app runs with build and debug.
+; [site] is read when the entry sets auth: true. Your own gate reads its own section
+; through phlo_auth('name').
+
+[control]
+user     = $controlUser
+password = $controlPass
+");
+chmod("$target/data/auth.ini", 0600);
+
 file_put_contents("$target/.gitignore", "php/
 www/app.css
 www/app.js
+data/auth.ini
+data/creds.ini
 data/errors.json
 data/trace/
 ");
@@ -231,6 +248,7 @@ fwrite(STDOUT, "  - Serve $target/www/ for host $host (FrankenPHP/Caddy), e.g.:\
 fwrite(STDOUT, "      $host {\n          root * $target/www\n          @notStatic not file\n          rewrite @notStatic /app.php\n          php_server\n      }\n");
 fwrite(STDOUT, "  - Quick check without a server: php $target/www/app.php reflect::context\n");
 fwrite(STDOUT, "  - App notes for agents live in data/app.md\n");
+fwrite(STDOUT, "  - Control Center on /phlo: $controlUser / $controlPass (data/auth.ini, gitignored)\n");
 
 if ($self !== "$engine/install.php" && @unlink($self)) fwrite(STDOUT, "\ninstall.php removed itself.\n");
 fwrite(STDOUT, "\nDone.\n");

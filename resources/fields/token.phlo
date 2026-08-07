@@ -3,7 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Token field
-@ advice:   Fills itself with a random token when a record is made and refuses to change afterwards, which makes it the id to use for anything that ends up in a URL. It handles, so a record can be looked up by it.
+@ advice:   Fills itself with a random token when a record is made and refuses to change afterwards, which makes it the id to use for anything that ends up in a URL. handle is true, so a record can be looked up by this column instead of by its id.
 @ package:  fields
 @ frontend: false
 @ backend:  true

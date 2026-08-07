@@ -251,3 +251,34 @@ function location(?string $url = null, ?int $code = null):string|bool {
 	$res->render($code ?? 302);
 	return true;
 }
+
+function phlo_auth(string $name, ?string $realm = null):bool {
+	static $cache = null, $mtime = null;
+	$file = defined('data') ? data.'auth.ini' : null;
+	if ($file && is_file($file)){
+		$time = filemtime($file);
+		if ($cache === null || $mtime !== $time){
+			$ini   = parse_ini_file($file, true, INI_SCANNER_RAW);
+			$cache = is_array($ini) ? $ini : [];
+			$mtime = $time;
+		}
+	}
+	else $cache ??= [];
+	$section = is_array($cache[$name] ?? null) ? $cache[$name] : [];
+	$user    = $section['user']     ?? void;
+	$pass    = $section['password'] ?? void;
+	$ok = $user !== void && $pass !== void && isset($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) && $_SERVER['PHP_AUTH_USER'] === $user && $_SERVER['PHP_AUTH_PW'] === $pass;
+	if ($ok || $realm === null) return $ok;
+	$res = phlo('res');
+	if (!$section){
+		$res->type = 'text/plain; charset=UTF-8';
+		$res->body = 'Missing auth config section ['.$name.'] in data/auth.ini';
+		$res->render(500);
+		return false;
+	}
+	$res->header('WWW-Authenticate', 'Basic realm="'.strtr($realm, ['"' => '']).'"');
+	$res->type = 'text/plain; charset=UTF-8';
+	$res->body = '401 Unauthorized';
+	$res->render(401);
+	return false;
+}

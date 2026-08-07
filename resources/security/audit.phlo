@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Audit log for model mutations (opt-in via static idColumn/objAudit). Schema: resources/security/audit.sql
-@ advice:   Off unless a model sets objAudit, and then every create, change and delete is written with the difference between before and after. Pass exclude for columns you would rather not keep, a password hash or a token; the log outlives the record, so what goes in is a decision, not a detail. purge() is there because a log nobody prunes eventually costs more than the table it watches.
+@ advice:   Off unless a model sets objAudit, and then every create, change and delete is written: an update as the difference between before and after, a create as the new row, a delete as the row that went. Pass exclude for columns you would rather not keep, a password hash or a token; the log outlives the record, so what goes in is a decision, not a detail. purge() is there because a log nobody prunes eventually costs more than the table it watches.
 @ package:  security
 @ frontend: false
 @ backend:  true

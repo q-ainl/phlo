@@ -4,7 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Credentials resolver from env and ini sources
-// advice:   One place for every secret, filled from data/creds.ini and from the environment, where PHLO__Section__key sets a value and PHLO_HOST__Section__key overrides it for one host. Values are wrapped so a var_dump or an error page shows stars instead of the secret. Keep the ini file out of the repository and let the environment win on a server.
+// advice:   One place for every secret, filled from data/creds.ini and from the environment, where PHLO__Section__key sets a value and PHLO_<HOST>__Section__key overrides it for one host, with <HOST> the request host uppercased and every other character an underscore. Values are wrapped so a var_dump or an error page shows stars instead of the secret. Keep the ini file out of the repository and let the environment win on a server.
 // package:  security
 // frontend: false
 // backend:  true

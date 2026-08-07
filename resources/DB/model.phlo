@@ -119,7 +119,6 @@ method objSave:?static {
 	$pk = static::idColumn()
 	$pkValue = $this->$pk ?? $this->id ?? null
 	$pkValue || error('Can\'t save '.static::class.' record without '.$pk)
-	// Hooks receive the persisted row as $old, never a clone of the already-mutated object.
 	$old = static::record(...[$pk => $pkValue])
 	$isNew = !$old
 	method_exists(static::class, 'beforeSave') && $this->beforeSave($old)

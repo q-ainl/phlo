@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Rotating async CSRF protection for Phlo requests
-@ advice:   The token rotates: every verified request answers with a new one, so a stolen token is worth one request at most. That only works if the page keeps the answer, which the frontend does on its own; a hand-written fetch has to send the current token as X-CSRF-Token and store the new one. It protects a session, so it says nothing about an API authenticated with a bearer token.
+@ advice:   Two halves you wire yourself: verify() checks the X-CSRF-Token header against the session, and update() answers with a fresh token as a command the page applies to its meta tag. A route that does both makes a stolen token worth one request at most, which is the whole point; a route that only verifies keeps one token for the life of the session. It protects a session, so it says nothing about an API authenticated with a bearer token.
 @ package:  security
 @ frontend: true
 @ backend:  true

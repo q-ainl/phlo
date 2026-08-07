@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
-@ summary:  Audio-clock presentation player for the DOM: timed image/video layers, transitions, subtitles and language alternatives from a presentation.json payload. Exposes the class `PresentationPlayer`; each transition carries its own pp-* CSS animation and the matching canvas curve for deterministic export rendering. boot() wires every .pp-embed, from an inline JSON script child or a data-src payload URL. A document keymap steers the fullscreen, focused or only player: space/k toggles, arrows seek and set volume, m mutes, c toggles subtitles, f fullscreen, home/end jump.
-@ advice:   Plays a presentation from one JSON payload with the audio as the clock, so image, subtitle and transition stay in step even on a slow machine. Alternative languages live in the same payload, which means switching language does not reload anything. Everything is timed against the audio, so a presentation without audio has nothing to run on.
+@ summary:  Timeline presentation player for the DOM: timed image/video layers, transitions, subtitles and language alternatives from a presentation.json payload. Exposes the class `PresentationPlayer`; each transition carries its own pp-* CSS animation and the matching canvas curve for deterministic export rendering. boot() wires every .pp-embed, from an inline JSON script child or a data-src payload URL. A document keymap steers the fullscreen, focused or only player: space/k toggles, arrows seek and set volume, m mutes, c toggles subtitles, f fullscreen, home/end jump.
+@ advice:   Plays a presentation from one JSON payload against its own clock, and seeks the audio and video to match it, so a slow machine drops frames rather than drifting out of step. That also means a presentation without audio runs perfectly well. Alternative languages live in the same payload, so switching language reloads nothing.
 @ package:  dom
 @ frontend: true
 @ backend:  false

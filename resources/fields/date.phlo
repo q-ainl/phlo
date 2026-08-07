@@ -3,7 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Date field
-@ advice:   Renders in the reader's language through IntlDateFormatter, so a Dutch visitor sees a Dutch date without any work. Set format to a date() pattern when the notation has to be fixed instead of local.
+@ advice:   Renders in the reader's language through IntlDateFormatter, so a Dutch visitor sees a Dutch date without any work. Without the intl extension it falls back to a built-in Dutch and English month list, so any other language reads as English there. Set format to a date() pattern when the notation has to be fixed rather than local.
 @ package:  fields
 @ frontend: false
 @ backend:  true

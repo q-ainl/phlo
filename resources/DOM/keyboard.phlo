@@ -64,8 +64,6 @@ phlo.keyboard = {
 		phlo.keyboard.open = null
 		obj('#keyboard')?.remove()
 	},
-	// Writing happens at the caret, so a correction halfway a word lands where the cashier
-	// tapped instead of at the end.
 	write(target, insert, back = false){
 		const start = target.selectionStart ?? target.value.length
 		const end = target.selectionEnd ?? start
@@ -116,7 +114,6 @@ on('click', 'body', (body, e) => {
 	phlo.keyboard.open?.focus({preventScroll: true})
 })
 
-// A tap outside both the keyboard and its field closes it; Escape does the same.
 on('pointerdown', 'body', (el, e) => {
 	if (!phlo.keyboard.open) return
 	if (e.target.closest('#keyboard') || e.target === phlo.keyboard.open) return

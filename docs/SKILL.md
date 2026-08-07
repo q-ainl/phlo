@@ -239,7 +239,7 @@ Short description of what this app does.
 - [ ] Fix the CMS image upload on mobile
 
 ## Notes
-- MySQL credentials are in data/auth.ini under [db]
+- MySQL credentials are in data/creds.ini under [mysql]
 - The `visitor` class tracks page views per session and sends notifications to the Phlo Dashboard (the separate fleet app) on its WebSocket port by default
 ```
 
@@ -862,7 +862,8 @@ phlo_app (
 );
 ```
 
-- `auth` - `true` enables site-wide HTTP Basic Authentication (credentials in `data/auth.ini`, section `[site]`; the Control Center reads `[control]` from the same file, each with a `user` and a `password` key).
+- `auth` - `true` enables site-wide HTTP Basic Authentication, reading the `[site]` section of `data/auth.ini`.
+- Gate credentials live in `data/auth.ini` only, never in `creds.ini`: `[control]` for the Control Center, `[site]` for `auth: true`, any other section for a gate of your own through `phlo_auth('admin')` (returns a bool, renders nothing) or `phlo_auth('admin', 'Realm')` (renders the 401 itself). A section that is missing never opens the door.
 - `build: true` and `thread: true` are mutually exclusive - build writes files to disk between requests which is unsafe in a long-running worker.
 - `control` - URL prefix for the built-in **Phlo Control Center**. Auto-defaults to `'phlo'` (so `/phlo`) whenever `build: true` and `debug: true`; set `control: 'admin'` to move it or `control: false` to disable. This is NOT the Phlo Dashboard, which is the separate fleet-management app.
 - `daemon` - the port the Phlo Daemon listens on. Phlo Realtime, the WebSocket layer built into the daemon, handles both `/websocket` upgrades and `/message` casts on that one port.
