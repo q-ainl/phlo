@@ -21,7 +21,8 @@ static fields => arr(
 	secret: arr(api_token: 'API token (Beheer > Instellingen > API)'),
 )
 
-// First call exchanges the API token for a session token (one POST), cached per instance
+// Returns the session token, fetching one on first use.
+// The API takes a session rather than a token per call, so the first call exchanges the
 method session():obj {
 	if ($m = $this->missing('api_token')) return $m
 	if ($this->sessionToken !== void) return static::ok($this->sessionToken)

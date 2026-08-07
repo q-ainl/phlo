@@ -188,9 +188,10 @@ prop objState = ['parents' => [], 'children' => [], 'many' => []]
 method objGet($key) => $this->getParent($key) ?? $this->getChildren($key) ?? $this->getMany($key)
 method objIn($ids, $db = null) => $ids ? ($db ?? static::DB())->quoteList($ids) : 'NULL'
 
-// A reference held across a re-fetch is orphaned from the record cache; after a
-// relation is loaded onto the canonical record, mirror it onto this object too so the
-// held reference sees it. No-op when this object is itself the canonical one.
+// Mirrors a freshly loaded relation onto a stale reference to the same record.
+// A reference held across a re-fetch is orphaned from the record cache, so once a
+// relation is loaded onto the canonical record it is copied here too and the held
+// reference sees it. No-op when this object is itself the canonical one.
 method objMirror(string $bucket, $key){
 	$pk = $this->objData[static::idColumn()] ?? null
 	if ($pk === null) return

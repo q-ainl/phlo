@@ -8,8 +8,9 @@
 @ requires: @DOM
 @ tags:     dom keyboard onscreen touch input frontend
 
-// Everything is delegated from the body, because the keys are drawn outside the update
-// cycle and a field can appear at any moment in a single page app.
+// Every event is delegated from the body.
+// The keys are drawn outside the update cycle and a field can appear at any moment in a
+// single page app, so binding per element would miss both.
 // A layout is three letter rows; the digit row and the function keys are the same
 // everywhere. Add your own with phlo.keyboard.layouts.dvorak = [...].
 <script>

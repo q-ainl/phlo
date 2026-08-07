@@ -6,8 +6,9 @@
 @ backend:  false
 @ tags:     video ffmpeg wasm canvas encode transcode webcodecs mp4 render
 
-// ffmpeg-wasm brought to the browser DOM. Use the ready singleton `ffmpeg`, or
-// `new Ffmpeg({corePath})`; only Ffmpeg and ffmpeg enter the bundle scope.
+// ffmpeg-wasm brought to the browser DOM.
+// Use the ready singleton `ffmpeg`, or `new Ffmpeg({corePath})`; only Ffmpeg and ffmpeg
+// enter the bundle scope.
 // Decoding prefers WebCodecs with an MP4Box demux and falls back to seeking a
 // <video> for containers or codecs it cannot handle. Encoding prefers the
 // multithreaded core and retries single-threaded when it stalls, so a browser

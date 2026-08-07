@@ -28,9 +28,10 @@ method load(string $table, string $columns = '*', string $where = void, string $
 
 method query($query, ...$args) => $this->queryRun($query, $args, true)
 
-// A worker can hold a MySQL connection past its wait_timeout; the next request's first
-// query then throws "server has gone away". Retry once on a connection-loss error by
-// dropping the cached PDO (which reconnects on next access). Only connection errors are
+// Runs a statement, retrying once when the connection was lost.
+// A worker can hold a MySQL connection past its wait_timeout, and the next request's
+// first query then throws "server has gone away". The retry drops the cached PDO, which
+// reconnects on next access. Only connection errors are
 // retried, never a normal SQL failure, so a mutation is never silently re-run.
 method queryRun($query, $args, $retry){
 	try {
@@ -67,8 +68,9 @@ method rows(...$args) => $this->load(...$args)->fetchAll(\PDO::FETCH_CLASS, obj:
 method record(...$args) => $this->load(...$args)->fetchObject(obj::class) ?: null
 method quoteList(array $ids) => loop($ids, fn($id) => $this->PDO->quote((string)$id), comma)
 
-// Safely quote a SQL identifier (column/table): wrap in the connector's quote char and double any embedded
-// quote, so an attacker-controlled array key cannot break out of the identifier (values are always ?-bound).
+// Safely quotes a SQL identifier such as a column or table name.
+// It wraps the name in the connector's quote char and doubles any embedded quote, so an
+// attacker-controlled array key cannot break out of the identifier. Values are ?-bound.
 method quoteId($id) => $this->fieldQuotes.str_replace($this->fieldQuotes, $this->fieldQuotes.$this->fieldQuotes, (string)$id).$this->fieldQuotes
 
 method create(string $table, ...$data){

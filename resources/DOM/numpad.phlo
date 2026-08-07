@@ -8,9 +8,9 @@
 @ requires: @DOM
 @ tags:     dom numpad keypad touch input pos frontend
 
-// Keys and focus are handled on the body rather than per element, because a pad may be
-// built after the binding pass of the update that created it, and a field can appear at
-// any moment in a single page app.
+// Keys and focus are handled on the body rather than per element.
+// A pad may be built after the binding pass of the update that created it, and a field
+// can appear at any moment in a single page app, so binding per element would miss both.
 // A key press is not a hand on the field. A key takes focus when pressed and hands it
 // straight back, so counting that as the operator touching the field cleared the value on
 // every keystroke and left only the last digit.
