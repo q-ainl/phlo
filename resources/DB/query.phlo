@@ -14,46 +14,46 @@ prop bindings = []
 prop orderBy
 prop limitVal
 prop offsetVal
-method fq => ($class = $this->class) ? $class::DB()->fieldQuotes : bt
-method q($column){
+method fq:string => ($class = $this->class) ? $class::DB()->fieldQuotes : bt
+method q($column):string {
 	preg_match('/^[A-Za-z_][A-Za-z0-9_.]*$/', $column) || error("Invalid column for query builder: $column")
 	$fq = $this->fq
 	return implode(dot, array_map(fn($part) => $fq.$part.$fq, explode(dot, $column)))
 }
 
-method eq($column, $value) => $this->where($this->q($column)." = ?", $value)
-method neq($column, $value) => $this->where($this->q($column)." != ?", $value)
-method gt($column, $value) => $this->where($this->q($column)." > ?", $value)
-method gte($column, $value) => $this->where($this->q($column)." >= ?", $value)
-method lt($column, $value) => $this->where($this->q($column)." < ?", $value)
-method lte($column, $value) => $this->where($this->q($column)." <= ?", $value)
-method like($column, $value) => $this->where($this->q($column)." LIKE ?", $value)
-method in($column, array $values) => $this->where($this->q($column)." IN (".implode(comma, array_fill(0, count($values), qm)).")", ...$values)
-method isNull($column) => $this->where($this->q($column)." IS NULL")
-method notNull($column) => $this->where($this->q($column)." IS NOT NULL")
-method between($column, $min, $max) => $this->where($this->q($column)." BETWEEN ? AND ?", $min, $max)
-method raw($sql, ...$bindings) => $this->where($sql, ...$bindings)
-method where($condition, ...$values){
+method eq($column, $value):static => $this->where($this->q($column)." = ?", $value)
+method neq($column, $value):static => $this->where($this->q($column)." != ?", $value)
+method gt($column, $value):static => $this->where($this->q($column)." > ?", $value)
+method gte($column, $value):static => $this->where($this->q($column)." >= ?", $value)
+method lt($column, $value):static => $this->where($this->q($column)." < ?", $value)
+method lte($column, $value):static => $this->where($this->q($column)." <= ?", $value)
+method like($column, $value):static => $this->where($this->q($column)." LIKE ?", $value)
+method in($column, array $values):static => $this->where($this->q($column)." IN (".implode(comma, array_fill(0, count($values), qm)).")", ...$values)
+method isNull($column):static => $this->where($this->q($column)." IS NULL")
+method notNull($column):static => $this->where($this->q($column)." IS NOT NULL")
+method between($column, $min, $max):static => $this->where($this->q($column)." BETWEEN ? AND ?", $min, $max)
+method raw($sql, ...$bindings):static => $this->where($sql, ...$bindings)
+method where($condition, ...$values):static {
 	$this->conditions[] = $condition
 	foreach ($values AS $v) $this->bindings[] = $v
 	return $this
 }
 
-method order($order){
+method order($order):static {
 	$this->orderBy = $order
 	return $this
 }
 
-method limit($limit){
+method limit($limit):static {
 	$this->limitVal = $limit
 	return $this
 }
 
-method offset($offset){
+method offset($offset):static {
 	$this->offsetVal = $offset
 	return $this
 }
-method build {
+method build:array {
 	$where = $this->conditions ? implode(' AND ', $this->conditions) : void
 	$limit = $this->limitVal ? ($this->offsetVal ? "$this->offsetVal,$this->limitVal" : "$this->limitVal") : void
 	$args = ['where' => $where ?: void, 'order' => $this->orderBy ?: void, 'limit' => $limit ?: void]
@@ -61,12 +61,12 @@ method build {
 	return $args
 }
 
-prop records => ($class = $this->class) && $class::records(...$this->build)
-prop record => ($class = $this->class) && $class::record(...$this->build)
-prop column => ($class = $this->class) && $class::column(...$this->build)
+prop records:array => ($class = $this->class) && $class::records(...$this->build)
+prop record:?model => ($class = $this->class) && $class::record(...$this->build)
+prop column:array => ($class = $this->class) && $class::column(...$this->build)
 prop item => ($class = $this->class) && $class::item(...$this->build)
 prop count => ($class = $this->class) && $class::recordCount(...$this->build)
-method delete{
+method delete:int {
 	$class = $this->class
 	$where = $this->conditions ? implode(' AND ', $this->conditions) : error('Cannot delete without conditions')
 	return $class::delete($where, ...$this->bindings)

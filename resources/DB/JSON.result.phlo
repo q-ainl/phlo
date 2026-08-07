@@ -8,10 +8,10 @@
 @ tags:     json database result
 
 static __handle => null
-prop data = []
+prop data:array = []
 method __construct(array $data) => $this->data = $data
 
-method fetchAll($mode = 2){
+method fetchAll($mode = 2):array {
 	if ($mode === \PDO::FETCH_COLUMN) return loop($this->data, fn($row) => reset((array)$row))
 	if ($mode === \PDO::FETCH_KEY_PAIR){
 		$out = []
@@ -64,4 +64,4 @@ method fetchColumn($col = 0){
 	return $vals[$col] ?? false
 }
 
-method rowCount => count($this->data)
+method rowCount:int => count($this->data)

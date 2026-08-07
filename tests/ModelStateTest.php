@@ -11,6 +11,6 @@ final class ModelStateTest extends TestCase {
 		$src = (string)file_get_contents(engine.'resources/DB/model.phlo');
 		$this->assertStringNotContainsString('static objLastErrors', $src, 'validation errors must not live in a worker-unsafe static');
 		$this->assertStringContainsString('static::state()->errors', $src, 'errors must be stored on the request-local model state');
-		$this->assertMatchesRegularExpression('/state\s*=>.*errors:/', $src, 'the request-local state object must initialise an errors bucket');
+		$this->assertMatchesRegularExpression('/state(?::\w+)?\s*=>.*errors:/', $src, 'the request-local state object must initialise an errors bucket');
 	}
 }
