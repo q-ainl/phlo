@@ -1,0 +1,42 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  Build-time stamp of when each page's source last changed, read at runtime for sitemap lastmod and for showing a date to the reader
+@ package:  seo
+@ frontend: false
+@ backend:  true
+@ advice:   Call lastmod::stamp from a build hook, so the dates are read where the sources are. Resolving them at runtime does not work on a release node, which carries no .phlo sources, and a deploy rewrites every mtime, so every page would claim to have changed on the day it was deployed. Pages in %app->pages resolve by convention; declare prop %lastmod.sources as uri => file path for the rest. A page that resolves to nothing simply gets no lastmod, which is the right answer: a crawler that catches a site inventing them stops trusting the field domain-wide.
+@ tags:     seo sitemap lastmod build stamp
+
+// Beside the generated PHP, so the map travels with a release. The release hook
+// passes its own output directory: it runs through the dev entrypoint and would
+// otherwise stamp the build it is not shipping.
+static file($dir = null) => ($dir ?: php).'lastmod.json'
+
+// Sources the convention cannot find, as uri => file path. Declare them from
+// your app: prop %lastmod.sources => arr(...)
+prop sources = []
+
+// The file most likely to render this page.
+static resolve($uri){
+	$slug = trim((string)$uri, slash)
+	$names = $slug === void ? ['home.phlo', 'page.home.phlo'] : [$slug.'.phlo', 'page.'.$slug.'.phlo', strtr($slug, [slash => dot]).'.phlo']
+	foreach ($names AS $name) if (is_file($file = app.$name)) return $file
+	return null
+}
+
+static day($file) => $file && is_file($file) ? date('Y-m-d', filemtime($file)) : null
+
+static uriOf($page) => is_string($page) ? $page : (string)(is_array($page) ? ($page['uri'] ?? void) : ($page->uri ?? void))
+
+static stamp($dir = null){
+	$map = []
+	foreach ((array)(%app->pages ?? []) AS $page) ($d = static::day(static::resolve(static::uriOf($page)))) && $map[static::uriOf($page)] = $d
+	foreach ((array)%lastmod->sources AS $uri => $file) ($d = static::day($file)) && $map[$uri] = $d
+	ksort($map)
+	file_put_contents($target = static::file($dir), json_encode($map, jsonFlags))
+	return ['file' => $target, 'pages' => count($map)]
+}
+
+prop map => is_file($file = static::file()) ? (array)json_decode((string)file_get_contents($file), true) : []
+
+method for($uri) => $this->map[$uri] ?? null

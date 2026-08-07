@@ -21,6 +21,29 @@ method robots {
 
 method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
 
+// A sitemap entry is a uri string, or an obj/array carrying uri plus whatever
+// else that page has to say. Keeping it a list rather than a uri => value map
+// leaves room for a second fact later without changing what an entry means.
+method uri($page) => is_string($page) ? $page : (string)($this->field($page, 'uri') ?? void)
+
+method field($page, $key){
+	if (is_string($page)) return null
+	return is_array($page) ? ($page[$key] ?? null) : ($page->$key ?? null)
+}
+
+// Only emitted when it parses. A wrong lastmod is worse than none: a crawler
+// that catches a site inventing them stops trusting the field domain-wide.
+// An entry without a date of its own falls back to the lastmod resource, so an
+// app that loads it needs no change here for its pages to carry one.
+method lastmod($page){
+	$mod = $this->field($page, 'lastmod')
+	($mod === null || $mod === void) && class_exists('lastmod') && $mod = %lastmod->for($this->uri($page))
+	if ($mod === null || $mod === void) return null
+	if (is_string($mod) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $mod)) return $mod
+	$ts = is_int($mod) ? $mod : strtotime((string)$mod)
+	return $ts ? date('c', $ts) : null
+}
+
 method locale {
 	$lang = %app->lang ?? 'en'
 	$map = ['nl' => 'nl_NL', 'en' => 'en_US', 'de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES', 'it' => 'it_IT', 'pt' => 'pt_PT', 'pl' => 'pl_PL', 'ru' => 'ru_RU', 'el' => 'el_GR', 'tr' => 'tr_TR', 'zh' => 'zh_CN']
@@ -42,14 +65,17 @@ prop noIndex => %app->noLink ?? %app->noIndex ?? false
 view:
 <?xml version=1.0 encoding="UTF-8"?>
 <urlset xmlns=http://www.sitemaps.org/schemas/sitemap/0.9 xmlns:xhtml=http://www.w3.org/1999/xhtml xmlns:xsi=http://www.w3.org/2001/XMLSchema-instance xsi:schemaLocation=http://www.sitemaps.org/schemas/sitemap/0.9+http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd>
-	<foreach $this->sitemapPages AS $uri>
-		{{ $this->page($uri) }}
+	<foreach $this->sitemapPages AS $page>
+		{{ $this->page($page) }}
 	</foreach>
 </urlset>
 
-view page($uri):
+view page($page):
 <url>
-	<loc>%req->base{( $uri ?: slash )}</loc>
+	<loc>%req->base{( ($uri = $this->uri($page)) ?: slash )}</loc>
+	<if $stamp = $this->lastmod($page)>
+		<lastmod>$stamp</lastmod>
+	</if>
 	<foreach $this->sitemapLangs AS $lang>
 		<if $lang === %app->lang>
 			{{ $this->xlink('x-default', $uri ?: slash) }}
