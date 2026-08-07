@@ -8,10 +8,12 @@
 @ requires: @DOM
 @ tags:     dom keyboard onscreen touch input frontend
 
+// Everything is delegated from the body, because the keys are drawn outside the update
+// cycle and a field can appear at any moment in a single page app.
+// A layout is three letter rows; the digit row and the function keys are the same
+// everywhere. Add your own with phlo.keyboard.layouts.dvorak = [...].
 <script>
 phlo.keyboard = {
-	// A layout is three letter rows; the digit row and the function keys are the same
-	// everywhere. Add your own with phlo.keyboard.layouts.dvorak = [...].
 	layouts: {
 		qwerty: ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'],
 		azerty: ['azertyuiop', 'qsdfghjklm', 'wxcvbn'],
@@ -101,8 +103,6 @@ app.keyboard = {
 	hide: () => phlo.keyboard.hide(),
 }
 
-// Delegated from the body: the keys are drawn outside the update cycle, and a field can
-// appear at any moment in a single page app.
 on('focusin', 'body', (body, e) => {
 	if (e.target.matches?.('[data-keyboard]')) phlo.keyboard.show(e.target)
 })

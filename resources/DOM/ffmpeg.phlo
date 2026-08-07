@@ -6,9 +6,13 @@
 @ backend:  false
 @ tags:     video ffmpeg wasm canvas encode transcode webcodecs mp4 render
 
+// ffmpeg-wasm brought to the browser DOM. Use the ready singleton `ffmpeg`, or
+// `new Ffmpeg({corePath})`; only Ffmpeg and ffmpeg enter the bundle scope.
+// Decoding prefers WebCodecs with an MP4Box demux and falls back to seeking a
+// <video> for containers or codecs it cannot handle. Encoding prefers the
+// multithreaded core and retries single-threaded when it stalls, so a browser
+// without cross-origin isolation still finishes, only slower.
 <script>
-// ffmpeg-wasm brought to the browser DOM. Use the ready singleton `ffmpeg`
-// (or `new Ffmpeg({corePath})`). Only Ffmpeg + ffmpeg enter the bundle scope.
 class Ffmpeg {
 
 	constructor(opts = {}){
@@ -41,13 +45,11 @@ class Ffmpeg {
 		return this.scripts[src]
 	}
 
-	// -----------------------------------------------------------------------
 	// Frame source: WebCodecs (MP4Box demux + VideoDecoder) with a seek fallback.
 	// src is a File or a URL string; getFrame(t) returns a drawable (VideoFrame or
 	// <video>). Falls back to seek for non-MP4 containers or unsupported codecs.
 	// The demux is cached in one slot so a multithreaded->single-threaded retry
 	// does not re-read or re-demux the same source.
-	// -----------------------------------------------------------------------
 	async frameSource(src, opts = {}){
 		const from = opts.from || 0
 		const to = opts.to || 0
@@ -313,11 +315,9 @@ class Ffmpeg {
 		}
 	}
 
-	// -----------------------------------------------------------------------
 	// Core: ffmpeg-wasm load (multithreaded core with single-threaded fallback),
 	// watched exec and a fallback wrapper. `log` is passed per call (this.log is
 	// only the default) so concurrent operations do not fight over one logger.
-	// -----------------------------------------------------------------------
 	drop(){
 		if (!this.ffmpeg) return
 		try {
@@ -381,9 +381,7 @@ class Ffmpeg {
 		}
 	}
 
-	// -----------------------------------------------------------------------
 	// High level.
-	// -----------------------------------------------------------------------
 	// generic ffmpeg run: writes `input` (Blob | Uint8Array | url) as inputName,
 	// runs args, reads `output` -> Blob. `args` should reference inputName/output.
 	async run(opts){

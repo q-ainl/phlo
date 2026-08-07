@@ -8,6 +8,12 @@
 @ requires: @DOM
 @ tags:     dom numpad keypad touch input pos frontend
 
+// Keys and focus are handled on the body rather than per element, because a pad may be
+// built after the binding pass of the update that created it, and a field can appear at
+// any moment in a single page app.
+// A key press is not a hand on the field. A key takes focus when pressed and hands it
+// straight back, so counting that as the operator touching the field cleared the value on
+// every keystroke and left only the last digit.
 <script>
 phlo.numpad = {
 	layouts: {
@@ -74,8 +80,6 @@ app.numpad = (selector, options = {}) => `<div class="numpad" data-numpad="${sel
 
 onExist('[data-numpad]', el => phlo.numpad.build(el))
 
-// One listener on the body instead of one per key: a pad may be built after the binding
-// pass of the update it was created in, and keys added later still have to work.
 on('click', 'body', (body, e) => {
 	const el = e.target.closest?.('[data-numpad-key]')
 	const pad = el?.closest('[data-numpad]')
@@ -86,10 +90,6 @@ on('click', 'body', (body, e) => {
 })
 
 // Touching the field by hand starts the fresh cycle over: the next key clears again.
-//
-// Focus returning from a key is not a hand. A key takes focus when it is pressed and the
-// handler above hands it straight back, so treating that as a fresh touch cleared the field
-// on every keystroke and left only the last one: a fresh pad could not be typed into at all.
 on('focusin', 'body', (body, e) => {
 	if (e.relatedTarget?.closest?.('[data-numpad-key]')) return
 	if (e.target.dataset?.numpadTyped) delete e.target.dataset.numpadTyped

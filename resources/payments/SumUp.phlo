@@ -6,15 +6,8 @@
 @ frontend: false
 @ backend:  true
 @ requires: @Connector creds:SumUp
+@ advice:   Cloud-initiated terminal payments: the POS creates a checkout for a paired reader over HTTPS, the reader wakes up with the amount, and the result arrives on the return_url webhook or by polling transaction(). A checkout must start on the device within 60 seconds and only one checkout can be active per reader at a time. Treat the webhook as a wake-up call, never as the verdict: re-fetch the transaction with transaction() before recording a payment, so a forged POST can never book money.
 @ tags:     sumup payments terminal reader card-present checkout connector
-
-// Cloud-initiated terminal payments: the POS creates a checkout for a paired reader over
-// HTTPS, the reader wakes up with the amount, and the result arrives on the return_url
-// webhook (or by polling transaction()). A checkout must start on the device within 60
-// seconds and only one checkout can be active per reader at a time.
-//
-// Treat the webhook as a wake-up call, never as the verdict: re-fetch the transaction via
-// transaction() before recording a payment, so a forged POST can never book money.
 
 const section = 'SumUp'
 const api = 'https://api.sumup.com'
