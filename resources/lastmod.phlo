@@ -10,25 +10,25 @@
 // Where the map lives, beside the generated PHP so it travels with a release.
 // The release hook passes its own output directory: it runs through the dev
 // entrypoint and would otherwise stamp the build it is not shipping.
-static file($dir = null) => ($dir ?: php).'lastmod.json'
+static file($dir = null):string => ($dir ?: php).'lastmod.json'
 
 // Sources the convention cannot find, as a uri to file path map.
 // Declare them from your app with prop %lastmod.sources.
-prop sources = []
+prop sources:array = []
 
 // The file most likely to render this page.
-static resolve($uri){
+static resolve($uri):?string {
 	$slug = trim((string)$uri, slash)
 	$names = $slug === void ? ['home.phlo', 'page.home.phlo'] : [$slug.'.phlo', 'page.'.$slug.'.phlo', strtr($slug, [slash => dot]).'.phlo']
 	foreach ($names AS $name) if (is_file($file = app.$name)) return $file
 	return null
 }
 
-static day($file) => $file && is_file($file) ? date('Y-m-d', filemtime($file)) : null
+static day($file):?string => $file && is_file($file) ? date('Y-m-d', filemtime($file)) : null
 
-static uriOf($page) => is_string($page) ? $page : (string)(is_array($page) ? ($page['uri'] ?? void) : ($page->uri ?? void))
+static uriOf($page):string => is_string($page) ? $page : (string)(is_array($page) ? ($page['uri'] ?? void) : ($page->uri ?? void))
 
-static stamp($dir = null){
+static stamp($dir = null):array {
 	$map = []
 	foreach ((array)(%app->pages ?? []) AS $page) ($d = static::day(static::resolve(static::uriOf($page)))) && $map[static::uriOf($page)] = $d
 	foreach ((array)%lastmod->sources AS $uri => $file) ($d = static::day($file)) && $map[$uri] = $d
@@ -37,6 +37,6 @@ static stamp($dir = null){
 	return ['file' => $target, 'pages' => count($map)]
 }
 
-prop map => is_file($file = static::file()) ? (array)json_decode((string)file_get_contents($file), true) : []
+prop map:array => is_file($file = static::file()) ? (array)json_decode((string)file_get_contents($file), true) : []
 
-method for($uri) => $this->map[$uri] ?? null
+method for($uri):?string => $this->map[$uri] ?? null

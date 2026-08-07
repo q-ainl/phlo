@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     chart svg sparkline bars donut visualization
 
-static spark($values, $color = '#888', $w = 240, $h = 48, $label = null){
+static spark($values, $color = '#888', $w = 240, $h = 48, $label = null):string {
 	$values = array_values(array_map('floatval', (array)$values))
 	if (!$values) return void
 	$max = max($values) ?: 1
@@ -27,7 +27,7 @@ static spark($values, $color = '#888', $w = 240, $h = 48, $label = null){
 	return '<svg viewBox="0 0 '.$w.' '.$h.'"'.$aria.' xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:'.$h.'px"><defs><linearGradient id="'.$id.'" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="'.$color.'" stop-opacity=".4"/><stop offset="100%" stop-color="'.$color.'" stop-opacity="0"/></linearGradient></defs><polygon points="'.implode(space, $area).'" fill="url(#'.$id.')"/><polyline points="'.implode(space, $points).'" fill="none" stroke="'.$color.'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>'
 }
 
-static bars($values, $color = '#888', $w = 240, $h = 48, $label = null){
+static bars($values, $color = '#888', $w = 240, $h = 48, $label = null):string {
 	$values = array_values(array_map('floatval', (array)$values))
 	if (!$values) return void
 	$max = max($values) ?: 1
@@ -45,7 +45,7 @@ static bars($values, $color = '#888', $w = 240, $h = 48, $label = null){
 	return '<svg viewBox="0 0 '.$w.' '.$h.'"'.$aria.' xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="display:block;width:100%;height:'.$h.'px">'.$out.'</svg>'
 }
 
-static donut($parts, $colors = null, $size = 120){
+static donut($parts, $colors = null, $size = 120):string {
 	$parts = array_filter(array_map('floatval', (array)$parts))
 	$total = array_sum($parts)
 	if (!$total) return void

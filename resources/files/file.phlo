@@ -25,11 +25,11 @@ method created:int|false => filectime($this->file)
 method createdAge:int => age($this->created)
 method createdHuman:string => time_human($this->created)
 method curl($type = null, $filename = null):CURLFile => new CURLFile($this->file, $type, $filename)
-method delete => first($deleted = $this->exists && unlink($this->file), debug($deleted ? "Deleted $this->basename" : "Could not delete $this->basename"))
+method delete:bool => first($deleted = $this->exists && unlink($this->file), debug($deleted ? "Deleted $this->basename" : "Could not delete $this->basename"))
 method exists:bool => file_exists($this->file)
 prop ext:string => pathinfo($this->name, PATHINFO_EXTENSION)
 prop filename:string => pathinfo($this->file, PATHINFO_FILENAME)
-method getLine => ($line = fgets($this->pointer)) === false ? false : rtrim($line)
+method getLine:string|false => ($line = fgets($this->pointer)) === false ? false : rtrim($line)
 method getLength(int $length):string|false => fread($this->pointer, $length)
 method is(string $file):bool => $file === $this->file
 method md5:string|false => md5_file($this->file)
@@ -37,7 +37,7 @@ prop mime:string => mime($this->name)
 method modified:int|false => filemtime($this->file)
 method modifiedAge:int => age($this->modified)
 method modifiedHuman:string => time_human($this->modified)
-method move($to) => rename($this->file, $to) && $this->file = $to
+method move($to):bool => rename($this->file, $to) && $this->file = $to
 prop name:string => $this->basename
 method output($download = false) => output($this->contents, $this->name, $download)
 prop path:string => realpath(pathinfo($this->file, PATHINFO_DIRNAME)).slash
@@ -54,14 +54,14 @@ method token($length = 20):string => token($length, $this->sha1)
 method type:string => substr($this->mime, 0, strpos($this->mime, slash))
 method touch:bool => touch($this->file)
 method writable:bool => is_writable($this->file)
-method writeINI($data, bool $deleteEmpty = false) => $this->write(!$deleteEmpty || $data ? loop($data, fn($value, $key) => $key.' = '.dq.strtr($value, [dq => bs.dq, lf => '\n']).dq, lf).lf : void, $deleteEmpty)
-method writeJSON($data, bool $deleteEmpty = false) => $this->write(!$deleteEmpty || $data ? json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : void, $deleteEmpty)
-method writeJSONplain($data, bool $deleteEmpty = false) => $this->write(!$deleteEmpty || $data ? json_encode($data) : void, $deleteEmpty)
-method write(string $data, bool $deleteEmpty = false){
+method writeINI($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? loop($data, fn($value, $key) => $key.' = '.dq.strtr($value, [dq => bs.dq, lf => '\n']).dq, lf).lf : void, $deleteEmpty)
+method writeJSON($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : void, $deleteEmpty)
+method writeJSONplain($data, bool $deleteEmpty = false):bool => $this->write(!$deleteEmpty || $data ? json_encode($data) : void, $deleteEmpty)
+method write(string $data, bool $deleteEmpty = false):bool {
 	if (!$data && $deleteEmpty) return $this->delete
 	if ($written = file_put_contents($this->file, $data, LOCK_EX) !== false) debug('Written '.$this->basename.' ('.$this->sizeHuman.')')
 	else error('Could not write '.$this->file)
 	return $written
 }
 
-method objInfo => array_combine($keys = array_merge(['file', 'name', 'exists'], $this->exists ? ['sizeHuman', 'createdHuman', 'modifiedHuman', 'mime'] : []), loop($keys, fn($arg) => $this->$arg))
+method objInfo:array => array_combine($keys = array_merge(['file', 'name', 'exists'], $this->exists ? ['sizeHuman', 'createdHuman', 'modifiedHuman', 'mime'] : []), loop($keys, fn($arg) => $this->$arg))

@@ -42,7 +42,7 @@ method fetchAll($mode = 2):array {
 	return $this->data
 }
 
-method fetchObject($class = 'obj'){
+method fetchObject($class = 'obj'):?obj {
 	if (!$this->data) return null
 	$row = reset($this->data)
 	$o = new $class

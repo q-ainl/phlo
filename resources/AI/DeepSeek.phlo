@@ -14,4 +14,4 @@ const endpoint = 'https://api.deepseek.com/v1/'
 const cred     = 'DeepSeek'
 const label    = 'DeepSeek'
 
-method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
+method embedding($input, $model = 'text-embedding-3-small'):array => %OpenAI->embedding($input, $model)

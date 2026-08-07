@@ -7,4 +7,4 @@
 @ requires: time_human
 @ tags:     age human time format
 
-function age_human(int $age) => time_human(time() - $age)
+function age_human(int $age):string => time_human(time() - $age)

@@ -11,18 +11,18 @@
 static __handle => null
 
 prop choice => %cookies->cookieChoice ?? null
-method hasChosen => $this->choice !== null
-method canTrack => $this->choice === 'all'
-method canAnalytics => $this->choice === 'all'
+method hasChosen:bool => $this->choice !== null
+method canTrack:bool => $this->choice === 'all'
+method canAnalytics:bool => $this->choice === 'all'
 
-prop translate => function_exists('en')
-prop labels => arr(
+prop translate:bool => function_exists('en')
+prop labels:array => arr(
 	region:    'Cookie choice',
 	body:      'We use essential cookies to make this site work. With your permission we also use analytics to improve the site.',
 	essential: 'Essential only',
 	accept:    'Accept',
 )
-method label($key) => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
+method label($key):string => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
 
 route async POST cookiewall accept all {
 	%cookies->objSet('cookieChoice', 'all', ['expires' => time() + 60 * 60 * 24 * 365, 'httponly' => false])

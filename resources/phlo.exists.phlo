@@ -6,4 +6,4 @@
 @ backend:  true
 @ tags:     phlo exists class build runtime
 
-function phlo_exists(string $obj) => is_file(php.strtr($obj, [us => dot]).'.php')
+function phlo_exists(string $obj):bool => is_file(php.strtr($obj, [us => dot]).'.php')

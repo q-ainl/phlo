@@ -7,7 +7,7 @@
 @ requires:    php-ext:openssl
 @ tags:        token random deterministic security
 
-function token(int $length = 8, ?string $input = null){
+function token(int $length = 8, ?string $input = null):string {
 	$length || error('Token must have a minimum length above 0', 500)
 	$alphabet = 'abcdefghijklmnopqrstuvwxyz'
 	$alphabetLength = strlen($alphabet)

@@ -10,10 +10,10 @@
 // backend:  true
 // tags:     cron schedule tasks scheduler
 class tasks extends obj {
-	public static function dir(){
+	public static function dir():string {
 		return data.'tasks/';
 	}
-	public static function run(){
+	public static function run():void {
 		is_dir(static::dir()) || mkdir(static::dir(), 0755, true);
 		$now = time();
 		foreach (phlo('app')->tasks ?? [] AS $name => $task){
@@ -30,7 +30,7 @@ class tasks extends obj {
 	public static function saveRun($name, $do, $schedule, $return){
 		return json_write(static::dir().$name.'.json', arr(do: $do, schedule: $schedule, return: $return));
 	}
-	public static function due($name, $task, $now){
+	public static function due($name, $task, $now):bool {
 		$last = static::lastRun($name);
 		if (isset($task->every)){
 			$every = preg_match('/^\d/', $task->every) ? $task->every : '1 '.$task->every;
@@ -56,20 +56,20 @@ class tasks extends obj {
 		if (is_string($do)) return phlo($do);
 		error('Task do must be Closure, "Class::method" string, or resource-name string');
 	}
-	public static function lastRun($name){
+	public static function lastRun($name):int {
 		$file = static::dir().$name.'.last';
 		return is_file($file) ? (int)file_get_contents($file) : 0;
 	}
-	public static function markRun($name, $ts){
+	public static function markRun($name, $ts):int|false {
 		return file_put_contents(static::dir().$name.'.last', (string)$ts, LOCK_EX);
 	}
-	public static function lock($name){
+	public static function lock($name):bool {
 		$file = static::dir().$name.'.lock';
 		if (is_file($file) && (time() - filemtime($file)) < 3600) return false;
 		touch($file);
 		return true;
 	}
-	public static function unlock($name){
+	public static function unlock($name):bool {
 		return @unlink(static::dir().$name.'.lock');
 	}
 }

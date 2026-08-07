@@ -8,7 +8,7 @@
 @ requires: @JSON
 @ tags:     settings config storage json
 
-function setting(?string $key = null, $value = null){
+function setting(?string $key = null, $value = null):mixed {
 	$store = %JSON('settings', assoc: true)
 	if ($key === null) return $store->objData
 	if (func_num_args() > 1){

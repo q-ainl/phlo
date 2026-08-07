@@ -16,7 +16,7 @@ method __construct(string $filename, ?string $path = null){
 
 readonly objFile:string
 
-method objRead {
+method objRead:void {
 	$fp = fopen($this->objFile, 'r+')
 	$headers = str_replace([dq, cr, lf], void, fgets($fp))
 	$delimiter = substr_count($headers, comma) > substr_count($headers, semi) ? comma : semi

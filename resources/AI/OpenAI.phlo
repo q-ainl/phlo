@@ -44,7 +44,7 @@ method chat(...$args):obj {
 	if (isset($res->choices[0]->message->tool_calls)) $return->tools = array_map(fn($tool) => new obj(name: $tool->function->name, args: json_decode($tool->function->arguments, true)), (array)$res->choices[0]->message->tool_calls)
 	return $return
 }
-method embedding($input, $model = 'text-embedding-3-small') => $this->request('embeddings', POST: ['input' => $input, 'model' => $model])->data[0]->embedding
+method embedding($input, $model = 'text-embedding-3-small'):array => $this->request('embeddings', POST: ['input' => $input, 'model' => $model])->data[0]->embedding
 method parseSSE(string $url, array $headers, array $payload):Generator {
 	$json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
 	$ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => implode(nl, [...$headers, 'Content-Type: application/json', 'Content-Length: '.strlen($json)]), 'content' => $json, 'timeout' => 300, 'ignore_errors' => true]])

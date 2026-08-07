@@ -9,11 +9,11 @@
 @ requires: php-ext:pdo
 @ tags:     database pdo sql
 
-prop PDO => error('No PDO connector defined')
-prop fieldQuotes = bt
-prop savepoint = 0
-prop insertIgnore = ' IGNORE'
-prop insertOnConflict = void
+prop PDO:\PDO => error('No PDO connector defined')
+prop fieldQuotes:string = bt
+prop savepoint:int = 0
+prop insertIgnore:string = ' IGNORE'
+prop insertOnConflict:string = void
 
 method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
 	$table = strpos($table, space) || strpos($table, dot) ? $table : "$this->fieldQuotes$table$this->fieldQuotes"
@@ -34,7 +34,7 @@ method query($query, ...$args) => $this->queryRun($query, $args, true)
 // first query then throws "server has gone away". The retry drops the cached PDO, which
 // reconnects on next access. Only connection errors are
 // retried, never a normal SQL failure, so a mutation is never silently re-run.
-method queryRun($query, $args, $retry){
+method queryRun($query, $args, $retry):\PDOStatement {
 	try {
 		if (!$args) $stmt = $this->PDO->query($query)
 		else {

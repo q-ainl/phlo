@@ -19,14 +19,14 @@ static toText(string $file):string {
 	return rtrim($text, "\f")
 }
 
-prop title = null
-prop author = null
-prop subject = null
-prop keywords = null
-prop creator = 'Phlo '.phlo.' (https://phlo.tech/)'
+prop title:?string = null
+prop author:?string = null
+prop subject:?string = null
+prop keywords:?string = null
+prop creator:string = 'Phlo '.phlo.' (https://phlo.tech/)'
 
-prop filename = 'Download.pdf'
-prop mode = 'D'
+prop filename:string = 'Download.pdf'
+prop mode:string = 'D'
 
 method fromHTML($HTML):string {
 	$mpdf = new \Mpdf\Mpdf

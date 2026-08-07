@@ -9,12 +9,12 @@
 @ requires: @payload @model token useragent
 @ tags:     visitors analytics heartbeat tracking
 
-static table = 'visitors'
+static table:string = 'visitors'
 static columns = 'id,token,host,page,lang,IP,browser,os,device,active_seconds,state,width,height,referrer,created,changed'
 
-static history => static::records(columns: 'FROM_UNIXTIME(changed, "%Y-%m-%d") AS date,COUNT(DISTINCT token) AS visitors,COUNT(id) AS visits', group: 'date', order: 'date DESC')
-static online => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 9)')
-static lastHour => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 3600)')
+static history:array => static::records(columns: 'FROM_UNIXTIME(changed, "%Y-%m-%d") AS date,COUNT(DISTINCT token) AS visitors,COUNT(id) AS visits', group: 'date', order: 'date DESC')
+static online:int => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 9)')
+static lastHour:int => static::item(columns: 'COUNT(DISTINCT token)', where: 'changed >= (UNIX_TIMESTAMP() - 3600)')
 
 static isBot(?string $ua):bool {
 	if (!$ua) return false

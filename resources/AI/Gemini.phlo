@@ -32,7 +32,7 @@ static tool($tool):array => [
 	],
 ]
 
-method embedding($input, $model = 'text-embedding-004') => $this->request($model.':embedContent', POST: ['content' => ['parts' => [['text' => $input]]]])->embedding->values
+method embedding($input, $model = 'text-embedding-004'):array => $this->request($model.':embedContent', POST: ['content' => ['parts' => [['text' => $input]]]])->embedding->values
 
 method vision($text, $image, $stream = false, ...$args):obj|Generator {
 	$model = $args['model'] ?? static::model

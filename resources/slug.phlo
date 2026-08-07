@@ -6,4 +6,4 @@
 @ backend:  true
 @ tags:     slug url string format
 
-function slug(string $text) => trim(preg_replace('/[^a-z0-9]+/', dash, strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text))), dash)
+function slug(string $text):string => trim(preg_replace('/[^a-z0-9]+/', dash, strtolower(iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text))), dash)

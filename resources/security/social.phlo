@@ -66,7 +66,7 @@ static authUrl($provider, $state, $nonce = void):string {
 	return OAuth2::authorizeUrl($c['authorize'], $params)
 }
 
-static profile($provider, $code, $nonce = void){
+static profile($provider, $code, $nonce = void):?array {
 	$cfg = static::config($provider)
 	if (!$cfg || $cfg['client_id'] === void) return null
 	$secret = $provider === 'apple' ? static::appleSecret() : $cfg['client_secret']

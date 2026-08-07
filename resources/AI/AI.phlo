@@ -27,15 +27,15 @@ method stream(...$args):Generator {
 	[$engine, $args] = $this->resolve(...$args)
 	return phlo($engine)->stream(...$args)
 }
-method embedding(...$args){
+method embedding(...$args):array {
 	[$engine, $args] = $this->resolve(...$args)
 	return phlo($engine)->embedding(...$args)
 }
-method vision(...$args){
+method vision(...$args):obj|Generator {
 	[$engine, $args] = $this->resolve(...$args)
 	return phlo($engine)->vision(...$args)
 }
-method transcribe(...$args){
+method transcribe(...$args):obj {
 	[$engine, $args] = $this->resolve(...$args)
 	return phlo($engine)->transcribe(...$args)
 }

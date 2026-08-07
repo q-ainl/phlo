@@ -7,9 +7,9 @@
 @ backend:  true
 @ tags:     cron schedule tasks scheduler
 
-static dir => data.'tasks/'
+static dir:string => data.'tasks/'
 
-static run {
+static run:void {
 	is_dir(static::dir()) || mkdir(static::dir(), 0755, true)
 	$now = time()
 	foreach (%app->tasks ?? [] AS $name => $task){
@@ -26,7 +26,7 @@ static run {
 
 static saveRun($name, $do, $schedule, $return) => json_write(static::dir().$name.'.json', arr(do: $do, schedule: $schedule, return: $return))
 
-static due($name, $task, $now){
+static due($name, $task, $now):bool {
 	$last = static::lastRun($name)
 	if (isset($task->every)){
 		$every = preg_match('/^\d/', $task->every) ? $task->every : '1 '.$task->every
@@ -54,18 +54,18 @@ static fire($do){
 	error('Task do must be Closure, "Class::method" string, or resource-name string')
 }
 
-static lastRun($name){
+static lastRun($name):int {
 	$file = static::dir().$name.'.last'
 	return is_file($file) ? (int)file_get_contents($file) : 0
 }
 
-static markRun($name, $ts) => file_put_contents(static::dir().$name.'.last', (string)$ts, LOCK_EX)
+static markRun($name, $ts):int|false => file_put_contents(static::dir().$name.'.last', (string)$ts, LOCK_EX)
 
-static lock($name){
+static lock($name):bool {
 	$file = static::dir().$name.'.lock'
 	if (is_file($file) && (time() - filemtime($file)) < 3600) return false
 	touch($file)
 	return true
 }
 
-static unlock($name) => @unlink(static::dir().$name.'.lock')
+static unlock($name):bool => @unlink(static::dir().$name.'.lock')

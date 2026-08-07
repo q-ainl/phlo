@@ -6,4 +6,4 @@
 @ backend:  true
 @ tags:     active class ui view html
 
-function active(bool $cond, string $classList = void) => $cond || $classList ? ' class="'.$classList.($cond ? ($classList ? space : void).'active' : void).'"' : void
+function active(bool $cond, string $classList = void):string => $cond || $classList ? ' class="'.$classList.($cond ? ($classList ? space : void).'active' : void).'"' : void

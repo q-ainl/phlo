@@ -8,7 +8,7 @@
 @ requires: cli obj
 @ tags:     await parallel cli process daemon
 
-function await(...$jobs){
+function await(...$jobs):array {
 	if (daemon) return daemon::await($jobs)
 	$children = []
 	$open = []

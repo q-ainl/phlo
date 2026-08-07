@@ -7,7 +7,7 @@
 @ requires: cli
 @ tags:     async cli process background app daemon
 
-function phlo_async(string $cb, ...$args){
+function phlo_async(string $cb, ...$args):bool {
 	if (daemon) return daemon::fire($cb, $args)
 	$cmd = cli.space.escapeshellarg($_SERVER['SCRIPT_FILENAME']).space.escapeshellarg($cb).loop($args, fn($a) => space.escapeshellarg((string)$a), void).' > /dev/null 2>&1 & echo $!'
 	exec($cmd, $r)

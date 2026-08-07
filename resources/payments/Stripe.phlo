@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     stripe payments checkout subscription billing webhook
 
-static boot($secret, $version = '2025-09-30.clover'){
+static boot($secret, $version = '2025-09-30.clover'):void {
 	$secret = trim((string)$secret)
 	if (!$secret) error('Stripe secret key not configured', 500)
 	\Stripe\Stripe::setApiKey($secret)

@@ -7,9 +7,9 @@
 @ backend:  true
 @ tags:     useragent browser os device web
 
-prop source => %req->userAgent ?: null
+prop source:?string => %req->userAgent ?: null
 
-prop os {
+prop os:string {
 	if (!$this->source) return 'Unknown'
 	$list = [
 		'Android' => '/Android/i',
@@ -25,7 +25,7 @@ prop os {
 	return 'Unknown'
 }
 
-prop osV {
+prop osV:string {
 	if (!$this->source) return void
 	if (preg_match('/(?:Android|OS X|OS|Windows NT)\s*([0-9._]+)/i', $this->source, $m)){
 		$v = strtr($m[1], [us => dot])
@@ -36,7 +36,7 @@ prop osV {
 	return void
 }
 
-prop osFull {
+prop osFull:string {
 	if (!$this->OS) return 'Unknown'
 	if ($this->OS === 'Windows') return 'Windows'
 	$v = $this->osV
@@ -46,7 +46,7 @@ prop osFull {
 	return trim($this->OS.space.$short)
 }
 
-prop name {
+prop name:string {
 	if (!$this->source) return 'Unknown'
 	if (preg_match('/\bwv\b/',$this->source) || (preg_match('/Version\/\d+\.\d+/',$this->source) && strpos($this->source,'Chrome/')!==false && strpos($this->source,'Safari/')!==false && strpos($this->source,' Mobile ')!==false)) return 'Android WebView'
 	if (preg_match('/CriOS\/([0-9.]+)/',$this->source)) return 'Chrome'
@@ -63,7 +63,7 @@ prop name {
 	return 'Unknown'
 }
 
-prop version {
+prop version:string {
 	if (!$this->source) return void
 	if (preg_match('/(?:Edg|OPR|Chrome|Firefox|Version|CriOS|FxiOS|SamsungBrowser)\/([0-9.]+)/', $this->source, $m)){
 		$v = $m[1]
@@ -74,7 +74,7 @@ prop version {
 	return void
 }
 
-prop full {
+prop full:string {
 	if (!$this->name) return 'Unknown'
 	$v = $this->version
 	if (!$v) return $this->name
@@ -83,7 +83,7 @@ prop full {
 	return rtrim($this->name.space.$short)
 }
 
-prop device {
+prop device:string {
 	if (!$this->source) return 'Unknown'
 	if (preg_match('/iPad|Tablet|Tab|SM-T|Nexus 7|Nexus 10/i', $this->source)) return 'Tablet'
 	if (preg_match('/Mobile|iPhone|Android.*Mobile|SM-G|Pixel [0-9]/i', $this->source)) return 'Phone'

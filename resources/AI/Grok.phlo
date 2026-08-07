@@ -14,4 +14,4 @@ const endpoint = 'https://api.x.ai/v1/'
 const cred     = 'Grok'
 const label    = 'Grok'
 
-method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
+method embedding($input, $model = 'text-embedding-3-small'):array => %OpenAI->embedding($input, $model)

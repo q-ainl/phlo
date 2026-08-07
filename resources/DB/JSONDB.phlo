@@ -14,8 +14,8 @@ method __construct(private string $file){
 	$dir = dirname($this->file)
 	is_dir($dir) || mkdir($dir, 0755, true) || error("JSONDB: cannot create dir $dir")
 }
-prop PDO => error('JSONDB driver does not use PDO')
-prop fieldQuotes = void
+prop PDO:\PDO => error('JSONDB driver does not use PDO')
+prop fieldQuotes:string = void
 prop lastInsertedId = null
 
 // Builds the quoted id list an IN clause expects.

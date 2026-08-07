@@ -10,8 +10,8 @@
 
 static instruction = 'Summarise what this application does and what has changed recently. Write in the same language as the description, at most eight sentences, running text without lists or headings. Do not open with a sentence about what you are going to do.'
 
-prop translate => function_exists('en')
-prop labels => arr(
+prop translate:bool => function_exists('en')
+prop labels:array => arr(
 	title:    'Manual',
 	lead:     'This page comes from the source itself: the description, what the code exposes and the latest changes.',
 	state:    'State',
@@ -30,7 +30,7 @@ prop labels => arr(
 	noInfo:   'This app does not carry a data/app.md yet.',
 	noNodes:  'This file carries no nodes; it consists of markup or script.',
 )
-method label($key) => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
+method label($key):string => $this->translate ? en($this->labels[$key]) : $this->labels[$key]
 
 static appInfo:string => (string)(reflect::appInfo() ?: void)
 

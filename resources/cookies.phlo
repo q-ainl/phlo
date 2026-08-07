@@ -9,9 +9,9 @@
 
 $this->objData = $_COOKIE
 
-prop lifetimeDays = 180
+prop lifetimeDays:int = 180
 
-method objSet($key, $value, array $options = []){
+method objSet($key, $value, array $options = []):bool {
 	$this->objData[$key] = $value
 	$_COOKIE[$key] = $value
 	$defaults = ['expires' => time() + $this->lifetimeDays * 86400, 'path' => slash, 'secure' => %req->secure, 'httponly' => true, 'samesite' => 'Lax']
@@ -19,7 +19,7 @@ method objSet($key, $value, array $options = []){
 	return true
 }
 
-method __unset($key){
+method __unset($key):void {
 	unset($this->objData[$key], $_COOKIE[$key])
 	$options = ['expires' => time() - 86400, 'path' => slash, 'secure' => %req->secure, 'httponly' => true, 'samesite' => 'Lax']
 	setcookie($key, void, $options)

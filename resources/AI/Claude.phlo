@@ -30,7 +30,7 @@ static tool($tool):array => [
 	],
 ]
 
-method embedding($input, $model = 'text-embedding-3-small') => %OpenAI->embedding($input, $model)
+method embedding($input, $model = 'text-embedding-3-small'):array => %OpenAI->embedding($input, $model)
 
 method vision($text, $image, $stream = false, ...$args):obj|Generator {
 	$data = is_string($image) && str_starts_with($image, 'http') ? file_get_contents($image) : $image

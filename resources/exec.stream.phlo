@@ -7,7 +7,7 @@
 @ backend:  true
 @ tags:     stream shell cli process yield
 
-function exec_stream(string $cmd, ?int $timeoutSec = 0){
+function exec_stream(string $cmd, ?int $timeoutSec = 0):Generator {
 	$desc = [0 => ['pipe','r'], 1 => ['pipe','w'], 2 => ['pipe','w']]
 	$proc = proc_open($cmd, $desc, $pipes)
 	if (!is_resource($proc)) return

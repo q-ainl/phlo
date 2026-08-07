@@ -12,7 +12,7 @@ function phlo_sync(string $cb, ...$args){
 	return $j;
 }
 
-function await(...$jobs){
+function await(...$jobs):array {
 	if (daemon) return daemon::await($jobs);
 	$children = [];
 	$open = [];

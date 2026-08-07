@@ -8,7 +8,7 @@
 @ requires: exec_stream cli
 @ tags:     stream phlo cli process yield daemon
 
-function phlo_stream(string $cb, ...$args){
+function phlo_stream(string $cb, ...$args):Generator {
 	if (daemon){
 		yield from daemon::stream($cb, $args)
 		return

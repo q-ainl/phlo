@@ -8,10 +8,10 @@
 @ advice:   Use %lang in views to show current app lang (for example in links)
 @ tags:     lang translation i18n locale ai
 
-function nl($text, ...$args) => %lang->translation('nl', $text, ...$args)
-function en($text, ...$args) => %lang->translation('en', $text, ...$args)
+function nl($text, ...$args):string => %lang->translation('nl', $text, ...$args)
+function en($text, ...$args):string => %lang->translation('en', $text, ...$args)
 
-static asyncBatch($from, $to, $json){
+static asyncBatch($from, $to, $json):void {
 	%app->lang = $to
 	$texts = json_decode($json, true)
 	$translations = $this->translateBatch($from, $to, $texts)
@@ -20,22 +20,22 @@ static asyncBatch($from, $to, $json){
 
 view => %app->lang
 
-prop model = 'gpt-4o-mini'
+prop model:string = 'gpt-4o-mini'
 prop instructions = void
-static fileCache = []
+static fileCache:array = []
 
-method file($lang) => langs.$lang.'.ini'
+method file($lang):string => langs.$lang.'.ini'
 
-method escape($value) => strtr((string)$value, [bs => bs.bs, dq => bs.dq, lf => '\n'])
-method unescape($value) => strtr(strtr($value, [bs.bs => "\x01", bs.dq => dq, '\n' => lf]), ["\x01" => bs])
+method escape($value):string => strtr((string)$value, [bs => bs.bs, dq => bs.dq, lf => '\n'])
+method unescape($value):string => strtr(strtr($value, [bs.bs => "\x01", bs.dq => dq, '\n' => lf]), ["\x01" => bs])
 
-method lineValue($line, $eq){
+method lineValue($line, $eq):string {
 	$value = rtrim(substr($line, $eq + 3), cr.lf)
 	if (strlen($value) > 1 && $value[0] === dq && substr($value, -1) === dq) $value = substr($value, 1, -1)
 	return $this->unescape($value)
 }
 
-method readAll($file){
+method readAll($file):array {
 	$items = []
 	if (!is_file($file)) return $items
 	foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] AS $line){
@@ -46,7 +46,7 @@ method readAll($file){
 	return $items
 }
 
-method search($file, $hash){
+method search($file, $hash):?string {
 	$size = (int)@filesize($file)
 	if (!$size) return null
 	$h = @fopen($file, 'rb')
@@ -92,7 +92,7 @@ method search($file, $hash){
 	return $value
 }
 
-method lookup($hash){
+method lookup($hash):?string {
 	$file = $this->file(%app->lang)
 	$mtime = (int)@filemtime($file)
 	$cache =& static::$fileCache[$file]
@@ -103,7 +103,7 @@ method lookup($hash){
 	return $cache['items'][$hash] = $value
 }
 
-method save($lang, $pairs){
+method save($lang, $pairs):void {
 	$file = $this->file($lang)
 	$items = $this->readAll($file)
 	foreach ($pairs AS $hash => $value) $items[$hash] = $value
@@ -117,11 +117,11 @@ method save($lang, $pairs){
 	unset(static::$fileCache[$file])
 }
 
-method transContext => ($instr = trim($this->instructions ?? void)) !== void ? lf.'Context from the app author about purpose and domain: '.$instr : void
+method transContext:string => ($instr = trim($this->instructions ?? void)) !== void ? lf.'Context from the app author about purpose and domain: '.$instr : void
 
-prop browser => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
-method cookie => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
-method detect($text, $fallback = 'en'){
+prop browser:?string => last($langs = array_filter(explode(comma, %req->acceptLanguage), fn($lang) => isset(%app->langs[substr($lang, 0, 2)])), $langs ? substr(current($langs), 0, 2) : null)
+method cookie:?string => ($lang = %cookies->lang) && %app->langs[$lang] ? $lang : null
+method detect($text, $fallback = 'en'):string {
 	$res = %AI->chat (
 		model: $this->model,
 		system: 'Analyse which language this text is in and return only the ISO 639-1 code of the language, no other data!',
@@ -130,8 +130,8 @@ method detect($text, $fallback = 'en'){
 	)->answer
 	return strlen($res) === 2 ? strtolower($res) : $fallback
 }
-method hash($from, $text) => $from.($short = substr(implode(regex_all('/[A-Za-z0-9]+/', ucwords($text))[0]), 0, 8)).substr(md5($text), 0, 10 - strlen($short))
-method translation($from, $text, ...$args){
+method hash($from, $text):string => $from.($short = substr(implode(regex_all('/[A-Za-z0-9]+/', ucwords($text))[0]), 0, 8)).substr(md5($text), 0, 10 - strlen($short))
+method translation($from, $text, ...$args):string {
 	if ($from === %app->lang) $translation = strtr($text, ['\n' => lf])
 	else {
 		$translation = []
@@ -150,7 +150,7 @@ method translation($from, $text, ...$args){
 	}
 	return $args ? sprintf($translation, ...$args) : $translation
 }
-method translate($from, $to, $text){
+method translate($from, $to, $text):string {
 	if ($from === $to) return $text
 	return %AI->chat (
 		model: $this->model,
@@ -159,7 +159,7 @@ method translate($from, $to, $text){
 		temperature: 0,
 	)->answer
 }
-method translateBatch($from, $to, $texts){
+method translateBatch($from, $to, $texts):array {
 	if ($from === $to) return $texts
 	$hashes = array_keys($texts)
 	$numbered = implode(lf, array_map(fn($i, $t) => ($i + 1).'. '.$t, array_keys($values = array_values($texts)), $values))
