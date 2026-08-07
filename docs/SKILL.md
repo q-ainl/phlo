@@ -313,6 +313,43 @@ Placed at the top of a `.phlo` file, before any nodes. Any `@ key: value` line i
 @ advice: use X for Y <- developer guidance, shown in reflect::objectIndex
 ```
 
+`@ summary` and `@ advice` are both required on every resource that is not a
+theme, transition or loader. They answer two different questions and neither
+substitutes for the other:
+
+- `@ summary` says **what it is**, in one sentence. A reader scanning an index
+  decides from this line whether to open the resource at all.
+- `@ advice` says **how to use it well**: what to configure, what people get
+  wrong, what the resource deliberately does not do. Write the sentence you
+  would say to someone about to use it for the first time.
+
+Both are shown on the object card in the manual and in reflection, so they are
+read far more often than the code beneath them.
+
+### Types and comments on a node
+
+Prefer a type over a comment. A type is checked by PHP, appears in the manual
+signature and in reflection without any work, and cannot fall out of date:
+
+```phlo
+static day($file):?string => ...      <- says more than a comment would
+```
+
+Three things to know before adding one. There is no `declare(strict_types=1)`,
+so scalars are coerced and a declared type only bites on `null` and on values
+that cannot convert. `:void` cannot go on an arrow node, because `=>` compiles
+to a `return`. And `:mixed` forbids falling off the end of a function, so a
+method that sometimes returns nothing stays untyped.
+
+Do not type a configuration property that an app redeclares in a subclass
+(`static table`, `static idColumn`, `static objCache`): a typed property must
+keep its type in every child, which turns a one-line model into a migration.
+
+Write a node comment only for what a type cannot say: a reason, an ordering
+constraint, a trap. Comments belong on the line before the node, and the first
+line has to be a complete sentence, because `reflect::find` and
+`reflect::compactRoutes` use that line on its own as the summary.
+
 ### Controller code
 
 Top-level statements outside any node (`route`, `prop`, `method`, `view`, `<style>`, `<script>`) are **controller code** - executed after class instantiation, not in `__construct`.

@@ -25,7 +25,11 @@ between the core and the ecosystem) is written down in [GOVERNANCE.md](GOVERNANC
 - **Resources (`resources/`)**: the preferred surface for contributions.
   Resources are isolated `.phlo` files with `@ summary` / `@ requires`
   metadata. New integrations, fields, DOM components, themes and transitions
-  belong here. Follow the metadata conventions of the existing resources.
+  belong here. Follow the metadata conventions of the existing resources:
+  every resource carries both `@ summary` (what it is) and `@ advice` (how to
+  use it well), and nodes carry types rather than comments wherever a type can
+  say it. See "Resource metadata" and "Types and comments on a node" in
+  `docs/SKILL.md`.
 - **The engine (`phlo.php`, `functions.php`, `error.php`, `debug.php`,
   `control.php`, `classes/`)**: held to a stricter standard. Bug fixes and
   diagnostics improvements are welcome; structural changes should start as
