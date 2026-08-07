@@ -21,9 +21,9 @@ method robots {
 
 method intl($uri) => (%app->slugs ?? [])[$uri] ?? $uri
 
-// A sitemap entry is a uri string, or an obj/array carrying uri plus whatever
-// else that page has to say. Keeping it a list rather than a uri => value map
-// leaves room for a second fact later without changing what an entry means.
+// A sitemap entry is a uri string, or an object carrying that uri plus more.
+// Keeping it a list rather than a uri => value map leaves room for a second
+// fact later without changing what an entry means.
 method uri($page) => is_string($page) ? $page : (string)($this->field($page, 'uri') ?? void)
 
 method field($page, $key){
@@ -31,10 +31,11 @@ method field($page, $key){
 	return is_array($page) ? ($page[$key] ?? null) : ($page->$key ?? null)
 }
 
-// Only emitted when it parses. A wrong lastmod is worse than none: a crawler
-// that catches a site inventing them stops trusting the field domain-wide.
-// An entry without a date of its own falls back to the lastmod resource, so an
-// app that loads it needs no change here for its pages to carry one.
+// The date for one entry, or nothing at all when it does not parse.
+// A wrong lastmod is worse than none: a crawler that catches a site inventing
+// them stops trusting the field domain-wide. An entry without a date of its own
+// falls back to the lastmod resource, so an app that loads it needs no change
+// here for its pages to carry one.
 method lastmod($page){
 	$mod = $this->field($page, 'lastmod')
 	($mod === null || $mod === void) && class_exists('lastmod') && $mod = %lastmod->for($this->uri($page))
@@ -60,9 +61,10 @@ prop sitemapPages => (array)(%app->pages ?? [''])
 prop sitemapLangs => array_keys((array)(%app->langs ?? []))
 prop siteName => %app->title ?? id
 prop twitterCard = false
-// Give it '@type' plus what only your app knows. The url, language, publisher,
-// description and image are filled in from what this resource already resolves
-// for the og tags, so a page cannot describe itself two different ways.
+// Schema.org data for this page, as '@type' plus what only your app knows.
+// The url, language, publisher, description and image are filled in from what
+// this resource already resolves for the og tags, so a page cannot describe
+// itself two different ways.
 prop structuredData => %app->structuredData ?? null
 
 method schemaData {
@@ -129,9 +131,9 @@ view head:
 		<meta name=twitter:image content="$this->ogImage">
 	</if>
 </if>
-<if !$this->noIndex>
-	<link rel=canonical href="{[ $this->canonical ]}">
-</if>
 <if $data = $this->schemaData>
 	<script type="application/ld+json">{{ json_encode($data, JSON_UNESCAPED_UNICODE) }}</script>
+</if>
+<if !$this->noIndex>
+	<link rel=canonical href="{[ $this->canonical ]}">
 </if>

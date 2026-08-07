@@ -7,13 +7,13 @@
 @ advice:   Call lastmod::stamp from a build hook, so the dates are read where the sources are. Resolving them at runtime does not work on a release node, which carries no .phlo sources, and a deploy rewrites every mtime, so every page would claim to have changed on the day it was deployed. Pages in %app->pages resolve by convention; declare prop %lastmod.sources as uri => file path for the rest. A page that resolves to nothing simply gets no lastmod, which is the right answer: a crawler that catches a site inventing them stops trusting the field domain-wide.
 @ tags:     seo sitemap lastmod build stamp
 
-// Beside the generated PHP, so the map travels with a release. The release hook
-// passes its own output directory: it runs through the dev entrypoint and would
-// otherwise stamp the build it is not shipping.
+// Where the map lives, beside the generated PHP so it travels with a release.
+// The release hook passes its own output directory: it runs through the dev
+// entrypoint and would otherwise stamp the build it is not shipping.
 static file($dir = null) => ($dir ?: php).'lastmod.json'
 
-// Sources the convention cannot find, as uri => file path. Declare them from
-// your app: prop %lastmod.sources => arr(...)
+// Sources the convention cannot find, as a uri to file path map.
+// Declare them from your app with prop %lastmod.sources.
 prop sources = []
 
 // The file most likely to render this page.
