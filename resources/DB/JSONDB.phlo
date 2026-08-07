@@ -26,7 +26,7 @@ prop lastInsertedId = null
 method quoteList(array $ids):string => dq.implode(dq.comma.dq, $ids).dq
 
 method objRead:array => file_exists($this->file) ? json_decode(file_get_contents($this->file), true) ?: [] : []
-method objWrite(array $data):int|false => file_put_contents($this->file, json_encode(array_values($data), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX)
+method objWrite(array $data):int|false => file_put_contents($this->file, json_encode(array_values($data), jsonFlags), LOCK_EX)
 method objNextId(array $data):int => $data ? (int)max(array_column($data, 'id')) + 1 : 1
 
 method objFilter(array $data, string $where = void, ...$args):array {
