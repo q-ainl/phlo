@@ -256,7 +256,7 @@
                 },
                 { "match": "\\b(if|else|elseif|foreach|for|while|switch|case|default|break|continue|return|match|fn|use|new|as|AS|instanceof|try|catch|finally|throw|yield|global|echo|print)\\b", "name": "keyword.control.phlo" },
                 { "match": "\\b(true|false|null)\\b", "name": "constant.language.phlo" },
-                { "match": "\\b(void|lf|nl|cr|tab|space|comma|dot|dash|slash|colon|semi|sq|dq|bs|bt|br|eq|qm|us|perc|pipe|jsonFlags|debug|build|app|php|www|data|engine|host|cli|id|phlo)\\b", "name": "constant.language.phlo-const.phlo" },
+                { "match": "\\b(void|lf|nl|cr|tab|space|comma|dot|dash|slash|colon|semi|sq|dq|bs|bt|br|eq|qm|us|perc|pipe|jsonPretty|jsonFlat|debug|build|app|php|www|data|engine|host|cli|id|phlo)\\b", "name": "constant.language.phlo-const.phlo" },
                 { "match": "\\b(view|apply|route|error|phlo|location|output|title|esc|arr|obj|loop|first|last|debug|dx|d|regex|regex_all|json_read|json_write|files|dirs|mime|DOM|indent|indentView|duration|size_human)(?=\\s*\\()", "name": "support.function.phlo" },
                 { "match": "\\b[A-Za-z_]\\w*(?=\\s*\\()", "name": "entity.name.function.call.phlo" },
                 { "match": "=>|===|==|!==|!=|<=>|<=|>=|&&|\\|\\||\\?\\?=?|\\.=|[-+*/%.!?:=<>|&]", "name": "keyword.operator.phlo" },

@@ -2,7 +2,7 @@ function highlight_Phlo(source){
   const esc = s => s.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;')
   const sp = (c, s) => `<span class="${c}">${s}</span>`
   const CONSTS = new Set([
-    'cli', 'async', 'method', 'jsonFlags', 'br', 'bs', 'bt', 'colon', 'comma', 'cr', 'dash', 'dot', 'dq', 'eq',
+    'cli', 'async', 'method', 'jsonPretty', 'jsonFlat', 'br', 'bs', 'bt', 'colon', 'comma', 'cr', 'dash', 'dot', 'dq', 'eq',
     'lf', 'nl', 'perc', 'pipe', 'qm', 'semi', 'slash', 'space', 'sq', 'tab', 'us', 'void', 'debug', 'build',
     'new', 'true', 'false', 'null', 'app', 'php', 'www', 'data', 'both',
   ])

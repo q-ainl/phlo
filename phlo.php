@@ -23,8 +23,8 @@ const sq    = '\'';
 const tab   = "\t";
 const us    = '_';
 const void  = '';
-const jsonPretty = JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
 const jsonFlat   = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+const jsonPretty = jsonFlat | JSON_PRETTY_PRINT;
 
 class PhloException extends RuntimeException {
 	public function __construct(string $message, int $code = 0, public array $data = []){ parent::__construct($message, $code); }
