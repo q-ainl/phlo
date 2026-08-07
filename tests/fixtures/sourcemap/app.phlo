@@ -1,16 +1,28 @@
 @ summary: Sourcemap line-mapping fixture. Each node carries a unique MARK_<type> token a few
 @          lines into its body, so SourcemapTest can map the compiled line back to source and
-@          catch per-node-type off-by-one errors in the sourcemap.
+@          catch per-node-type off-by-one errors in the sourcemap. This file declares routes and
+@          no controller, so its route table is prepended to the class body and every mapped line
+@          shifts by the size of that block.
 
 prop label = 'sourcemap'
+
+prop arrowProp => 'MARK_PROPARROW'
+
+static arrowStatic => 'MARK_STATICARROW'
+
+static staticBody {
+	$first = 1
+	$tag = 'MARK_STATICBODY'
+	return $tag.$first
+}
+
+method arrowMethod => 'MARK_METHODARROW'
 
 method plainMethod($x){
 	$one = 1
 	$two = 'MARK_METHOD'
 	return $one.$two.$x
 }
-
-app::route()
 
 route GET status {
 	$ok = true
@@ -31,6 +43,8 @@ view footer:
 <small>filler line one</small>
 <em>MARK_VIEWVAL</em>
 </footer>
+
+function arrowFn => 'MARK_FUNCTIONARROW'
 
 function looseFn($n){
 	$a = 1

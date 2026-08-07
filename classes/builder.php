@@ -136,7 +136,7 @@ class build_builder {
 					if (isset($node->line)){
 						$line    = substr_count($prefix.$functions, lf);
 						$hasBody = str_contains($node->body ?? void, lf);
-						$map[]   = ['php' => $line + 1 + ($hasBody ? 1 : 0), 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name, 'source' => $file->file];
+						$map[]   = ['php' => $line + 2, 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name, 'source' => $file->file];
 					}
 					$functions .= $node->renderFunction().($minifyPHP ? void : lf);
 				}
@@ -230,7 +230,8 @@ class build_builder {
 				$hasBody = $isMethod && str_contains($node->body ?? void, lf);
 				// A view body opens with a synthetic `$_ = [];` line that maps to no source line, so the php
 				// anchor must skip it too, otherwise every body line reports one line too late.
-				$map[]   = ['php' => $line + 1 + ($isMethod ? 1 : 0) + ($node->operator === 'view' && $hasBody ? 1 : 0), 'phlo' => $node->line + ($hasBody ? 1 : 0), 'name' => $node->name];
+				$declared = $hasBody && $node->name !== 'controller';
+				$map[]    = ['php' => $line + 1 + ($isMethod ? 1 : 0) + ($node->operator === 'view' && $hasBody ? 1 : 0), 'phlo' => $node->line + ($declared ? 1 : 0), 'name' => $node->name];
 			}
 			if ($isValue)        $body .= $node->renderValue();
 			elseif ($isShortRoute) ;
@@ -241,6 +242,7 @@ class build_builder {
 			}
 		}
 		if (!$body) return null;
+		if ($routes) foreach ($map as $index => $row) $map[$index]['php'] = $row['php'] + substr_count($routes, lf);
 		return ['php' => $PHP.$routes.rtrim($body)."\n}\n", 'map' => $map];
 	}
 
@@ -323,18 +325,13 @@ class build_builder {
 		$entry = $this->sourcemap[$file] ?? null;
 		if (!$entry) return null;
 		$source = $entry['source'] ?? void;
-		$best   = $next = null;
+		$best   = null;
 		foreach ($entry['map'] ?? [] as $row){
-			if (($row['php'] ?? 0) > $line) $next = !$next || $row['php'] < $next['php'] ? $row : $next;
-			elseif (!$best || $row['php'] > $best['php']) $best = $row;
+			if (($row['php'] ?? 0) <= $line && (!$best || $row['php'] > $best['php'])) $best = $row;
 		}
 		if ($best){
 			$source = $best['source'] ?? $source;
 			$line   = $best['phlo'] + ($line - $best['php']);
-			$ceiling = $next['phlo'] ?? null ? $next['phlo'] - 1 : null;
-			$lines   = $source === void ? 0 : count(@file($source) ?: []);
-			if ($lines) $ceiling = $ceiling === null ? $lines : min($ceiling, $lines);
-			if ($ceiling !== null) $line = max($best['phlo'], min($line, $ceiling));
 		}
 		return $source === void ? null : $source.colon.$line;
 	}

@@ -13,9 +13,9 @@
 	'%PHP%/app.php' => [
 		'source' => '%SRC%/app.phlo',
 		'map' => [
-			['php' => 6, 'phlo' => 3, 'name' => 'title'],
-			['php' => 8, 'phlo' => 5, 'name' => 'GETHome'],
-			['php' => 11, 'phlo' => 7, 'name' => 'main'],
+			['php' => 9, 'phlo' => 3, 'name' => 'title'],
+			['php' => 11, 'phlo' => 5, 'name' => 'GETHome'],
+			['php' => 14, 'phlo' => 7, 'name' => 'main'],
 		],
 	],
 	'%PHP%/creds.php' => [

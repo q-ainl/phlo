@@ -3,7 +3,7 @@
 		'source' => '',
 		'map' => [
 			[
-				'php' => 3,
+				'php' => 4,
 				'phlo' => 18,
 				'name' => 'slugify',
 				'source' => '%SRC%/page.items.phlo',
@@ -16,7 +16,7 @@
 			['php' => 6, 'phlo' => 3, 'name' => 'title'],
 			['php' => 7, 'phlo' => 4, 'name' => 'version'],
 			['php' => 9, 'phlo' => 5, 'name' => 'now'],
-			['php' => 12, 'phlo' => 8, 'name' => 'controller'],
+			['php' => 12, 'phlo' => 7, 'name' => 'controller'],
 			['php' => 21, 'phlo' => 11, 'name' => 'GETHome'],
 			['php' => 24, 'phlo' => 12, 'name' => 'AsyncPOSTItemsSave'],
 			['php' => 27, 'phlo' => 14, 'name' => 'home'],

@@ -3,13 +3,13 @@
 		'source' => '',
 		'map' => [
 			[
-				'php' => 3,
+				'php' => 4,
 				'phlo' => 9,
 				'name' => 'camel',
 				'source' => '%PHLO%/resources/camel.phlo',
 			],
 			[
-				'php' => 7,
+				'php' => 8,
 				'phlo' => 9,
 				'name' => 'slug',
 				'source' => '%PHLO%/resources/slug.phlo',
@@ -19,10 +19,10 @@
 	'%PHP%/app.php' => [
 		'source' => '%SRC%/app.phlo',
 		'map' => [
-			['php' => 6, 'phlo' => 3, 'name' => 'title'],
-			['php' => 8, 'phlo' => 7, 'name' => 'GETW'],
-			['php' => 11, 'phlo' => 9, 'name' => 'slugTitle'],
-			['php' => 15, 'phlo' => 12, 'name' => 'shell'],
+			['php' => 9, 'phlo' => 3, 'name' => 'title'],
+			['php' => 11, 'phlo' => 7, 'name' => 'GETW'],
+			['php' => 14, 'phlo' => 9, 'name' => 'slugTitle'],
+			['php' => 18, 'phlo' => 12, 'name' => 'shell'],
 		],
 	],
 	'%PHP%/widget.php' => [

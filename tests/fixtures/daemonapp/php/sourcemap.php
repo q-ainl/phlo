@@ -31,9 +31,9 @@
 	'/srv/control/phlo/tests/fixtures/daemonapp/php/app.php' => [
 		'source' => '/srv/control/phlo/tests/fixtures/daemonapp/app.phlo',
 		'map' => [
-			['php' => 7, 'phlo' => 3, 'name' => 'ping'],
-			['php' => 10, 'phlo' => 4, 'name' => 'daemonLoaded'],
-			['php' => 14, 'phlo' => 8, 'name' => 'dueWeekly'],
+			['php' => 10, 'phlo' => 3, 'name' => 'ping'],
+			['php' => 13, 'phlo' => 4, 'name' => 'daemonLoaded'],
+			['php' => 17, 'phlo' => 8, 'name' => 'dueWeekly'],
 		],
 	],
 	'/srv/control/phlo/tests/fixtures/daemonapp/php/tasks.php' => [

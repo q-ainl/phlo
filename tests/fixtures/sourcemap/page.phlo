@@ -1,0 +1,14 @@
+@ summary: Second half of the sourcemap fixture: a file whose bare statements become a controller.
+@          A controller has no declaration line above its body, unlike every other node, so its
+@          mapping must not skip one.
+
+prop heading = 'page'
+
+$boot = 'MARK_CONTROLLER'
+$ready = true
+
+method render($x){
+	$one = 1
+	$tag = 'MARK_PAGEMETHOD'
+	return $tag.$one.$x.$boot
+}

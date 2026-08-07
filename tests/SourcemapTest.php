@@ -12,7 +12,8 @@ final class SourcemapTest extends TestCase {
 	public static function setUpBeforeClass():void {
 		phlo_test_wipe(php);
 		phlo_test_wipe(www);
-		$src = __DIR__.'/fixtures/sourcemap/app.phlo';
+		$src     = __DIR__.'/fixtures/sourcemap/app.phlo';
+		$sources = [$src, __DIR__.'/fixtures/sourcemap/page.phlo'];
 		new build_builder([
 			'build' => [
 				'routes' => true, 'buildCSS' => false, 'buildJS' => false,
@@ -21,12 +22,14 @@ final class SourcemapTest extends TestCase {
 				'iconNS' => 'app', 'comments' => true, 'extends' => 'obj',
 				'exclude' => [], 'trace' => false,
 			],
-			'sources'    => ['app' => [$src], 'resources' => []],
+			'sources'    => ['app' => $sources, 'resources' => []],
 			'app_source' => $src,
 		], true);
 
-		foreach (file($src) as $i => $line){
-			if (preg_match('/MARK_\w+/', $line, $m)) self::$markers[$m[0]]['src'] = $i + 1;
+		foreach ($sources as $source){
+			foreach (file($source) as $i => $line){
+				if (preg_match('/MARK_\w+/', $line, $m)) self::$markers[$m[0]]['src'] = $i + 1;
+			}
 		}
 		foreach (glob(php.'*.php') ?: [] as $file){
 			foreach (file($file) as $i => $line){
