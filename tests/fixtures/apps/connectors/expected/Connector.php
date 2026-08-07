@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Base class for API connectors: credentials, JSON requests, retries, pagination and a normalized result contract
+// advice:   Make one with Connector::make(); it reads its own section from %creds, so keys live in data/creds.ini or in PHLO__Section__key in the environment and never in your code. Every call answers in the same shape, ok with status and data or ok false with error, and nothing is thrown, so test ->ok rather than catching. Raise retries above zero to let GET, HEAD and QUERY back off and try again on 429 and 5xx; writes are never retried, because a repeated POST would book twice.
 // package:  connectors
 // frontend: false
 // backend:  true

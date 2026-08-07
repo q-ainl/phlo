@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Persistent app settings in data/settings.json: setting() lists everything, setting(key) reads one value or null, setting(key, value) writes
+@ advice:   Three shapes in one function: setting() gives everything, setting(key) reads one value or null, setting(key, value) writes and saves at once. It is meant for the handful of choices an app keeps, in data/settings.json, not for data with a life of its own; anything you would want to query or relate belongs in a model.
 @ package:  files
 @ frontend: false
 @ backend:  true

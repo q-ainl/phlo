@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:     q-ai.nl
 @ summary:     Boolean field
+@ advice:      Stores 1 or 0 and never null, so a checkbox that is left alone still saves a value. Set true and false to change the two symbols a list shows.
 @ package:     fields
 @ frontend:    true
 @ backend:     true

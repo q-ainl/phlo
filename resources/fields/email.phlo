@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Email field
+@ advice:   Only changes how a stored address is shown, as a mailto link. It validates nothing, so add pattern or required when the address has to be real.
 @ package:  fields
 @ frontend: false
 @ backend:  true

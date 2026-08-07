@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Client-side file upload image resizer
+@ advice:   Scales a picked file down in the browser before it is uploaded, so a phone photo of several megabytes leaves as a few hundred kilobytes. It only shrinks, keeps the aspect ratio, and gives a data URL back through the callback, which can go straight into a preview or a form field. The image field uses it, so an upload through the CMS is already covered.
 @ package:  dom
 @ frontend: true
 @ backend:  false

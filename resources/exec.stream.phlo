@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Stream shell command output via yielding
+@ advice:   Yields a shell command's output line by line, with error true on the lines that came from stderr, so a failure can be shown as it happens instead of after. It reads stdout and stderr together, which is what keeps a command that writes a lot to one of them from deadlocking. Pass a timeout for anything that could hang; zero waits forever.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

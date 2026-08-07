@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Minimal PDOStatement-like wrapper for JSONDB result arrays
+@ advice:   Exists so JSONDB can hand back something that behaves like a PDO statement, which is what lets the ORM stay unaware of which driver answered. You do not build one yourself; you meet it as the return value of a JSONDB query.
 @ package:  database
 @ frontend: false
 @ backend:  true

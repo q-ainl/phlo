@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Embeddings resource with Qdrant
+@ advice:   Embeddings are cached in APCu for four weeks per input, so repeating a search costs nothing at the AI end. create() opens a collection at 1536 dimensions, the length of an OpenAI vector, so state the size yourself when another engine fills it. search() without input sends a zero vector, which lists a collection rather than searching it.
 @ package:  ai
 @ frontend: false
 @ backend:  true

@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Notification to the central hub: POST to [notify].url (secret header) via Phlo's HTTP() function. No-op without [notify] config.
+@ advice:   One line to send a notification to the central hub, and quietly nothing at all when no hub is configured, so the same code runs on a laptop and on a server. That silence cuts both ways: a missing config gives no error, so check the hub itself when a message fails to arrive.
 @ package:  fleet
 @ frontend: false
 @ backend:  true

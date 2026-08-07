@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Convert text to URL slug
+@ advice:   Makes a URL slug: accents are folded to their ascii letter, everything else becomes a dash. Two different titles can produce the same slug, so check for a collision before you use one as an id.
 @ package:  string
 @ frontend: false
 @ backend:  true

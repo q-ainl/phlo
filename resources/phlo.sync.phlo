@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Run an app target synchronously, via the daemon pool or a one-shot CLI process
+@ advice:   Runs an app target and gives you its return value, in the pool under the daemon and as a CLI process without one. JSON output is decoded, anything else comes back as text, and a job that answers with an error field raises it here, so a failure surfaces in the caller rather than being swallowed.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

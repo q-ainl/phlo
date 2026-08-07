@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Convert timestamp age to human label
+@ advice:   Rounds a timestamp to one unit that reads well, so a moment ago and last year both come out short. Define tsLabels to say it in another language; the frontend has the same trick with app.tsLabels, so both sides can speak the visitor's language.
 @ package:  time
 @ frontend: false
 @ backend:  true

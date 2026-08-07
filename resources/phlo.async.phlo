@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Run an app target in the background, via the daemon pool or a one-shot CLI process
+@ advice:   Fire and forget: it starts an app target and returns at once, so nothing that follows can see the result or whether it went well. Use it for work a visitor should not wait on, and let the job write its own outcome somewhere you can read back. Use phlo_sync when you need the answer, await when you need several.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

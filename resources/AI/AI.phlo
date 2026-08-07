@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Unified AI facade with engine auto-detect
+@ advice:   One door for every engine: %AI->chat reads the engine from the model name, so gpt goes to OpenAI, claude to Claude and gemini to Gemini, while via names one outright. Every engine answers in the same shape, with answer, model, finish and a token count, so swapping models is a one-word change. A model no rule matches falls back to OpenAI, and each engine still needs credentials of its own.
 @ package:  ai
 @ frontend: false
 @ backend:  true

@@ -2,6 +2,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Base ORM field
+@ advice:   Every field type extends this one and is made with field(type: 'x'), which resolves to the resource field_x; anything else you pass becomes a property, so title, required, length, pattern and enum need no declaration. Override input() for the form and label() for the list, and let objColumns name the columns the field owns, so a field that stores nothing returns an empty array.
 @ package:  fields
 @ frontend: false
 @ backend:  true

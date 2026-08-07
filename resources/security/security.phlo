@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Generic security resource
+@ advice:   Pick a profile per app rather than writing headers yourself: strict allows only nonced scripts and styles, basic allows your own files, marketing also allows images from anywhere, and api shuts everything off and marks the response as an API. Async responses get no policy, because the page they land in already has one. Add a CDN or a media host to sources and a domain that may frame you to whitelist; those are the two escape hatches, and everything else stays closed. Under debug, basic and marketing let inline scripts through so the debug console runs, so a production site with debug on is running a weaker policy than it thinks.
 @ package:  security
 @ frontend: true
 @ backend:  true

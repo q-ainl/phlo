@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  File field
+@ advice:   An upload is stored under a random token instead of its own name, so two people can send the same filename and no visitor can guess a neighbouring URL. That takes two columns, name and name_token, which objColumns already claims. Set accept to narrow the picker, and path and uri when the files live somewhere other than the default.
 @ package:  fields
 @ frontend: true
 @ backend:  true

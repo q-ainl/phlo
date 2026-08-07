@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Microsoft Graph connector (app-only client credentials): read users and calendars, send mail, create events
+// advice:   This is the app-only flow: the token belongs to the registration, not to a person, so it needs admin-consented application permissions and every call names the mailbox it acts on. Tokens are cached in APCu for their lifetime, so a run without APCu fetches one per request. Set mailbox to spare yourself passing a user each time.
 // extends:  Connector
 // package:  connectors
 // frontend: false

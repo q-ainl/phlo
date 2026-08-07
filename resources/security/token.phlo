@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:     Generate deterministic or random lowercase token
+@ advice:      Lowercase letters only, so a token survives being read aloud, typed by hand or used in a URL without escaping. Pass an input and the token is derived from it, so the same input always gives the same token: exactly what you want for a file or a record, and exactly what you do not want for a secret. Leave the input out for anything that must be unguessable.
 @ package:     security
 @ frontend:    false
 @ backend:     true

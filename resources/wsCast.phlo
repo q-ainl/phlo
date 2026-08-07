@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Broadcast a message to WebSocket clients via the daemon's cast bridge
+@ advice:   Sends a message to connected clients from anywhere in the backend, without a socket of your own: it goes over the daemon's bridge. wsTarget picks who, and wsExcept leaves one connection out, which is how you avoid echoing an action back to the person who caused it. It needs a running daemon, so it does nothing on a plain web process.
 @ package:  realtime
 @ frontend: false
 @ backend:  true

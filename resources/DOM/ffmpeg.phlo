@@ -1,7 +1,8 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  ffmpeg-wasm for the DOM: encode a canvas timeline to MP4, decode source frames via WebCodecs (seek fallback), transcode/run arbitrary ffmpeg. Exposes the ready singleton `ffmpeg` (and class `Ffmpeg`).
-@ package:  DOM
+@ advice:   Encodes and converts video in the browser through ffmpeg-wasm, so no file has to leave the machine and no server has to be equipped for it. That comes at a price: several megabytes of wasm on first use, and encoding costs real time and memory, so it fits a clip rather than an hour of video. It needs cross-origin isolation for its threads, which the headers have to allow.
+@ package:  dom
 @ frontend: true
 @ backend:  false
 @ tags:     video ffmpeg wasm canvas encode transcode webcodecs mp4 render

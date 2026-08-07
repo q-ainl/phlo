@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Google Gemini API
+@ advice:   Google puts the model in the path rather than in the body, so a wrong model name reads as a wrong URL. Its embeddings come from text-embedding-004 with a different vector length than OpenAI's, so a collection filled by one engine cannot be searched with the other.
 @ package:  ai
 @ frontend: false
 @ backend:  true

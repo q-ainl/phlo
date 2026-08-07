@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Thin Stripe wrappers: Checkout, Billing Portal, prices, customers, subscriptions and webhook verification. Call Stripe::boot($secret) first. Requires the Stripe PHP SDK (composer: stripe/stripe-php).
+@ advice:   A thin layer over the Stripe SDK, which has to be installed and booted with Stripe::boot($secret) before anything else. Checkout and the billing portal are hosted by Stripe, so card details never touch your server. Verify a webhook before you read it: an unverified POST is a stranger claiming a payment, and verifyWebhook() is what turns it into a fact.
 @ package:  payments
 @ frontend: false
 @ backend:  true

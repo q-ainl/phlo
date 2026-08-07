@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Telegram Bot API connector: send messages, photos and documents; poll updates
+// advice:   Needs a bot token from BotFather and a chat_id, and a person has to have written to the bot before it can write to them. Like Slack, the API answers 200 on refusal, which the connector already translates into ok false. photo() and document() take a URL or an existing file_id, not raw bytes.
 // extends:  Connector
 // package:  connectors
 // frontend: false

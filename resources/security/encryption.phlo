@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:     Encrypt and decrypt secretbox payloads using a key
+@ advice:      Authenticated encryption through libsodium: a fresh nonce per call travels with the value, so encrypting the same text twice gives different output and a changed ciphertext refuses to decrypt rather than returning rubbish. decrypt() gives false on a failure, so test with === false and not on falsiness. The key is hashed to the right length, which means any string works, but a short one is still a short secret.
 @ package:     security
 @ frontend:    false
 @ backend:     true

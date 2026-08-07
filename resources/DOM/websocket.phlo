@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Client-side WebSocket handler
+@ advice:   Opens the connection and keeps it open, reconnecting on its own, and treats what arrives as commands, so the server can update a page with the same instructions a route uses. It survives a page swap, which a hand-bound on() does not. A token belongs in a cookie rather than in the URL, since a URL ends up in logs.
 @ package:  realtime
 @ frontend: true
 @ backend:  false

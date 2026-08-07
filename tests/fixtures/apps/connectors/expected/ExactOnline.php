@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Exact Online connector (OAuth2): read sales invoices and accounts, create sales invoices
+// advice:   Every path is scoped to a division, so state which administration you mean; a wrong division answers empty rather than failing. Exact rotates the refresh token on every refresh, which is why the token store locks; running two apps on one refresh token logs both out.
 // extends:  OAuthConnector
 // package:  connectors
 // frontend: false

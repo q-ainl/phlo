@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Cookies data object
+@ advice:   Reads and writes a cookie as a property. Every cookie it sets is httponly, samesite Lax and secure on an https request, so a script cannot read it and it does not travel to another site. That also means a value you need in the browser does not belong here. lifetimeDays sets how long they last; unsetting the property removes the cookie on the visitor's side too.
 @ package:  web
 @ frontend: false
 @ backend:  true

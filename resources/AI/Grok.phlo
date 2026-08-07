@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  xAI Grok API (OpenAI-compatible, extends OpenAI)
+@ advice:   OpenAI-compatible, so it inherits the whole OpenAI resource and only swaps endpoint, model and credentials. Embeddings are not part of the deal and go out through OpenAI, so that key has to be present as well.
 @ extends:  OpenAI
 @ package:  ai
 @ frontend: false

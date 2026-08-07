@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  File resource
+@ advice:   Wrap a path in %file and everything about it is one call away: contents, size, mime, hashes, human dates, and a token() derived from the file's sha1, so the same content always yields the same token. Watch the difference between file and name: file is where it sits, name is what it is called, and ext and mime read the name. An upload therefore keeps its extension while the temp path has none.
 @ package:  files
 @ frontend: false
 @ backend:  true

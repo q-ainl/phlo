@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Phlo ORM class with unified columns and schema
+@ advice:   A model is a class with fields, and everything else follows from that: columns, form, validation and relations. Named arguments in a read are equality, so records(active: 1) is a where and nothing more; reach for query() when you need a comparison, a LIKE or an IN. A parent field gives back the record itself rather than an id, and children and many-relations are fetched once for a whole result set instead of per row. Set objValidate to have field rules enforced on save, objAudit to log every change, and objCache to keep reads in APCu.
 @ type:     abstract class
 @ package:  database
 @ frontend: false

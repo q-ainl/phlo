@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Persisted OAuth2 token store with automatic refresh via the OAuth2 resource
+// advice:   Tokens are kept as one file per key under data/tokens with 0600 rights, so a refresh survives a restart and every worker shares it. A refresh takes an exclusive lock, which matters with providers that rotate the refresh token: without it the losing request is left holding a dead one.
 // package:  connectors
 // frontend: false
 // backend:  true
@@ -39,8 +40,9 @@ class TokenStore extends obj {
 		];
 		return $token;
 	}
-	// Exclusive lock around a key's refresh cycle, so concurrent callers do not each fire a
-	// refresh (which rotates the refresh_token and would brick the losers).
+	// Takes an exclusive lock around one key's refresh cycle.
+	// Without it concurrent callers each fire a refresh, and since that rotates the
+	// refresh_token every loser is left holding a dead one.
 	public static function lock($key){
 		$dir = data.'tokens';
 		is_dir($dir) || mkdir($dir, 0700, true);

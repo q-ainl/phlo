@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Fluent query builder for Phlo ORM
+@ advice:   For everything named arguments cannot say: eq, gt, like, in, isNull, order, limit and offset, chained and closed with records, record, column, item or count. Column names are quoted for the driver you are on, so the same chain works on MySQL and Postgres. Values go in as bindings, so a search box can be passed straight through.
 @ package:  database
 @ frontend: false
 @ backend:  true

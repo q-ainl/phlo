@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Cache callback results in APCu
+@ advice:   Wraps a callback in APCu with one line, and the callback only runs when the value is not there. The cache lives in the process, so it is not shared with a worker or a CLI run and it is gone after a restart, which makes it right for something expensive and reproducible and wrong for something authoritative. Key it on everything the answer depends on, or two different questions get the same answer.
 @ package:  cache
 @ frontend: false
 @ backend:  true

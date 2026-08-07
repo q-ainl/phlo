@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  PDF generator and reader
+@ advice:   Two halves that share a name. Reading uses the pdftotext binary, so it needs poppler-utils on the machine and gives nothing on a scan without a text layer. Writing renders HTML through mPDF, and mode is the mPDF one: D sends a download, I shows it in the browser, S returns the bytes as a string, so leaving the default on an API route pushes a download at your caller.
 @ package:  files
 @ frontend: false
 @ backend:  true

@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Get age in seconds since a given timestamp
+@ advice:   Seconds since a timestamp, so an expiry or a cache check reads as a comparison. Nothing more than that: use time_human for something a reader sees.
 @ package:  time
 @ frontend: false
 @ backend:  true

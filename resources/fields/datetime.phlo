@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Date-time field
+@ advice:   Stores a unix timestamp rather than a formatted string, and shows an age icon that runs blue under an hour, yellow under a day and red beyond. Fields called created and changed are kept out of the form because the model writes those itself.
 @ package:  fields
 @ frontend: true
 @ backend:  true

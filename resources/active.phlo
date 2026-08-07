@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Build active class attribute for UI state
+@ advice:   Writes the whole class attribute, or nothing at all when there is nothing to say, so a link needs no ternary in the view. Because it emits the attribute rather than a class name, it goes into the tag itself and not inside another class attribute.
 @ package:  view
 @ frontend: false
 @ backend:  true

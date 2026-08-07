@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Visitor tracking via heartbeat
+@ advice:   Counts visitors from the page itself with a heartbeat, so time on page and who is online now are real rather than guessed from page loads. It keeps a token instead of an IP for recognition, and bots are filtered out before anything is written. A heartbeat every few seconds is a write per visitor, so watch the table on a busy site and prune it.
 @ extends:  model
 @ package:  analytics
 @ frontend: false

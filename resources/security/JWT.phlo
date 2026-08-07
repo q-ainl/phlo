@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Sign and verify compact HS256 JSON Web Tokens (RFC 7519), secure by default
+@ advice:   HS256 only, and a token that claims another algorithm is refused rather than tried, which is the classic way these are broken. The secret must be at least 32 bytes, an expiry is always written, and verify() throws with a 401 instead of returning false, so a route can simply call it. Name an issuer and it is checked as well. A signed token is readable by anyone holding it, so keep secrets out of the claims.
 @ package:  security
 @ frontend: false
 @ backend:  true

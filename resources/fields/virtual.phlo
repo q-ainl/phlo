@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Virtual field
+@ advice:   Owns no column and is never saved, so use it to show something derived next to the real fields. The record supplies the value through a prop or method of the same name.
 @ package:  fields
 @ frontend: false
 @ backend:  true

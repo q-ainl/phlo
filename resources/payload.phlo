@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  POST, PUT, PATCH, QUERY and file-upload data object
+@ advice:   Everything a request carried in its body, whichever way it was sent: JSON, a form, or multipart with files, including PUT and PATCH, which PHP itself leaves for you to unpack. An uploaded file arrives as a file resource rather than a temp path. It is raw input from outside, so read it, never trust it: what you save belongs behind field validation.
 @ package:  web
 @ frontend: false
 @ backend:  true

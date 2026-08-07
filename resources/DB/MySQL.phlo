@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  MySQL handler via DB class
+@ advice:   Reads host, database, user and password from the mysql section of %creds. It is the default assumption of the ORM, so a model that names no engine of its own ends up here.
 @ extends:  DB
 @ package:  database
 @ frontend: false

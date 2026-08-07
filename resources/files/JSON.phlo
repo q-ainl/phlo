@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Generic JSON resource
+@ advice:   The file behaves as an object: read a key, write a key, and the file is saved when the object goes out of scope. That last part is the trap: nothing is written until then, so call objWrite() yourself when the request may end otherwise. Names are read against data/ and a slash in the name becomes a dot, so no name can escape the directory.
 @ package:  files
 @ frontend: false
 @ backend:  true

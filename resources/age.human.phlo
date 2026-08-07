@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Convert age in seconds to human readable text
+@ advice:   The reader-facing side of age(): give it an age in seconds and it gives a label like 3 hours. Pass an age here and a timestamp to time_human; the two are easy to swap and both give an answer, only the wrong one.
 @ package:  time
 @ frontend: false
 @ backend:  true

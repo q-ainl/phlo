@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  DeepSeek API (OpenAI-compatible, extends OpenAI)
+@ advice:   OpenAI-compatible, so it inherits the whole OpenAI resource and only swaps endpoint, model and credentials; anything that works there works here unless DeepSeek itself lacks it. Embeddings are such a gap: they are routed to OpenAI, so that key has to be present as well.
 @ extends:  OpenAI
 @ package:  ai
 @ frontend: false

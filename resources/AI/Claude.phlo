@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Anthropic Claude API
+@ advice:   Anthropic has no embedding endpoint, so embedding() quietly goes out through OpenAI and needs that key too. system travels as its own field here rather than as a first message, which context() settles, so the same call works on either engine. vision() fetches an image URL itself and sends it inline as base64, so a large photo becomes a large request.
 @ package:  ai
 @ frontend: false
 @ backend:  true

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  onVisible and onVisibleIn helpers for DOM visibility
+@ advice:   Reacts to an element entering or leaving the viewport at ten percent visible, which is what you want for lazy loading, counting a view or starting an animation at the right moment. Give only cbOut and it fires once and stops watching, so a one-off costs nothing afterwards. onVisibleIn watches inside a scrolling container rather than the window.
 @ package:  dom
 @ frontend: true
 @ backend:  false

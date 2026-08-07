@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Generate HTML tag string with attributes
+@ advice:   One function for every element: attributes are named arguments, an underscore becomes a dash, so data_id turns into data-id, and true gives a bare attribute like required. Values are escaped, and an attribute with null is left out, which is what lets an optional attribute be written without a condition around it. Pass no inner content and you get a single tag without a closing one.
 @ package:  view
 @ frontend: false
 @ backend:  true

@@ -1,7 +1,8 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Lightweight dependency-free SVG charts: sparkline, bars and donut. Use charts::spark/bars/donut.
-@ package:  DOM
+@ advice:   Three small SVG charts rendered on the server, without a library and without a script, so they show up in a mail, a PDF and a page with a strict policy alike. They are meant for a number in context, not for exploring data: no axes, no legend, no tooltips.
+@ package:  dom
 @ frontend: true
 @ backend:  true
 @ tags:     chart svg sparkline bars donut visualization

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  e-Boekhouden.nl connector: session auth from an API token, relations and sales invoices
+@ advice:   Authenticates with a session rather than a token per call: the first call trades api_token for one, later calls in the same request reuse it, and a new request starts over. Sessions are limited, so gather the work you need per request instead of making a connector per call.
 @ extends:  Connector
 @ package:  connectors
 @ frontend: false
@@ -23,6 +24,7 @@ static fields => arr(
 
 // Returns the session token, fetching one on first use.
 // The API takes a session rather than a token per call, so the first call exchanges the
+// API token for one and every later call in the same request reuses it.
 method session():obj {
 	if ($m = $this->missing('api_token')) return $m
 	if ($this->sessionToken !== void) return static::ok($this->sessionToken)

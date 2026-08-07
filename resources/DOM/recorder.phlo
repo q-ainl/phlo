@@ -1,7 +1,8 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Record the screen, a camera/mic or a canvas via MediaRecorder -> Blob. Optionally transcodes to MP4 with the DOM/ffmpeg resource when it is loaded. Exposes the ready singleton `recorder` (and class `Recorder`).
-@ package:  DOM
+@ advice:   Records the screen, a camera or a canvas through MediaRecorder and answers with a blob. The browser decides the container, which is usually WebM and on Safari is not, so transcode when the file has to be played anywhere; loading the ffmpeg resource gives you MP4. Recording needs a real gesture from the visitor and a secure origin, so it cannot be started from a script alone.
+@ package:  dom
 @ frontend: true
 @ backend:  false
 @ requires: DOM/ffmpeg?

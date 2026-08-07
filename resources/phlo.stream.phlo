@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Stream an app target's output line by line, via the daemon pool or a one-shot CLI process
+@ advice:   For a job whose output you want while it runs rather than at the end: it yields line by line, so a foreach can pass every line straight to chunk() and a page fills up as the work happens. The generator only advances while you read it, so a caller that stops reading stops the job.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Simple AI answering helper
+@ advice:   For a question with one short answer rather than a conversation: answer('...') gives a bare line and answer('...', 'yes', 'no') forces the reply to be exactly one of the options. Nothing fitting gives null instead of an invented answer, so treat null as a real outcome. It runs at temperature .1, so the same question tends to give the same answer.
 @ package:  ai
 @ frontend: false
 @ backend:  true

@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Image field
+@ advice:   A file field that also writes a thumbnail, and the browser scales the picture down before it is sent, so a phone photo does not travel at full size. thumbSize is the thumbnail edge in pixels; a list shows the thumbnail and a record shows the full image.
 @ package:  fields
 @ frontend: true
 @ backend:  true

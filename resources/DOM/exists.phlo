@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  onExist helper for dynamic SPA elements
+@ advice:   on() binds to what is there now, which is why it does not survive a page swap; onExist runs your callback the first time an element appears and only then, however it got there. That makes it the right hook for anything a plugin has to prepare once, and it is what the store, the keyboard and the numpad use themselves.
 @ package:  dom
 @ frontend: true
 @ backend:  false

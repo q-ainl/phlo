@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Create associative array from iterable using callbacks
+@ advice:   Turns a list into a keyed array in one pass: the first callback makes the key, the optional second makes the value. Keys that repeat overwrite each other, so this doubles as a way to fold a list into its unique entries.
 @ package:  array
 @ frontend: false
 @ backend:  true

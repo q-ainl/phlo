@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  User agent information
+@ advice:   Reads operating system, browser and device out of the user agent string. That string is a claim, not a fact: it can be turned off, faked or shortened, so use it for statistics and never as a condition for something that matters. What a browser can do is worth asking the browser itself.
 @ package:  web
 @ frontend: false
 @ backend:  true

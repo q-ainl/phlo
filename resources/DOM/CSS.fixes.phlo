@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App basic CSS boilerplate fixes
+@ advice:   The handful of corrections nearly every app makes anyway: border-box sizing, no tap delay on anything clickable, no spinners on a number field, collapsed table borders and a [hidden] that actually hides. Note that it also clears the focus outline on inputs and buttons, so give focus a visible state of your own or keyboard users lose their place.
 @ package:  css
 @ frontend: true
 @ backend:  false

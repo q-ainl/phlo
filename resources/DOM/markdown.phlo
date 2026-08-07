@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Client-side markdown parser
+@ advice:   Parses markdown in the browser, for text that arrives after the page: a chat message, a preview while typing, an answer streaming in. It renders what it is given, so escape or clean anything a visitor wrote before showing it to someone else. Markdown that is already known at render time is cheaper to parse on the server.
 @ package:  dom
 @ frontend: true
 @ backend:  false

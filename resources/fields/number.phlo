@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Number field
+@ advice:   decimals sets both the step of the input and the formatting of the list. min is 0 out of the box, so state it yourself when negative values are allowed.
 @ package:  fields
 @ frontend: true
 @ backend:  true

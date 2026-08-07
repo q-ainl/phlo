@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Self-contained interactive slider-puzzle captcha (no external service). The server picks a secret gap position and renders the background plus a loose piece with GD; the client drags the piece into place. verify() checks the end position plus human drag behaviour (time, path, variation). Single-use and session-bound; the gap position never leaves the server.
+@ advice:   Runs entirely on your own server, so no visitor is handed to a third party and nothing has to be disclosed in a privacy statement. The gap position never leaves the server, and it judges the drag as well as the endpoint, so a script that jumps straight to the answer is refused. verify() does not consume the puzzle: call consume() yourself, and only on success, or a failed attempt costs the visitor their challenge. It needs GD.
 @ package:  security
 @ frontend: true
 @ backend:  true
@@ -51,7 +52,6 @@ static images($gapX, $gapY){
 	return arr(bg: 'data:image/png;base64,'.$bgData, piece: 'data:image/png;base64,'.$pieceData)
 }
 
-@ advice: verify() does not consume the captcha; call consume() only on success.
 static verify($x, $telemetry){
 	$c = %session->captcha ?? null
 	if (!$c || time() > (int)($c['exp'] ?? 0)) return false

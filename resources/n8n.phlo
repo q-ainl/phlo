@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Call n8n webhook endpoint
+@ advice:   Fires an n8n workflow from your app, with test true to hit the test URL that only listens while the editor is open. It posts and returns what came back; n8n itself decides whether that is the result or just an acknowledgement, so a long workflow is better answered by a callback than by waiting here.
 @ package:  network
 @ frontend: false
 @ backend:  true

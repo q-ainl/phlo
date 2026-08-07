@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Stateless OAuth2 client: build the authorize URL and exchange/refresh tokens. Token storage and config are the caller's responsibility. The protocol primitive under TokenStore and OAuthConnector.
+@ advice:   The bare protocol: build an authorize URL, trade a code for tokens, refresh. It keeps nothing and knows nothing about your app, which is what makes it usable for any provider. For a connector you almost never need it directly, since TokenStore and OAuthConnector do the keeping for you; reach for it when you run the login yourself.
 @ package:  security
 @ frontend: false
 @ backend:  true

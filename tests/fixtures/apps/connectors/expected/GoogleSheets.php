@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Google Sheets connector (OAuth2): read ranges and append rows
+// advice:   Shares the Google section with Calendar, so one refresh token has to carry both scopes. A range is A1 notation including the tab name, e.g. Sheet1!A:D. append() writes with USER_ENTERED, so the sheet parses what you send just as a typist would and a leading zero or a date-like string is reinterpreted; pass RAW when the value has to stay untouched.
 // extends:  OAuthConnector
 // package:  connectors
 // frontend: false

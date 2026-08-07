@@ -1,7 +1,7 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// trace::boot() must leave tracing off for internal control/dashboard requests
+// trace::boot() must leave tracing off for internal Control Center requests
 // (a path under the `control` prefix), so the trace graph only shows real app
 // requests. Normal app requests and CLI runs stay traced.
 final class TraceScopeTest extends TestCase {
@@ -29,7 +29,7 @@ final class TraceScopeTest extends TestCase {
 
 	public function testAppRequestIsTraced():void {
 		$_SERVER['REQUEST_METHOD'] = 'GET';
-		$_SERVER['REQUEST_URI']    = '/dashboard';
+		$_SERVER['REQUEST_URI']    = '/orders';
 		trace::boot(app);
 		$this->assertTrue(trace::$on);
 	}

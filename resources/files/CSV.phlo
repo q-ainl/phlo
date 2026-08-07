@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  CSV reader resource
+@ advice:   Reads the first line as the header and picks its own separator by counting: more commas than semicolons and it is a comma, otherwise a semicolon. Every row comes back keyed by header name, so a file with duplicate or empty headers loses columns. It reads, it does not write.
 @ package:  files
 @ frontend: false
 @ backend:  true

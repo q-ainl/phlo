@@ -2,7 +2,7 @@
 @ creator:  q-ai.nl
 @ summary:  SumUp connector: card-present checkouts on paired Solo readers via the Cloud API, transaction lookup and history
 @ extends:  Connector
-@ package:  connectors
+@ package:  payments
 @ frontend: false
 @ backend:  true
 @ requires: @Connector creds:SumUp

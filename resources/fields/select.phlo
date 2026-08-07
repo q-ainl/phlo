@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Select field
+@ advice:   Stores the chosen option itself rather than a key, so renaming an option later leaves older records pointing at wording you no longer offer. Pass the accepted values as options.
 @ package:  fields
 @ frontend: false
 @ backend:  true

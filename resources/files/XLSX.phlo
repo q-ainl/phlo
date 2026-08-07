@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  XLSX reader resource
+@ advice:   Reads a workbook without a library by unpacking the zip itself, and gives every sheet by name with the first row as the header. Values arrive as the sheet stored them, so a date is the serial number Excel keeps and a percentage is a fraction; convert those yourself. Formulas give the last calculated value, so a sheet that was never opened after an edit hands you the old one.
 @ package:  files
 @ frontend: false
 @ backend:  true

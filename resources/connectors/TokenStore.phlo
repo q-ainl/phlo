@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Persisted OAuth2 token store with automatic refresh via the OAuth2 resource
+@ advice:   Tokens are kept as one file per key under data/tokens with 0600 rights, so a refresh survives a restart and every worker shares it. A refresh takes an exclusive lock, which matters with providers that rotate the refresh token: without it the losing request is left holding a dead one.
 @ package:  connectors
 @ frontend: false
 @ backend:  true

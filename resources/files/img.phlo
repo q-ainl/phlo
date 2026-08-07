@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  GD image resource
+@ advice:   Only scales down, never up: a request larger than the original returns the image untouched, so a thumbnail never looks stretched. The output format follows the extension you save to, so saving a .jpg writes JPEG at quality 85 whatever came in. Pass crop with a width and a height to fill the frame instead of fitting inside it, and top or bottom to choose which part survives.
 @ package:  files
 @ frontend: false
 @ backend:  true

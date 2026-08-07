@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Text field
+@ advice:   length is both the limit and the choice of input: over 250 characters the field renders a textarea instead of a single line.
 @ package:  fields
 @ frontend: false
 @ backend:  true

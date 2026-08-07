@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  DOM form tags for button, input, select and textarea
+@ advice:   button(), input(), select() and textarea() are tag() with the name filled in, so they take the same named arguments and the same escaping. They exist because these four appear so often that the name is noise.
 @ package:  view
 @ frontend: false
 @ backend:  true

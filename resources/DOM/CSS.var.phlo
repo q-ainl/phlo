@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  CSS variable proxy via app.var
+@ advice:   app.var reads and writes CSS custom properties as if they were an object, so the server can change a colour, a size or a spacing with a command instead of a stylesheet swap. It writes on the root element, so what you set applies everywhere that inherits it.
 @ package:  css
 @ frontend: true
 @ backend:  false

@@ -2,6 +2,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Price field
+@ advice:   A number field fixed at two decimals. Store the amount in the unit you bill in and leave the formatting to the field.
 @ package:  fields
 @ frontend: false
 @ backend:  true

@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Multi-select via checkboxes; stores the choice as CSV in one hidden field (no save change needed).
+@ advice:   Joins the checked boxes into one comma separated column, so it needs no pivot table and no extra save logic. Reach for many instead when the choices are records with a life of their own.
 @ package:  fields
 @ frontend: false
 @ backend:  true

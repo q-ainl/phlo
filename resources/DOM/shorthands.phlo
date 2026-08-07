@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  onChange, onClick and onInput event shorthands
+@ advice:   Nothing more than onClick, onChange and onInput for the three most common cases of on(). Same behaviour and the same limitation: they bind to what exists at that moment, so use onExist for anything that appears later.
 @ package:  dom
 @ frontend: true
 @ backend:  false

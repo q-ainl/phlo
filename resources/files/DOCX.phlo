@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  DOCX reader resource
+@ advice:   Pulls the plain text out of a .docx and nothing more: no styling, no tables as tables, no images. Paragraphs come out as a list, which is what makes it usable for search and for feeding a model, and DOCX::toText() is the one-liner for that.
 @ package:  files
 @ frontend: false
 @ backend:  true

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Multilingual SEO: sitemap.xml, robots.txt, hreflang + head meta (description/OG/Twitter/canonical)
+@ advice:   Serves sitemap.xml and robots.txt itself and writes the head meta, so a page needs no SEO markup of its own. It reads from the app: pages for the sitemap, slugs for translated URLs, description, image and structuredData for the head, so filling those is the whole job. Every language of a page points at the others with hreflang, and a lastmod resource, when there is one, dates the sitemap.
 @ package:  seo
 @ frontend: false
 @ backend:  true

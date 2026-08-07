@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Generic INI resource
+@ advice:   The same shape as the JSON resource, saved when the object goes out of scope, but writing flattens the file: comments and section headers do not survive a round trip. Keep it to values a program owns; a file a person edits by hand deserves to be read rather than rewritten.
 @ package:  files
 @ frontend: false
 @ backend:  true

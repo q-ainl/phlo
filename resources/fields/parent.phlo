@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Parent relation field
+@ advice:   Points at another model through obj and offers every record of it in one select, so keep it to sets a person can still scroll. Reading the field gives you the record itself, not the id.
 @ package:  fields
 @ frontend: false
 @ backend:  true

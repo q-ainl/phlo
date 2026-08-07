@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  PostgreSQL resource
+@ advice:   Quotes identifiers with double quotes rather than backticks and has no INSERT IGNORE, so a duplicate is skipped with ON CONFLICT DO NOTHING. Postgres folds an unquoted name to lower case, so a column called createdAt in a schema is not the same one you get back unquoted.
 @ extends:  DB
 @ package:  database
 @ frontend: false

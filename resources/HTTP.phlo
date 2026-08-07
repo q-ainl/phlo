@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  HTTP request helper via cURL
+@ advice:   One function for a whole request: a URL and headers is a GET, and POST, PUT, PATCH, QUERY or DELETE named as an argument decides the rest. Pass an array with JSON true and it is sent as JSON. The timeout is fifteen seconds and it is a real limit, so raise it deliberately for a slow API rather than by accident. Pass response by reference to see the status and the headers, which is the only way to tell an empty answer from a failure.
 @ package:  network
 @ frontend: false
 @ backend:  true

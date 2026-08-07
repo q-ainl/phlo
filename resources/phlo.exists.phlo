@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Check if compiled Phlo class exists
+@ advice:   Asks whether a Phlo object was built, by looking for the generated PHP rather than by loading anything, so it costs nothing and triggers no autoload. Use it to make a resource optional: check first, then call. This is a build question, not a runtime one, so a resource added after the last build answers no until it is rebuilt.
 @ package:  build
 @ frontend: false
 @ backend:  true

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Simple toast resource
+@ advice:   app.mod.toast(msg) for a short message that needs no answer, gone after four seconds or on a click. Because it is a command, the server can raise one from a route without a line of frontend code. Anything a visitor must confirm belongs in the dialog resource instead.
 @ package:  dom
 @ frontend: true
 @ backend:  false

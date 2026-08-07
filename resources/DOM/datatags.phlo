@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App datatag plugin
+@ advice:   Turn any element into a request without writing a handler: data-get, data-post, data-put, data-patch or data-delete holds the path, and with post, put and patch every other data attribute travels along as a field. That is why an element that also carries data-confirm is left alone here: the dialog resource asks first and clicks it again afterwards. Attribute names arrive dash-lowered as the browser gives them, so keep them one word.
 @ package:  dom
 @ frontend: true
 @ backend:  false

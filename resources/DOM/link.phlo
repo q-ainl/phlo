@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App async link handler
+@ advice:   A link with class async is fetched and swapped in instead of loading the page, and everything else keeps working: a target, a modifier click and an outside link go to the browser untouched. An anchor is remembered across the swap, so a deep link scrolls to the right place after the new content has arrived.
 @ package:  dom
 @ frontend: true
 @ backend:  false

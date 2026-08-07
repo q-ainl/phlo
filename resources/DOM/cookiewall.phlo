@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Subtle GDPR cookie-consent banner. English by default; auto-translates when the lang system (en()) is loaded. Override prop labels for a fixed language, or prop translate to force it on/off.
+@ advice:   Asks once and keeps the answer in a cookie, so it stays out of the way afterwards. canTrack and canAnalytics are what the rest of the app should ask before it loads anything; the banner itself blocks nothing. It translates itself when the language system is loaded, so it speaks the visitor's language without a second set of texts.
 @ package:  privacy
 @ frontend: true
 @ backend:  true

@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Run app targets in parallel, via the daemon pool or one-shot CLI processes
+@ advice:   Runs several app targets at once and returns their results in the order you asked, so three slow calls take as long as the slowest instead of their sum. Under the daemon they run in the pool; without it each becomes a CLI process. The whole wait is bounded, five minutes unless await_timeout says otherwise, and a child still running is killed rather than waited for, so one hung job cannot hold a request.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

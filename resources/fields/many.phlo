@@ -3,11 +3,11 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Many-to-many relation field
+@ advice:   Editing is opt-in: a model that sets create/change on a many field gets the checkbox picker from input(); CMS.API::syncMany() then rewrites the pivot table on save.
 @ package:  fields
 @ frontend: true
 @ backend:  true
 @ tags:     field relation many
-@ advice:   Editing is opt-in: a model that sets create/change on a many field gets the checkbox picker from input(); CMS.API::syncMany() then rewrites the pivot table on save.
 
 prop list = 'label'
 prop record = 'label'

@@ -4,13 +4,13 @@
 		'map' => [
 			[
 				'php' => 3,
-				'phlo' => 8,
+				'phlo' => 9,
 				'name' => 'camel',
 				'source' => '%PHLO%/resources/camel.phlo',
 			],
 			[
 				'php' => 7,
-				'phlo' => 8,
+				'phlo' => 9,
 				'name' => 'slug',
 				'source' => '%PHLO%/resources/slug.phlo',
 			],

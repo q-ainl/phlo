@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  UBL 2.1 invoice XML (PEPPOL BIS Billing 3.0) from a normalized invoice structure. Use UBL::invoice($data).
+@ advice:   Builds the invoice XML that PEPPOL expects from a plain array with supplier, customer and lines. Tax is grouped by rate and each group gets its own subtotal, so lines at 21 and 9 percent land in the right boxes on their own. It formats and escapes the amounts you hand it but checks nothing: a total that does not match its lines is written out as given, and a receiver will reject it.
 @ package:  files
 @ frontend: false
 @ backend:  true

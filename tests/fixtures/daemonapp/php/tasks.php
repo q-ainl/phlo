@@ -4,6 +4,7 @@
 // version:  1.0
 // creator:  q-ai.nl
 // summary:  Cron runner for %app->tasks. One cron entry per app triggers this every minute.
+// advice:   Everything scheduled in one place: %app->tasks holds what runs and when, and one cron entry per app triggers this every minute. A task takes a lock, so a run that lasts longer than its interval does not start over itself. Timing is per minute, so anything finer belongs in a daemon rather than here.
 // package:  scheduling
 // frontend: false
 // backend:  true

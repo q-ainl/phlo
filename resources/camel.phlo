@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Convert text to camelCase
+@ advice:   Turns a sentence into camelCase, for making a property or key name out of a title. It splits on spaces, so a hyphen or an underscore survives into the result.
 @ package:  string
 @ frontend: false
 @ backend:  true

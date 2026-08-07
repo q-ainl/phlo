@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Basic OpenAI functions
+@ advice:   Write a conversation as system, user and assistant instead of assembling messages yourself; context() folds them into the right order. Each answer carries tokens_in and tokens_out, so a run can be metered or capped without reading the raw response. A refused request is raised as an error rather than returned, which is the opposite of how the connectors behave, so wrap a call you cannot afford to lose. Pass token to use a key other than the configured one.
 @ package:  ai
 @ frontend: false
 @ backend:  true

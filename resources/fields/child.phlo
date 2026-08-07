@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Child relation field
+@ advice:   The mirror of a parent field elsewhere: it reads the records that point back at this one and owns no column itself. It cannot be edited here, only followed, so change a child from its own record. Set key when the foreign key is not named after the parent model.
 @ package:  fields
 @ frontend: true
 @ backend:  true

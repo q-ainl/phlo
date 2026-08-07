@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  JSON file database driver. One JSONDB instance = one JSON file = one model table. No joins, no transactions, no schema introspection.
+@ advice:   A model in a JSON file, for a set of records that stays small and readable: no joins, no transactions, and every write rewrites the whole file. It understands only equality and IN in a where, and raw SQL is refused outright, so keep the model plain. Move to SQLite the moment the file grows or two processes start writing.
 @ extends:  DB
 @ package:  database
 @ frontend: false

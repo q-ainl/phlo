@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Database engine class
+@ advice:   The shape every driver fills in, and the reason a model can move between MySQL, PostgreSQL, SQLite and a JSON file untouched. Reads come in named flavours, so ask for what you want back: record for one, records keyed by id, rows in order, column, pair and item. Anything you pass as an argument is bound, never pasted into the SQL, so a value from a visitor is safe by construction. A connection that went away is reconnected and the query is tried once more, which is what keeps a long-lived worker alive.
 @ type:     abstract class
 @ package:  database
 @ frontend: false

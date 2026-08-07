@@ -1,5 +1,6 @@
 @ version:  1.0
 @ summary:  Stream JSON chunks over CLI or Server-Sent Events
+@ advice:   Sends a piece of a response now instead of at the end, so long work reports as it goes. The first call switches the response to a stream and fixes the content type, so anything printed after it is part of that stream and a normal return can no longer be made. In the browser these arrive as commands; on the CLI they are plain lines.
 @ package:  runtime
 @ frontend: false
 @ backend:  true

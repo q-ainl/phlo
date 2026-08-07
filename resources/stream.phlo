@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Raw data stream beside the JSON command channel: stream() emits text or binary chunks under any content type, app.stream() consumes them via fetch dispatching on the response type
+@ advice:   The channel beside the command stream, for what is not JSON: an image, a PDF, a zip, a file to download. Give it a content type, and a name when it should arrive as a download rather than be shown. On the page app.stream() picks its handling from the type that came back, so a caller does not have to know in advance what it is getting.
 @ package:  runtime
 @ frontend: true
 @ backend:  true

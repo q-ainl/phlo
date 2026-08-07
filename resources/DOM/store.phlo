@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Stateful binding engine
+@ advice:   Bind an element to a value with data-bind and it follows every change, in both directions on an input. data-bind-attr does the same for an attribute, data-each repeats a template over a list, and app.calc holds values derived from others and recalculated on their own. app.persist keeps a path across a reload and app.sync keeps it equal across tabs or over a websocket. On a first render the DOM wins over an empty store, so server-rendered content is not blanked before the store has been filled.
 @ package:  dom
 @ frontend: true
 @ backend:  false

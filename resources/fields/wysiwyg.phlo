@@ -3,6 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  WYSIWYG field
+@ advice:   Stores whatever HTML the editor produces, including anything a user pasted in, so clean or escape it before it reaches a public page.
 @ package:  fields
 @ frontend: true
 @ backend:  true

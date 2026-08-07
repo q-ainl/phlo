@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App dialog resource
+@ advice:   Replaces alert, confirm and prompt with a real dialog element, so they no longer block the page and no longer break an automated session. They answer a promise, so await them. Put data-confirm on a link or a button to ask before it does anything: the question is asked once, then the original action runs.
 @ package:  dom
 @ frontend: true
 @ backend:  false

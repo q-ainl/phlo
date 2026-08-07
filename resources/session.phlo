@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Session data object
+@ advice:   The session as an object: read a key, write a key, done. Call objRegenerateId() the moment someone logs in or changes role, so a token from before cannot be reused. Sessions are per browser, so anything that must survive a device belongs in a model.
 @ package:  web
 @ frontend: false
 @ backend:  true

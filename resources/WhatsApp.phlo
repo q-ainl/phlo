@@ -1,6 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  WhatsApp client for phloWA using whatsapp-web.js
+@ advice:   Speaks to a phloWA instance, which holds the actual WhatsApp session, so this resource is a client and not a connection: without that service running, nothing is sent. A contact is a full WhatsApp address, and one ending in @g is a group, which number() and isGroup() sort out. It is an unofficial route, so treat volume and content with the care an account you cannot replace deserves.
 @ package:  messaging
 @ frontend: false
 @ backend:  true
