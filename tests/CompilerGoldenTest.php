@@ -43,7 +43,7 @@ final class CompilerGoldenTest extends TestCase {
 			return;
 		}
 		$expected = [];
-		foreach (glob($expectedDir.'*') ?: [] as $file) $expected[basename($file)] = (string)file_get_contents($file);
+		foreach (glob($expectedDir.'*') ?: [] as $file) $expected[basename($file)] = self::normalize((string)file_get_contents($file), $dir);
 		ksort($expected);
 		$this->assertSame(array_keys($expected), array_keys($generated), 'Generated file set differs from expected/');
 		foreach ($expected as $name => $content){
@@ -73,8 +73,14 @@ final class CompilerGoldenTest extends TestCase {
 
 	// Absolute fixture paths and the engine version would make goldens machine- and
 	// version-dependent; replace both with stable placeholders.
+	// Paths, the engine version and the prose of a summary, an advice line or a node comment are
+	// not compiler output: rewording a resource would otherwise redden every golden that quotes
+	// it, and real compiler changes would drown in that noise. The comment lines themselves stay
+	// in the comparison, so dropping or misplacing one is still caught.
 	private static function normalize(string $content, string $dir):string {
 		$content = str_replace([$dir.'/src/', $dir.'/rsrc/', php, engine], ['%SRC%/', '%RSRC%/', '%PHP%/', '%PHLO%/'], $content);
-		return (string)preg_replace('/^(\/\/ phlo:\s*).+$/m', '$1%VERSION%', $content);
+		$content = (string)preg_replace('/^(\/\/ phlo:\s*).+$/m', '$1%VERSION%', $content);
+		$content = (string)preg_replace('/^(\/\/ (?:summary|advice):\s*).+$/m', '$1%TEXT%', $content);
+		return (string)preg_replace('/^(\t+\/\/ ).+$/m', '$1%TEXT%', $content);
 	}
 }

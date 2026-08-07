@@ -24,6 +24,13 @@ tagged release onward. The engine version constant lives in `phlo.php`
   configuration property was typed, because a typed property must keep its
   type in every subclass and that would make a migration out of every
   `static table` and `static objCache`.
+- `session` takes an overridable `options` array and passes it to
+  `session_start()`, so an app can steer the session cookie without working
+  around the resource. A flow that returns with a cross-site POST, such as an
+  OIDC provider posting its callback, needs `cookie_samesite: 'None'` with
+  `cookie_secure: true`; PHP 8.6 makes `Lax` the default, and a Lax cookie is
+  not sent on that request, so the state stored before the redirect would read
+  back empty.
 - `phlo_auth($section, $realm = null)` moved from `classes/changed.php` into
   `functions.php`, so an app can gate anything with its own section of
   `data/auth.ini` on a release node too. It used to load only in build mode,
