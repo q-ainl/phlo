@@ -60,6 +60,24 @@ prop sitemapPages => (array)(%app->pages ?? [''])
 prop sitemapLangs => array_keys((array)(%app->langs ?? []))
 prop siteName => %app->title ?? id
 prop twitterCard = false
+// Give it '@type' plus what only your app knows. The url, language, publisher,
+// description and image are filled in from what this resource already resolves
+// for the og tags, so a page cannot describe itself two different ways.
+prop structuredData => %app->structuredData ?? null
+
+method schemaData {
+	if (!$this->structuredData) return null
+	$base = [
+		'@context' => 'https://schema.org',
+		'url' => $this->canonical,
+		'inLanguage' => %app->lang ?? 'en',
+		'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $this->canonical],
+		'publisher' => ['@type' => 'Organization', 'name' => $this->siteName, 'url' => %req->base],
+	]
+	$this->ogDescr && $base['description'] = $this->ogDescr
+	$this->ogImage && $base['image'] = $this->ogImage
+	return array_replace($base, (array)$this->structuredData)
+}
 prop noIndex => %app->noLink ?? %app->noIndex ?? false
 
 view:
@@ -113,4 +131,7 @@ view head:
 </if>
 <if !$this->noIndex>
 	<link rel=canonical href="{[ $this->canonical ]}">
+</if>
+<if $data = $this->schemaData>
+	<script type="application/ld+json">{{ json_encode($data, JSON_UNESCAPED_UNICODE) }}</script>
 </if>
