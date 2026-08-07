@@ -10,6 +10,20 @@ tagged release onward. The engine version constant lives in `phlo.php`
 ## [Unreleased]
 
 ### Changed
+- **Breaking:** `view()` no longer links a manifest when `www/manifest.json`
+  happens to exist. The manifest resource owns that output now: it serves
+  `/manifest.json` from `%manifest->body` and puts the link on the page with
+  `%manifest->head`. An app that relied on the file being picked up must
+  either add that head view or write the `<link rel="manifest">` itself. The
+  `favicon.ico` link stays automatic, because no resource owns favicons and
+  the file is what a browser asks for either way.
+- Every resource now carries `@ advice` next to `@ summary`, and return types
+  are declared wherever the body proves one (18 to 80 percent of nodes).
+  Adding a return type to an overridable method is a compatibility rule: an
+  app that overrides one without repeating the type gets a fatal. No
+  configuration property was typed, because a typed property must keep its
+  type in every subclass and that would make a migration out of every
+  `static table` and `static objCache`.
 - `phlo_auth($section, $realm = null)` moved from `classes/changed.php` into
   `functions.php`, so an app can gate anything with its own section of
   `data/auth.ini` on a release node too. It used to load only in build mode,

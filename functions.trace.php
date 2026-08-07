@@ -224,7 +224,6 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	is_file(www.($filename = "$ns.js")) && $defer[] = $asset("/$filename");
 	$app->head && $head .= $app->head.lf;
 	is_file(www.($filename = 'favicon.ico')) && $head .= '<link rel="icon" href="'.esc($asset("/$filename")).qm.$version.'">'.lf;
-	is_file(www.($filename = 'manifest.json')) && $head .= '<link rel="manifest" href="'.esc($asset("/$filename")).qm.$version.'">'.lf;
 	foreach ($css as $item){
 		$url = $asset($item);
 		if ($inline && !is_absolute_url($item)) $head .= '<style'.$nonce.'>'.lf.file_get_contents(www.substr($item, 1)).lf.'</style>'.lf;

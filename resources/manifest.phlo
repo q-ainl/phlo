@@ -4,7 +4,7 @@
 @ package:  web
 @ frontend: false
 @ backend:  true
-@ advice:   Set the body from your app (prop %manifest.body => arr(...)) and include %manifest->head in your head view. Apps with multiple manifest variants keep their own routes and serve each body through manifest::output().
+@ advice:   Set the body from your app (prop %manifest.body => arr(...)) and include %manifest->head in your head view; %manifest itself is the manifest document, the way %seo is the sitemap. view() no longer links a manifest for you, so that head view is what puts the link on the page. Apps with multiple manifest variants keep their own routes and serve each body through manifest::output().
 @ tags:     manifest pwa webmanifest install standalone
 
 route GET manifest.json {
@@ -15,10 +15,16 @@ route GET manifest.json {
 prop body = null
 prop maxAge:int = 60
 
+static encode($body):string => json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+
 static output($body, $maxAge = null):void {
 	%res->header('Cache-Control', 'public, max-age='.($maxAge ?? %manifest->maxAge))
-	output(json_encode($body, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), type: 'application/manifest+json')
+	output(static::encode($body), type: 'application/manifest+json')
 }
+
+// The manifest document itself, so %manifest reads the way %seo does: the thing, not a
+// link to it. The head link stays a separate view, because that is what goes in a page.
+view => manifest::encode(%manifest->body)
 
 view head:
 <link rel="manifest" href="/manifest.json">
