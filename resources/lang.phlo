@@ -5,7 +5,7 @@
 @ frontend: false
 @ backend:  true
 @ requires: @cookies @AI @INI phlo.async
-@ advice:   The translation layer behind nl() and en(): a phrase is hashed, looked up in langs/<lang>.ini, and translated by the AI in the background when it is missing, so the first visitor reads the source text and the next one reads the translation. Editing a source phrase changes its hash and orphans the old translation, so a rewrite costs a re-translation. The current language itself is %app->lang; this resource is what fills it.
+@ advice:   %lang prints the current app language through its view, so it drops straight into a link or an attribute. Beyond that it is the translation layer behind nl() and en(): a phrase is hashed, looked up in langs/<lang>.ini, and translated by the AI in the background when it is missing, so the first visitor reads the source text and the next one reads the translation. Editing a source phrase changes its hash and orphans the old translation, so a rewrite costs a re-translation.
 @ tags:     lang translation i18n locale ai
 
 function nl($text, ...$args):string => %lang->translation('nl', $text, ...$args)
