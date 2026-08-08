@@ -259,6 +259,8 @@ class phlo_control {
 				'name'    => $config,
 				'meta'    => trim((string)($resource['kind'] ?? 'resource').space.(string)($resource['class'] ?? void)),
 				'summary' => ($resource['summary'] ?? ''),
+				'advice'  => ($resource['advice'] ?? ''),
+				'tags'    => ($resource['tags'] ?? []),
 			];
 		}
 		ksort($resourceGroups, SORT_NATURAL | SORT_FLAG_CASE);
@@ -910,12 +912,14 @@ class phlo_control {
 				$iMeta   = esc($item['meta']);
 				$iUrl    = esc($item['url']);
 				$summary = $item['summary'] !== void ? '<p>'.esc($item['summary']).'</p>' : void;
+				$advice  = ($item['advice'] ?? void) !== void ? '<p class="advice">'.esc($item['advice']).'</p>' : void;
+				$tags    = ($item['tags'] ?? []) ? '<span class="tags">'.esc(implode(space, $item['tags'])).'</span>' : void;
 				$html .= "<article id=\"{$id}-row\" class=\"resource-item$rowCls\">\n"
 					."<form method=\"post\" action=\"$iUrl\">"
 					."<input type=\"hidden\" name=\"button_id\" value=\"$id\">"
 					."<button id=\"$id\" type=\"submit\" class=\"toggle$btnCls\">$btnTxt</button>"
 					."</form>\n"
-					."<div><strong>$iName</strong><span>$iMeta</span>$summary</div>\n"
+					."<div><strong>$iName</strong><span>$iMeta</span>$summary$advice$tags</div>\n"
 					."</article>\n";
 			}
 			$html .= "</div>\n</section>\n";

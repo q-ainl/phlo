@@ -563,6 +563,17 @@ button.close-panel {
   color: var(--muted);
   font-size: 12px
 }
+.resource-item p.advice {
+  color: var(--text);
+  opacity: .72;
+  font-style: italic
+}
+.resource-item .tags {
+  margin-top: 2px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  opacity: .6
+}
 .resource-group header {
   cursor: pointer;
   align-items: center;
