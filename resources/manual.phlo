@@ -119,6 +119,7 @@ static nodesByFile:array {
 				type: $type,
 				name: (string)($row['name'] ?? void),
 				args: (string)($row['args'] ?? void),
+				ret: (string)($row['type'] ?? void),
 				summary: (string)($row['summary'] ?? void),
 			)
 		}
@@ -537,7 +538,7 @@ view fileNodes($file):
 	<foreach $file->nodes AS $node>
 		<div.docs__node>
 			<span.docs__kind>{{ $node->type }}</span>
-			<span.docs__mono>{{ $node->name }}{( $node->args !== void ? '('.$node->args.')' : void )}</span>
+			<span.docs__mono>{{ $node->name }}{( $node->args !== void ? '('.$node->args.')' : void )}{( $node->ret !== void ? ': '.$node->ret : void )}</span>
 			<if $node->summary !== void>
 				<p.docs__meta>{{ mb_substr($node->summary, 0, 240) }}</p>
 			</if>

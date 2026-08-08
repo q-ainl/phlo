@@ -58,7 +58,7 @@ class reflect {
 					'file'    => static::displayPath($path),
 					'name'    => ($node['name'] ?? void) ?: null,
 					'line'    => ($node['line'] ?? 0),
-					'summary' => ($node['comments'] ?? void) ?: null,
+					'summary' => ($node['comments'] ?? void) ? static::firstLineStr((string)$node['comments']) : null,
 				];
 				if ($withBody) $entry['body'] = ($node['body'] ?? void);
 				$out[] = static::sourcePruneNulls($entry);
@@ -155,6 +155,7 @@ class reflect {
 				$entry = ['file' => $label, 'line' => ($node['line'] ?? 0)];
 				($node['name']     ?? null) !== null && $entry['name']    = $node['name'];
 				($node['args']     ?? null) !== null && $entry['args']    = $node['args'];
+				($node['type']     ?? null) !== null && $entry['type']    = $node['type'];
 				($node['comments'] ?? null) !== null && $entry['summary'] = static::firstLineStr((string)$node['comments']);
 				if ($withBody) $entry['body'] = $node['body'] ?? null;
 				$out[] = $entry;
@@ -677,6 +678,8 @@ class reflect {
 				'source'  => $item['source'] ?? null,
 				'group'   => $item['group'] ?? null,
 				'loaded'  => (bool)($item['loaded'] ?? false),
+				'advice'  => $item['advice'] ?? null,
+				'tags'    => $item['tags'] ?? [],
 			];
 		}
 		uksort($out, 'strnatcasecmp');
@@ -697,6 +700,8 @@ class reflect {
 				'loaded'        => (bool)($item['loaded'] ?? false),
 				'frontend'      => $item['frontend'] ?? null,
 				'backend'       => $item['backend'] ?? null,
+				'advice'        => $item['advice'] ?? null,
+				'tags'          => $item['tags'] ?? [],
 				'ctor'          => static::constructorArgs($item['methods'] ?? []),
 				'methods'       => static::entryMap($item['methods'] ?? []),
 				'staticMethods' => static::entryMap($item['statics'] ?? []),
@@ -922,6 +927,8 @@ class reflect {
 				'package'   => static::metaValue($meta, 'package'),
 				'frontend'  => static::metaBool($meta, 'frontend'),
 				'backend'   => static::metaBool($meta, 'backend'),
+				'advice'    => static::metaValue($meta, 'advice'),
+				'tags'      => static::metaList($meta, 'tags'),
 			];
 		}
 		uksort($out, 'strnatcasecmp');
@@ -1485,6 +1492,7 @@ class reflect {
 			'backend'   => static::metaBool($meta, 'backend'),
 			'requires'  => static::metaList($meta, 'requires'),
 			'tags'      => static::metaList($meta, 'tags'),
+			'advice'    => static::metaValue($meta, 'advice'),
 			'comments'  => $fn['comments'] ?? null,
 			'metadata'  => $meta,
 		];
@@ -1601,7 +1609,7 @@ class reflect {
 				'args'    => $entry['args'] ?? void,
 				'ret'     => $entry['return'] ?? 'mixed',
 				'line'    => ($entry['line'] ?? 0),
-				'summary' => $entry['comments'] ?? null,
+				'summary' => ($entry['comments'] ?? void) ? static::firstLineStr((string)$entry['comments']) : null,
 			];
 		}
 		uksort($out, 'strnatcasecmp');

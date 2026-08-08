@@ -84,6 +84,14 @@ tagged release onward. The engine version constant lives in `phlo.php`
   without the app running. Put the route behind your auth gate and add
   `manual` to `release.exclude`, since a manual carrying the source does not
   belong on a customer server.
+- Reflection hands over what an author wrote for a reader: `objectIndex()`,
+  `availableResources()` and `functionIndex()` carry `advice` and `tags` now,
+  `find()` reports a node's declared type next to its args, and every summary
+  a reflection call returns is the first line of the comment, so two callers
+  asking about the same node get the same sentence. The Control Center shows
+  the advice and the tags on its resource cards, which also lets the filter
+  match on a tag. Before this, the 132 advice lines were parsed and then
+  dropped on the private side of reflect, reachable by nobody.
 
 ### Fixed
 - `app.stream()` could throw while turning a blob into a `File` when a plain
