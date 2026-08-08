@@ -94,6 +94,9 @@ tagged release onward. The engine version constant lives in `phlo.php`
   dropped on the private side of reflect, reachable by nobody.
 
 ### Fixed
+- Seven of the fourteen node comments added for what a type cannot say opened
+  with a line that ran on into the next, so reflection served half a thought
+  as their summary. Each first line ends where its sentence does now.
 - `app.stream()` could throw while turning a blob into a `File` when a plain
   download filename contained a literal percent sign, and cut a quoted name at
   its first semicolon. It now parses the plain and RFC 5987 forms separately,

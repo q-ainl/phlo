@@ -37,6 +37,7 @@ class MicrosoftGraph extends Connector {
 	// %TEXT%
 	// %TEXT%
 	// %TEXT%
+	// %TEXT%
 	protected function fetchToken():string {
 		$tenant = $this->config['tenant_id'] ?? void;
 		$id = $this->config['client_id'] ?? void;
