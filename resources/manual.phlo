@@ -129,12 +129,12 @@ static nodesByFile:array {
 }
 
 static fileRow(string $file):obj {
-	$head = (string)@file_get_contents($file, false, null, 0, 400)
-	preg_match('~@ summary:\s*(.+)~', $head, $match)
+	$meta = (new build_file($file))->meta
 	$key = basename($file, '.phlo')
 	return obj(
 		name: basename($file),
-		summary: trim((string)($match[1] ?? void)),
+		summary: trim((string)($meta['summary'] ?? void)),
+		advice: trim((string)($meta['advice'] ?? void)),
 		lines: count(file($file) ?: []),
 		nodes: static::nodesByFile()[$key] ?? [],
 	)
@@ -532,6 +532,9 @@ view fileNodes($file):
 		<span.docs__filesum>{{ $file->summary ?: void }}</span>
 		<span.docs__num>{{ count($file->nodes) }}</span>
 	</summary>
+	<if $file->advice !== void>
+		<p.docs__meta>{{ $file->advice }}</p>
+	</if>
 	<if !$file->nodes>
 		<p.docs__meta>{{ %manual->label('noNodes') }}</p>
 	</if>
