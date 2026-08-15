@@ -9,7 +9,7 @@
 
 static toText(string $file):string {
 	$process = proc_open('pdftotext '.escapeshellarg($file).' -', [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes)
-	if (!is_resource($process)) return null
+	if (!is_resource($process)) error('PDFToText Error: could not start pdftotext')
 	fclose($pipes[0])
 	$text = stream_get_contents($pipes[1])
 	fclose($pipes[1])
@@ -36,5 +36,5 @@ method fromHTML($HTML):string {
 	$this->keywords && $mpdf->SetKeywords($this->keywords)
 	$this->creator && $mpdf->SetCreator($this->creator)
 	$mpdf->WriteHTML($HTML)
-	return $mpdf->Output($this->filename, $this->mode)
+	return (string)$mpdf->Output($this->filename, $this->mode)
 }
