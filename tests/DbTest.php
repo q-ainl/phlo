@@ -23,6 +23,7 @@ final class DbTest extends TestCase {
 
 	public static function setUpBeforeClass():void {
 		@unlink(self::$appDir.'data/test.db');
+		@unlink(self::$appDir.'data/jdocs.json');
 		[$code, $out, $err] = self::cli('build::run');
 		self::assertSame(0, $code, "build::run failed:\n$out$err");
 	}
@@ -215,5 +216,7 @@ final class DbTest extends TestCase {
 		$r = json_decode(trim($out), true);
 		$this->assertSame('"1","2"', $r['objIn'] ?? null, 'JSONDB quoteList is literal-quoted, no PDO: '.$out);
 		$this->assertSame("'1','2'", $r['objInDb'] ?? null, 'objIn quotes through the executing DB passed in (SQLite), not the model own driver: '.$out);
+		$this->assertTrue($r['createTyped'] ?? false, 'JSONDB create() returns a typed model instance, not a bare obj: '.$out);
+		$this->assertTrue($r['recordTyped'] ?? false, 'JSONDB record() hydrates the row into the model class (FETCH_CLASS honours the requested class): '.$out);
 	}
 }

@@ -71,6 +71,7 @@ tests/fixtures/db/www/app.css
 tests/fixtures/db/www/app.js
 tests/fixtures/db/data/errors.json
 tests/fixtures/db/data/test.db
+tests/fixtures/db/data/jdocs.json
 
 # NS fixture build output
 tests/fixtures/ns/php/

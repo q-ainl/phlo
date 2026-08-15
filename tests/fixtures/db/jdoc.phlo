@@ -6,7 +6,15 @@
 
 static table = 'jdocs'
 
-static runTests => [
-	'objIn'   => (new static)->objIn(['1', '2']),
-	'objInDb' => (new static)->objIn(['1', '2'], note::DB()),
-]
+static runTests {
+	// A JSONDB-backed model must hydrate into its own class, like a PDO driver does under
+	// FETCH_CLASS: record() is typed :?static and create() returns :?static, so a bare obj
+	// from the JSON result is a return-type fatal. records() is :array and so never caught it.
+	$row = static::create(name: 'typed')
+	return [
+		'objIn'       => (new static)->objIn(['1', '2']),
+		'objInDb'     => (new static)->objIn(['1', '2'], note::DB()),
+		'createTyped' => $row instanceof static,
+		'recordTyped' => static::record(id: $row->id) instanceof static,
+	]
+}

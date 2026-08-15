@@ -11,7 +11,7 @@ static __handle => null
 prop data:array = []
 method __construct(array $data) => $this->data = $data
 
-method fetchAll($mode = 2):array {
+method fetchAll($mode = 2, $class = 'obj'):array {
 	if ($mode === \PDO::FETCH_COLUMN) return loop($this->data, fn($row) => reset((array)$row))
 	if ($mode === \PDO::FETCH_KEY_PAIR){
 		$out = []
@@ -24,7 +24,7 @@ method fetchAll($mode = 2):array {
 	if (($mode & (\PDO::FETCH_CLASS | \PDO::FETCH_UNIQUE)) === (\PDO::FETCH_CLASS | \PDO::FETCH_UNIQUE)){
 		$out = []
 		foreach ($this->data AS $row){
-			$o = new obj
+			$o = new $class
 			foreach ((array)$row AS $k => $v) $o->$k = $v
 			$out[$row['id'] ?? count($out)] = $o
 		}
@@ -33,7 +33,7 @@ method fetchAll($mode = 2):array {
 	if (($mode & \PDO::FETCH_CLASS) === \PDO::FETCH_CLASS){
 		$out = []
 		foreach ($this->data AS $row){
-			$o = new obj
+			$o = new $class
 			foreach ((array)$row AS $k => $v) $o->$k = $v
 			$out[] = $o
 		}
