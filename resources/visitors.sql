@@ -5,7 +5,7 @@ CREATE TABLE `visitors` (
   `page` varchar(100) NOT NULL,
   `lang` char(2) NOT NULL,
   `IP` varchar(15) DEFAULT NULL,
-  `browser` varchar(18) NOT NULL,
+  `browser` varchar(32) NOT NULL,
   `os` varchar(18) DEFAULT NULL,
   `device` varchar(12) DEFAULT NULL,
   `active_seconds` int(10) unsigned NOT NULL DEFAULT 0,
