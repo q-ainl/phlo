@@ -94,6 +94,12 @@ tagged release onward. The engine version constant lives in `phlo.php`
   dropped on the private side of reflect, reachable by nobody.
 
 ### Fixed
+- `view()` no longer sends a `Link: rel=preload; as=script` header when the app
+  runs a nonce-based policy. A preload header cannot carry a nonce, so under
+  `%security->strict` the browser refused the preloaded bundle and fetched it
+  again from the tag: one blocked request, one console error and one wasted
+  round trip on every page. Styles keep their preload, because a nonce policy
+  still allows `'self'` for stylesheets.
 - Seven of the fourteen node comments added for what a type cannot say opened
   with a line that ran on into the next, so reflection served half a thought
   as their summary. Each first line ends where its sentence does now.

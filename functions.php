@@ -153,6 +153,11 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$ns ??= $app->ns ?? 'app';
 	$link = $app->link ?: [];
 	$nonce = $app->nonce ? ' nonce="'.$app->nonce.'"' : void;
+	// A preload header cannot carry a nonce, so under a nonce-based policy the browser refuses
+	// the preloaded script and fetches it again from the tag. Sending it then costs a blocked
+	// request and a console error and saves nothing, so scripts skip the preload when a nonce
+	// is in play. Styles keep theirs: a nonce policy still allows 'self' for stylesheets.
+	$preloadScripts = !$app->nonce;
 	$head = '<title>'.esc(title()).'</title>'.lf;
 	$head .= '<meta name="viewport" content="'.($cmds['viewport'] ?? $app->viewport ?? 'width=device-width').'">'.lf;
 	$app->themeColor && $head .= "<meta name=\"theme-color\" content=\"$app->themeColor\">\n";
@@ -172,13 +177,13 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 		$url = $asset($item);
 		if ($inline && !is_absolute_url($item)) $head .= '<script'.$nonce.'>'.lf.file_get_contents(www.substr($item, 1)).'</script>'.lf;
 		else $head .= '<script src="'.esc($url).qm.$version.'"'.$nonce.'></script>'.lf;
-		if (!$inline && !is_absolute_url($item)) $link[] = "<$url?$version>; rel=preload; as=script";
+		if ($preloadScripts && !$inline && !is_absolute_url($item)) $link[] = "<$url?$version>; rel=preload; as=script";
 	}
 	foreach ($defer as $item){
 		$url = $asset($item);
 		if ($inline && !is_absolute_url($item)) $body .= lf.'<script'.$nonce.'>'.lf.file_get_contents(www.substr($item, 1)).'</script>';
 		else $head .= '<script src="'.esc($url).qm.$version.'" defer'.$nonce.'></script>'.lf;
-		if (!$inline && !is_absolute_url($item)) $link[] = "<$url?$version>; rel=preload; as=script";
+		if ($preloadScripts && !$inline && !is_absolute_url($item)) $link[] = "<$url?$version>; rel=preload; as=script";
 	}
 	!build && $link && $res->header('Link', implode(comma, $link));
 	debug && $body .= lf.debug_render(strlen($body));
