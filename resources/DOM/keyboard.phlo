@@ -103,7 +103,9 @@ app.keyboard = {
 }
 
 on('focusin', 'body', (body, e) => {
-	if (e.target.matches?.('[data-keyboard]')) phlo.keyboard.show(e.target)
+	if (!e.target.matches?.('[data-keyboard]')) return
+	if (phlo.keyboard.open === e.target) return
+	phlo.keyboard.show(e.target)
 })
 
 on('click', 'body', (body, e) => {

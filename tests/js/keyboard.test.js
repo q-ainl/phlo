@@ -82,6 +82,16 @@ test('typing lands at the caret and reaches the field as a real keystroke', () =
 
 // The field can be redrawn away underneath the keys: the dialog gets new content while the
 // keyboard is still open. Writing into a node nobody can see is invisible work.
+test('the focus returning from a key does not undo shift', () => {
+	const env = mount('<dialog id="modal" open><input id="naam" data-keyboard></dialog>', ['DOM/keyboard'])
+	focus(env, '#naam')
+	env.context.phlo.keyboard.press('shift')
+	assert.strictEqual(env.context.phlo.keyboard.caps, true)
+	focus(env, '#naam')
+	assert.strictEqual(env.context.phlo.keyboard.caps, true, 'a browser that focuses the key puts the field back afterwards, and that is no reason to start over')
+	assert.strictEqual(env.document.querySelector('#keyboard [data-keyboard-key="Q"]') !== null, true, 'the keys stay upper case until one of them is used')
+})
+
 test('keys pressed after the field is gone let go instead of typing into nothing', () => {
 	const env = mount('<dialog id="modal" open><input id="naam" data-keyboard></dialog>', ['DOM/keyboard'])
 	const field = focus(env, '#naam')
