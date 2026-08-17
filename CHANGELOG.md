@@ -39,6 +39,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   adds later therefore survive, where before only `@font-face` did and the rest
   was dropped without a word. `@page :first` and `@property --tint` keep their
   prelude; `.card { @page: size: A4 }` no longer wraps the card in an `@page`.
+- `css_phlo()` keeps at-rules that hold declarations. The encoder classified
+  them the same way the decoder did, so pasting a stylesheet with `@font-face`
+  or `@page` into the Control Center CSS editor dropped those blocks. It follows
+  the body now too, and the round trip through both directions is covered.
 - **Breaking:** a declaration that belongs to no selector is a build error
   instead of silence. It names the declaration, the at-rule it sat in and, for
   the common cause, that a rule was written on one line while the dialect wants

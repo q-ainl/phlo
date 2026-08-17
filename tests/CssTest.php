@@ -165,6 +165,31 @@ final class CssTest extends TestCase {
 		build_css::decode("@media (min-width: 40em) {\n\tcolor: red\n}");
 	}
 
+	public function testEncodeKeepsAtRulesWithADeclarationBody():void {
+		$this->assertSame("@font-face {\n\tfont-family: Inter\n\tsrc: url(/f.woff2)\n}", build_css::encode('@font-face{font-family:Inter;src:url(/f.woff2)}'));
+		$this->assertSame('@page: margin-bottom: 30mm', build_css::encode('@page{margin-bottom:30mm}'));
+		$this->assertSame('@view-transition: navigation: auto', build_css::encode('@view-transition{navigation:auto}'));
+	}
+
+	public function testEncodeLeavesConditionalGroupsAlone():void {
+		$this->assertSame('@media (min-width: 40em): .x: color: red', build_css::encode('@media (min-width: 40em){.x{color:red}}'));
+	}
+
+	public function testAtRuleRoundTripFixpoint():void {
+		$samples = [
+			"@font-face {\n\tfont-family: Inter\n\tsrc: url(/f.woff2)\n}",
+			"@page {\n\tmargin-bottom: 30mm\n}",
+			"@page :first {\n\tmargin-top: 30mm\n}",
+			"@view-transition: navigation: auto",
+			"@property --tint {\n\tsyntax: '<color>'\n\tinherits: false\n}",
+		];
+		foreach ($samples as $phlo){
+			$css = build_css::decode($phlo);
+			$this->assertNotSame(void, $css, 'Nothing came out for: '.$phlo);
+			$this->assertSame($css, build_css::decode(build_css::encode($css)), 'Round trip drifted for: '.$phlo);
+		}
+	}
+
 	public function testStylesheetsThatSilentlyLostTheirAtRule():void {
 		$pdf = build_css::decode("@page {\n\tmargin-bottom: 30mm\n}\nbody {\n\tcolor: #111\n}");
 		$this->assertStringContainsString('@page{margin-bottom:30mm}', $pdf);

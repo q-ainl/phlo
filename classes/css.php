@@ -307,7 +307,7 @@ class build_css {
 			if ($char === '{'){
 				$selector = trim(substr($input, $lastPos, $i - $lastPos));
 				if ($selector !== void){
-					if ($selector[0] === '@'){ $atStack[] = $selector; $contextStack[] = 'at'; }
+					if ($selector[0] === '@' && self::is_css_group($selector, $input, $i)){ $atStack[] = $selector; $contextStack[] = 'at'; }
 					else { $selectorStack[] = $selector; $contextStack[] = 'selector'; }
 				}
 				$lastPos = $i + 1;
@@ -325,6 +325,13 @@ class build_css {
 			}
 		}
 		return $rules;
+	}
+
+	private static function is_css_group(string $selector, string $input, int $index):bool {
+		if (in_array(self::at_name($selector), self::groups, true)) return true;
+		$open  = strpos($input, '{', $index + 1);
+		$close = strpos($input, '}', $index + 1);
+		return $open !== false && ($close === false || $open < $close);
 	}
 
 	private static function parse_css_props(string $block):array {
