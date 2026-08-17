@@ -30,6 +30,21 @@ tagged release onward. The engine version constant lives in `phlo.php`
   configuration property was typed, because a typed property must keep its
   type in every subclass and that would make a migration out of every
   `static table` and `static objCache`.
+- The CSS parser classifies an at-rule by what its body holds instead of by its
+  name. Only the conditional group rules (`@media`, `@supports`, `@container`,
+  `@layer`, `@scope`, `@document`, `@keyframes`) are known by name and keep
+  wrapping the selectors inside them; every other at-rule whose body holds
+  declarations is emitted as its own block. `@page`, `@property`,
+  `@counter-style`, `@font-palette-values`, `@view-transition` and anything CSS
+  adds later therefore survive, where before only `@font-face` did and the rest
+  was dropped without a word. `@page :first` and `@property --tint` keep their
+  prelude; `.card { @page: size: A4 }` no longer wraps the card in an `@page`.
+- **Breaking:** a declaration that belongs to no selector is a build error
+  instead of silence. It names the declaration, the at-rule it sat in and, for
+  the common cause, that a rule was written on one line while the dialect wants
+  one declaration per line. This surfaces stylesheets that were already losing
+  those lines, so a build that was green can now fail on CSS that never
+  rendered.
 - A failing build lint now names the `.phlo` line instead of the generated PHP
   file. `php -l` reports what it was handed, and the builder still holds the
   sourcemap of that same build, so the location is rewritten before the error

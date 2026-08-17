@@ -112,4 +112,65 @@ final class CssTest extends TestCase {
 	public function testCommaInQuotedAttributePreserved():void {
 		$this->assertSame('.a b[data-x="p, q"]{color:red}', build_css::decode(".a {\n\tb[data-x=\"p, q\"]: color: red\n}"));
 	}
+
+	public function testAtRuleWithDeclarationBodyRendersItsOwnBlock():void {
+		$this->assertSame('@page{size:A4 landscape;margin:10mm}', build_css::decode("@page {\n\tsize: A4 landscape\n\tmargin: 10mm\n}"));
+		$this->assertSame('@font-face{font-family:Inter}', build_css::decode("@font-face {\n\tfont-family: Inter\n}"));
+	}
+
+	public function testAtRuleWithDeclarationBodyKeepsItsPrelude():void {
+		$this->assertSame('@page :first{margin-top:30mm}', build_css::decode("@page :first {\n\tmargin-top: 30mm\n}"));
+		$this->assertSame("@property --tint{syntax:'<color>';inherits:false}", build_css::decode("@property --tint {\n\tsyntax: '<color>'\n\tinherits: false\n}"));
+	}
+
+	public function testUnknownAtRuleIsClassifiedByItsBody():void {
+		$this->assertSame('@brandnew{foo:bar}', build_css::decode("@brandnew {\n\tfoo: bar\n}"));
+		$this->assertSame("@brandnew (x){\n.a{color:red}}", build_css::decode("@brandnew (x) {\n\t.a {\n\t\tcolor: red\n\t}\n}"));
+	}
+
+	public function testConditionalGroupsKeepWrappingSelectors():void {
+		$this->assertSame("@media (min-width: 40em){\n.x{color:red}}", build_css::decode("@media (min-width: 40em) {\n\t.x {\n\t\tcolor: red\n\t}\n}"));
+		$this->assertSame("@supports (display: grid){\n.x{display:grid}}", build_css::decode("@supports (display: grid) {\n\t.x {\n\t\tdisplay: grid\n\t}\n}"));
+		$this->assertSame("@keyframes fade{\n0%{opacity:0}}", build_css::decode("@keyframes fade {\n\t0% {\n\t\topacity: 0\n\t}\n}"));
+	}
+
+	public function testInlineDeclarationAtRuleBecomesItsOwnBlock():void {
+		$this->assertSame('@view-transition{navigation:auto}', build_css::decode('@view-transition: navigation: auto'));
+		$this->assertSame("@page{size:A4 landscape}", build_css::decode(".kaart {\n\t@page: size: A4 landscape\n}"));
+	}
+
+	public function testInlineConditionalGroupStillWrapsTheSelector():void {
+		$this->assertSame("@media (max-width: 40em){\n.kaart{color:red}}", build_css::decode(".kaart {\n\t@media (max-width: 40em): color: red\n}"));
+	}
+
+	public function testIdSelectorSurvivesTheAtRuleKeying():void {
+		$this->assertSame('#header{color:red}', build_css::decode("#header {\n\tcolor: red\n}"));
+		$this->assertSame('.a #b{color:red}', build_css::decode(".a {\n\t#b: color: red\n}"));
+	}
+
+	public function testRepeatedDeclarationBodyBlocksStaySeparate():void {
+		$phlo = "@font-face {\n\tfont-family: A\n}\n@font-face {\n\tfont-family: B\n}\n@page {\n\tmargin: 1mm\n}\n@page {\n\tmargin: 2mm\n}";
+		$this->assertSame('@font-face{font-family:A}@font-face{font-family:B}@page{margin:1mm}@page{margin:2mm}', str_replace(lf, void, build_css::decode($phlo)));
+	}
+
+	public function testDeclarationThatBelongsToNothingIsABuildError():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/belongs to no selector/');
+		build_css::decode('color: red');
+	}
+
+	public function testDeclarationInsideAConditionalGroupIsABuildError():void {
+		$this->expectException(PhloException::class);
+		$this->expectExceptionMessageMatches('/belongs to no selector/');
+		build_css::decode("@media (min-width: 40em) {\n\tcolor: red\n}");
+	}
+
+	public function testStylesheetsThatSilentlyLostTheirAtRule():void {
+		$pdf = build_css::decode("@page {\n\tmargin-bottom: 30mm\n}\nbody {\n\tcolor: #111\n}");
+		$this->assertStringContainsString('@page{margin-bottom:30mm}', $pdf);
+		$this->assertStringContainsString('body{color:#111}', $pdf);
+		$trans = build_css::decode("@view-transition: navigation: auto\n@media (prefers-reduced-motion: reduce) {\n\t@view-transition: navigation: none\n}");
+		$this->assertStringContainsString('@view-transition{navigation:auto}', $trans);
+		$this->assertStringContainsString('navigation:none', $trans);
+	}
 }

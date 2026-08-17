@@ -1,6 +1,8 @@
 <?php
 
 class build_css {
+	private const groups = ['media', 'supports', 'container', 'layer', 'scope', 'document', 'keyframes'];
+
 	public static function decode(string $input, bool $compact = true):string {
 		$input = str_replace(["\r\n", "\r"], "\n", $input);
 		$lines = self::merge_continuations(explode("\n", $input));
@@ -9,8 +11,8 @@ class build_css {
 		$selectorStack = [];
 		$atStack       = [];
 		$contextStack  = [];
-		$fontFaceIndex = 0;
-		foreach ($lines as $line){
+		$atIndex       = 0;
+		foreach ($lines as $index => $line){
 			$trim = trim($line);
 			if ($trim === void) continue;
 			if (str_starts_with($trim, '//')) continue;
@@ -25,14 +27,13 @@ class build_css {
 				$head = trim(substr($trim, 0, -1));
 				if ($head !== void){
 					if ($head[0] === '@'){
-						$headLower = strtolower($head);
-						if (str_starts_with($headLower, '@font-face')){
-							$selectorStack[] = ['@font-face#'.(++$fontFaceIndex)];
-							$contextStack[]  = 'selector';
-						}
-						else {
+						if (self::is_group($head, $lines, $index)){
 							$atStack[]      = $head;
 							$contextStack[] = 'at';
+						}
+						else {
+							$selectorStack[] = [$head.'#'.(++$atIndex)];
+							$contextStack[]  = 'selector';
 						}
 					}
 					else {
@@ -61,7 +62,9 @@ class build_css {
 					}
 					else {
 						[$prop, $value] = self::split_first($right, $token);
-						self::add_rule($rules, array_merge($atStack, [trim($left)]), $selectorStack, null, $prop, $value);
+						$head = trim($left);
+						if (in_array(self::at_name($head), self::groups, true)) self::add_rule($rules, array_merge($atStack, [$head]), $selectorStack, null, $prop, $value);
+						else self::add_rule($rules, $atStack, [[$head.'#'.(++$atIndex)]], null, $prop, $value);
 					}
 				}
 				else {
@@ -126,10 +129,31 @@ class build_css {
 		}
 		$selector     = $selector ? self::unescape_selector($selector) : null;
 		$fullSelector = self::build_selector($selectorStack, $selector);
-		if (!$fullSelector) return;
+		if (!$fullSelector){
+			$line = $prop.colon.space.$value;
+			$hint = str_contains($line, '{') ? ' (a rule written on one line; open the block and put each declaration on its own line)' : ' (a declaration needs a selector, an at-rule that takes declarations, or a parent block)';
+			error('Build error: CSS declaration belongs to no selector: "'.$line.'"'.($atStack ? ' inside '.implode(space, $atStack) : void).$hint);
+		}
 		if (str_starts_with($prop, '$')) $prop = '--'.substr($prop, 1);
 		$value = preg_replace('/\\$([A-Za-z_][A-Za-z0-9_-]*)/', 'var(--$1)', $value);
 		$rules[$atKey][$fullSelector][] = [$prop, $value];
+	}
+
+	private static function at_name(string $head):string {
+		preg_match('/^@(?:-[a-z]+-)?([a-z-]+)/i', $head, $match);
+		return strtolower($match[1] ?? void);
+	}
+
+	private static function is_group(string $head, array $lines, int $index):bool {
+		if (in_array(self::at_name($head), self::groups, true)) return true;
+		for ($i = $index + 1, $count = count($lines); $i < $count; ++$i){
+			$next = trim($lines[$i]);
+			if ($next === void || str_starts_with($next, '//')) continue;
+			if (str_starts_with($next, '#') && isset($next[1]) && ($next[1] === space || $next[1] === "\t")) continue;
+			if (str_starts_with($next, '/*') && str_ends_with($next, '*/')) continue;
+			return str_ends_with($next, '{');
+		}
+		return false;
 	}
 
 	private static function render_rules(array $rules, bool $compact):string {
@@ -139,7 +163,7 @@ class build_css {
 			if ($compact){
 				if ($inAt) $out[] = $atKey.'{';
 				foreach ($selectors as $selector => $props){
-					$selectorOut = str_starts_with($selector, '@font-face#') ? '@font-face' : $selector;
+					$selectorOut = $selector[0] === '@' ? preg_replace('/#\\d+(?=\\s|$)/', void, $selector) : $selector;
 					$rule = $selectorOut.'{';
 					$last = count($props) - 1;
 					foreach ($props as $i => $prop) $rule .= $prop[0].colon.$prop[1].($i < $last ? semi : void);
@@ -150,7 +174,7 @@ class build_css {
 			else {
 				if ($inAt) $out[] = $atKey.'{';
 				foreach ($selectors as $selector => $props){
-					$selectorOut = str_starts_with($selector, '@font-face#') ? '@font-face' : $selector;
+					$selectorOut = $selector[0] === '@' ? preg_replace('/#\\d+(?=\\s|$)/', void, $selector) : $selector;
 					$out = array_merge($out, self::selector_lines($selectorOut, $inAt));
 					$pad = $inAt ? tab.tab : tab;
 					foreach ($props as $prop) $out[] = $pad.$prop[0].colon.space.$prop[1].semi;
