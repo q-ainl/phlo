@@ -121,7 +121,7 @@ class build_css {
 	private static function add_rule(array &$rules, array $atStack, array $selectorStack, ?string $selector, string $prop, string $value):void {
 		$atKey    = $atStack ? implode(space, $atStack) : void;
 		$prop     = trim($prop);
-		$value    = trim($value);
+		$value    = self::strip_terminator(trim($value));
 		$selector = $selector !== null ? trim($selector) : null;
 		if ($selector && $selectorStack){
 			$selector = preg_replace('/(^|\\s|,)\\\\\\./', '$1&.', $selector);
@@ -137,6 +137,24 @@ class build_css {
 		if (str_starts_with($prop, '$')) $prop = '--'.substr($prop, 1);
 		$value = preg_replace('/\\$([A-Za-z_][A-Za-z0-9_-]*)/', 'var(--$1)', $value);
 		$rules[$atKey][$fullSelector][] = [$prop, $value];
+	}
+
+	private static function strip_terminator(string $value):string {
+		$quote = void;
+		$end   = 0;
+		for ($i = 0, $len = strlen($value); $i < $len; ++$i){
+			$c = $value[$i];
+			if ($quote !== void){
+				if ($c === bs){ $end = min($i + 2, $len); ++$i; continue; }
+				if ($c === $quote) $quote = void;
+				$end = $i + 1;
+				continue;
+			}
+			if ($c === dq || $c === sq){ $quote = $c; $end = $i + 1; continue; }
+			if ($c === semi || trim($c) === void) continue;
+			$end = $i + 1;
+		}
+		return substr($value, 0, $end);
 	}
 
 	private static function at_name(string $head):string {

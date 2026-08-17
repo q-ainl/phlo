@@ -24,13 +24,13 @@ class build_icons {
 		$topX = key($topX);
 		$topY = key($topY);
 		$CSS  = ".icon {\n"
-			."\tbackground-image: url(/icons.png?$version);\n"
-			."\tbackground-position-y: bottom;\n"
-			."\tdisplay: inline-block;\n"
-			."\toverflow: hidden;\n"
-			."\tpadding: 0;\n"
-			."\twidth: {$topX}px;\n"
-			."\theight: {$topY}px;\n}";
+			."\tbackground-image: url(/icons.png?$version)\n"
+			."\tbackground-position-y: bottom\n"
+			."\tdisplay: inline-block\n"
+			."\toverflow: hidden\n"
+			."\tpadding: 0\n"
+			."\twidth: {$topX}px\n"
+			."\theight: {$topY}px\n}";
 		$icons = imagecreatetruecolor($width, $height);
 		imagefill($icons, 0, 0, imagecolorallocatealpha($icons, 0, 0, 0, 127));
 		imagealphablending($icons, false);
@@ -42,9 +42,9 @@ class build_icons {
 			$selector = preg_match('/(.+)\.(.+)$/', $name, $match)
 				? 'body.'.$match[2].' .icon.'.$match[1]
 				: '.icon.'.$name;
-			$il = $left ? tab.'background-position-x: '.($left ? dash.$left : '0')."px;\n" : void;
-			$iw = ($ix = imagesx($img)) === $topX ? void : "\twidth: {$ix}px;\n";
-			$ih = ($iy = imagesy($img)) === $topY ? void : "\theight: {$iy}px;\n";
+			$il = $left ? tab.'background-position-x: '.($left ? dash.$left : '0')."px\n" : void;
+			$iw = ($ix = imagesx($img)) === $topX ? void : "\twidth: {$ix}px\n";
+			$ih = ($iy = imagesy($img)) === $topY ? void : "\theight: {$iy}px\n";
 			if ($il || (!$match && ($iw || $ih))) $CSS .= lf.$selector." {\n".$il.($match ? void : $iw.$ih).'}';
 			$left += imagesx($img);
 		}

@@ -30,6 +30,12 @@ tagged release onward. The engine version constant lives in `phlo.php`
   configuration property was typed, because a typed property must keep its
   type in every subclass and that would make a migration out of every
   `static table` and `static objCache`.
+- The icon sprite builder writes its CSS in the dialect it is parsed with. It
+  emitted plain CSS with a terminator after every declaration and handed that to
+  the `.phlo` parser, which takes everything after `: ` as the value, so every
+  sprite rule came out of the build with a doubled `;`. A declaration that ends
+  on a terminator now loses it in the parser as well, quote-aware so
+  `content: "a;b"` keeps its own, which covers pasted CSS in general.
 - The CSS parser classifies an at-rule by what its body holds instead of by its
   name. Only the conditional group rules (`@media`, `@supports`, `@container`,
   `@layer`, `@scope`, `@document`, `@keyframes`) are known by name and keep

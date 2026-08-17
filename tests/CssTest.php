@@ -113,6 +113,18 @@ final class CssTest extends TestCase {
 		$this->assertSame('.a b[data-x="p, q"]{color:red}', build_css::decode(".a {\n\tb[data-x=\"p, q\"]: color: red\n}"));
 	}
 
+	public function testTrailingSemicolonIsNotPartOfTheValue():void {
+		$this->assertSame('body{color:red}', build_css::decode("body {\n\tcolor: red;\n}"));
+		$this->assertSame('body{color:red;margin:0}', build_css::decode("body {\n\tcolor: red;\n\tmargin: 0;;\n}"));
+		$this->assertSame('html{height:100dvh}', build_css::decode('html: height: 100dvh;'));
+	}
+
+	public function testSemicolonInsideAQuotedValueSurvives():void {
+		$this->assertSame('.a::after{content:"x;y"}', build_css::decode(".a::after {\n\tcontent: \"x;y\"\n}"));
+		$this->assertSame('.a::after{content:"x;y"}', build_css::decode(".a::after {\n\tcontent: \"x;y\";\n}"));
+		$this->assertSame(".b{background:url('a;b.png')}", build_css::decode(".b {\n\tbackground: url('a;b.png')\n}"));
+	}
+
 	public function testAtRuleWithDeclarationBodyRendersItsOwnBlock():void {
 		$this->assertSame('@page{size:A4 landscape;margin:10mm}', build_css::decode("@page {\n\tsize: A4 landscape\n\tmargin: 10mm\n}"));
 		$this->assertSame('@font-face{font-family:Inter}', build_css::decode("@font-face {\n\tfont-family: Inter\n}"));
