@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App dialog resource
-@ advice:   Replaces alert, confirm and prompt with a real dialog element, so they no longer block the page and no longer break an automated session. They answer a promise, so await them. Put data-confirm on a link or a button to ask before it does anything: the question is asked once, then the original action runs.
+@ advice:   Replaces alert, confirm and prompt with a real dialog element, so they no longer block the page and no longer break an automated session. They answer a promise, so await them. Put data-confirm on a link or a button to ask before it does anything: the question is asked once, then the original action runs. The button labels live in app.dlgLabels, so an app writes its own language straight into that object.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -13,8 +13,10 @@ window.alert = app.mod.alert = msg => phlo.dialog('alert', msg)
 window.confirm = msg => phlo.dialog('confirm', msg)
 window.prompt = (msg, defaultValue) => phlo.dialog('prompt', msg, defaultValue)
 
+app.dlgLabels = {ok: 'OK', cancel: 'Cancel'}
+
 phlo.dialog = async (type, message, defaultValue = '') => new Promise(resolve => {
-	app.mod.append('body', '<dialog id="phloDialog" class="phlo-dialog" role="dialog" aria-modal="true">\n<form method="dialog">\n<p class="phlo-dialog__message"></p>\n' + (type === 'prompt' ? '<input class="phlo-dialog__input" name="value">' : '') + '\n<menu class="phlo-dialog__actions">\n<button value="1" autofocus>OK</button>\n' + (type !== 'alert' ? '<button value="0">Cancel</button>' : '') + '\n</menu>\n</form>\n</dialog>')
+	app.mod.append('body', '<dialog id="phloDialog" class="phlo-dialog" role="dialog" aria-modal="true">\n<form method="dialog">\n<p class="phlo-dialog__message"></p>\n' + (type === 'prompt' ? '<input class="phlo-dialog__input" name="value">' : '') + '\n<menu class="phlo-dialog__actions">\n<button value="1" autofocus>' + app.dlgLabels.ok + '</button>\n' + (type !== 'alert' ? '<button value="0">' + app.dlgLabels.cancel + '</button>' : '') + '\n</menu>\n</form>\n</dialog>')
 	const dialog = obj('#phloDialog')
 	const messageEl = dialog.querySelector('.phlo-dialog__message')
 	messageEl && (messageEl.textContent = String(message ?? ''))

@@ -93,6 +93,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   Center, and Phlo Dashboard stays the name of the separate fleet app.
 
 ### Added
+- The `DOM/dialog` buttons read their labels from `app.dlgLabels`, so an app writes
+  its own language into that object (`app.dlgLabels.ok = 'Oké'`), the same way
+  `app.tsLabels` says the timestamp units. The resource ships `OK` and `Cancel`, so
+  an app that sets nothing reads as before.
 - A `manual` resource: `GET /manual` describes the app it runs in, from three
   sources that follow the code by themselves: `data/app.md`, the live source
   through `reflect` and `git log`. A layer under `paths.resources` becomes its
