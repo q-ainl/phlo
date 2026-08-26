@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App form handler and input state saver
-@ advice:   A form with class async submits over the same channel as the rest and answers with commands rather than a new page, using its own method attribute. The target is read from the action attribute, not the action property: a field named action (or method, or submit) shadows the property with the element itself, and a form for a record with such a field would then never leave the page. Apart from that, this keeps the DOM honest: what a visitor types is written back into the attributes, so the state that is saved and restored on a back button matches what is on screen.
+@ advice:   A form with class async submits over the same channel as the rest and answers with commands rather than a new page, using its own method attribute. Method and target are read as attributes, never as properties of the form: a field named action or method shadows the property with the element itself, and a form for a record with such a field would then never leave the page. Without an action the form posts to the page it is on, resolved against the origin like every other request. Apart from that, this keeps the DOM honest: what a visitor types is written back into the attributes, so the state that is saved and restored on a back button matches what is on screen.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -17,5 +17,5 @@ on('input change', 'input, select, textarea', input => {
 	phlo.state.replace()
 	return false
 })
-on('submit', 'form.async', (form, e) => [e.preventDefault(), app[(form.attributes.method?.value ?? 'GET').toLowerCase()](new URL(form.getAttribute('action'), location.origin).pathname.substr(1), new FormData(form))])
+on('submit', 'form.async', (form, e) => [e.preventDefault(), app[(form.attributes.method?.value ?? 'GET').toLowerCase()](new URL(form.attributes.action?.value ?? location.pathname, location.origin).pathname.substr(1), new FormData(form))])
 </script>

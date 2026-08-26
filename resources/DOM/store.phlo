@@ -313,7 +313,7 @@ onExist('[data-bind]', el => {
 })
 
 onExist('[data-bind-attr]', el => {
-	const spec = el.getAttribute('data-bind-attr')
+	const spec = el.attributes['data-bind-attr']?.value
 	if (!spec) return
 	const BOOL = new Set(['disabled','checked','hidden','required','readonly','selected','autofocus','multiple'])
 	let meta = phlo.existing.get(el)
@@ -337,7 +337,7 @@ onExist('[data-bind-attr]', el => {
 			name === 'text' ? el.textContent :
 			name === 'html' ? el.innerHTML :
 			name === 'value' ? el.value :
-			(name === 'class' ? null : el.getAttribute(name))
+			(name === 'class' ? null : el.attributes[name]?.value ?? null)
 		const fromStore = phlo.store.get(path)
 		const domNonEmpty = (domVal ?? '').trim() !== ''
 		const storeEmpty = fromStore === undefined || (typeof fromStore === 'string' && fromStore.trim() === '')
@@ -390,7 +390,7 @@ onExist('[data-each]', el => {
 		if (node.matches('[data-bind], [data-bind-attr]')) bound.push(node)
 		bound.forEach(item => {
 			if (item.dataset.bind !== undefined && item.dataset.eachBind === undefined) item.dataset.eachBind = item.dataset.bind
-			const attr = item.getAttribute('data-bind-attr')
+			const attr = item.attributes['data-bind-attr']?.value
 			if (attr !== null && item.dataset.eachBindAttr === undefined) item.dataset.eachBindAttr = attr
 			if (item.dataset.eachBind !== undefined){
 				const not = item.dataset.eachBind.startsWith('!') ? '!' : ''

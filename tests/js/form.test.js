@@ -15,7 +15,7 @@ const mountForm = html => {
 	const env = mount(html, ['DOM/form'], {
 		URL: URL,
 		FormData: class { constructor(form){ this.form = form } },
-		location: {origin: 'https://admin.test'},
+		location: {origin: 'https://admin.test', pathname: '/change/here'},
 	})
 	env.context.app.put = (path, data) => puts.push({path, data})
 	env.context.app.get = (path, data) => puts.push({path, data})
@@ -27,6 +27,18 @@ test('a form with a field named action still submits to its action attribute', (
 	submit(env)
 	assert.strictEqual(puts.length, 1, 'the form went out')
 	assert.strictEqual(puts[0].path, 'change/menu_button/29', 'to the path in the attribute, without the leading slash')
+})
+
+test('a field named method shadows the property just the same, and the attribute still wins', () => {
+	const {env, puts} = mountForm('<form class="async" method="put" action="/change/x/1"><input name="method" value="delete"></form>')
+	submit(env)
+	assert.deepStrictEqual(puts.map(p => p.path), ['change/x/1'])
+})
+
+test('a form without an action posts to the page it is on', () => {
+	const {env, puts} = mountForm('<form class="async" method="put"><input name="q" value="x"></form>')
+	submit(env)
+	assert.deepStrictEqual(puts.map(p => p.path), ['change/here'])
 })
 
 test('a form without such a field submits the same way', () => {

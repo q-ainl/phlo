@@ -1,0 +1,47 @@
+@ version:  1.0
+@ creator:  q-ai.nl
+@ summary:  One verdict on the connection, drawn from the traffic itself: app.online, offline on <body>, app.connection.on('change')
+@ advice:   Nothing runs on a clock here. The verdict comes from what actually happened: a request that got no answer at all, or a websocket reconnect that failed, means offline; any answer at all, or a socket that opens, means online. A socket that merely closes says nothing, because sockets drop for a hundred reasons while HTTP is fine, and the reconnect that follows is the only probe there is. Read app.online, style on body.offline, and subscribe with app.connection.on('change', cb) to pause a live view or refuse what needs the server. It decides nothing about what the visitor sees; that is the app's.
+@ package:  dom
+@ frontend: true
+@ backend:  false
+@ requires: @DOM
+@ tags:     dom connection offline online network frontend
+
+<script>
+app.connection = {
+	online: true,
+	since: Date.now(),
+	reason: 'start',
+	subs: [],
+	on(cb){
+		app.connection.subs.push(cb)
+		return () => app.connection.subs = app.connection.subs.filter(sub => sub !== cb)
+	},
+	set(online, reason){
+		if (online === app.connection.online) return
+		Object.assign(app.connection, {online, reason, since: Date.now()})
+		document.body.classList.toggle('offline', !online)
+		phlo.log('🖧 Connection ' + (online ? 'online' : 'offline'), reason)
+		app.connection.subs.forEach(cb => cb(online, reason))
+	},
+	attempting: false,
+}
+Object.defineProperty(app, 'online', {get: () => app.connection.online})
+
+const connectionRequest = phlo.request
+phlo.request = (...args) => {
+	const xhr = connectionRequest(...args)
+	if (xhr){
+		xhr.addEventListener('load', () => app.connection.set(true, 'response'))
+		xhr.addEventListener('error', () => app.connection.set(false, 'request'))
+		xhr.addEventListener('timeout', () => app.connection.set(false, 'timeout'))
+	}
+	return xhr
+}
+
+app.websocket?.on?.('connect', () => [app.connection.attempting = false, app.connection.set(true, 'websocket')])
+app.websocket?.on?.('close', () => app.connection.attempting = true)
+app.websocket?.on?.('error', () => app.connection.attempting && app.connection.set(false, 'websocket'))
+addEventListener('offline', () => app.connection.set(false, 'network'))
+</script>

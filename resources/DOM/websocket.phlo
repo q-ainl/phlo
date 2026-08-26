@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Client-side WebSocket handler
-@ advice:   Opens the connection and keeps it open, reconnecting on its own, and treats what arrives as commands, so the server can update a page with the same instructions a route uses. It survives a page swap, which a hand-bound on() does not. A token belongs in a cookie rather than in the URL, since a URL ends up in logs.
+@ advice:   Reconnects on its own with a backoff that triples up to half a minute, and tries at once when the network says it is back or the tab becomes visible again. send() answers true or false and never complains: whether a message that could not go out is queued or dropped is the app's call. Opens the connection and keeps it open, reconnecting on its own, and treats what arrives as commands, so the server can update a page with the same instructions a route uses. It survives a page swap, which a hand-bound on() does not. A token belongs in a cookie rather than in the URL, since a URL ends up in logs.
 @ package:  realtime
 @ frontend: true
 @ backend:  false
@@ -17,7 +17,7 @@ app.websocket = {
 			phlo.wss.onmessage = e => [{trans, state, ...cmds} = JSON.parse(e.data), apply(cmds, trans, state)]
 			phlo.wss.onopen = e => [app.websocket.emit('connect', e), phlo.log('🖧 Websocket connected', e), app.websocket.retry = 333]
 			phlo.wss.onerror = e => [app.websocket.emit('error', e), phlo.log('🖧 Websocket error', e)]
-			phlo.wss.onclose = e => [app.websocket.emit('close', e), phlo.log('🖧 Websocket close', e), app.websocket.retry && [app.websocket.open, app.websocket.retry *= 3]]
+			phlo.wss.onclose = e => [app.websocket.emit('close', e), phlo.log('🖧 Websocket close', e), app.websocket.retry && [app.websocket.open, app.websocket.retry = Math.min(app.websocket.retry * 3, 30000)]]
 		})
 	},
 	path: 'websocket',
@@ -38,8 +38,15 @@ app.websocket = {
 			catch(err){ phlo.log('🖧 Websocket ' + event, err) }
 		})
 	},
-	send: data => phlo.wss?.readyState === 1 ? [phlo.log('🖧 app.websocket.send', '\n', data), phlo.wss.send(JSON.stringify(data))] : phlo.error('🖧 Could not send websocket data over closed socket'),
+	send(data){
+		if (phlo.wss?.readyState !== 1) return phlo.log('🖧 Could not send websocket data over closed socket', data), false
+		phlo.log('🖧 app.websocket.send', '\n', data)
+		phlo.wss.send(JSON.stringify(data))
+		return true
+	},
 	retry: 333,
 }
 app.websocket.open
+addEventListener('online', () => phlo.wss?.readyState !== 1 && [app.websocket.retry = 333, app.websocket.open])
+addEventListener('visibilitychange', () => !document.hidden && phlo.wss?.readyState !== 1 && [app.websocket.retry = 333, app.websocket.open])
 </script>

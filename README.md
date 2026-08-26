@@ -122,6 +122,8 @@ config, source, build, release and error views. Move it with the optional `contr
   protocol.
 - **[docs/websocket-contract.md](docs/websocket-contract.md)** the realtime
   WebSocket contract (Phlo Daemon).
+- **[docs/connection.md](docs/connection.md)** who decides that the server is
+  gone, and what a site, a back office and a device do with that.
 - **[docs/tasks.md](docs/tasks.md)** cron tasks.
 - **[docs/model-opt-in.md](docs/model-opt-in.md)** ORM opt-in features.
 - **[docs/connectors.md](docs/connectors.md)** API connectors (webshops,
