@@ -49,3 +49,20 @@ static parsing {
 	$out['absentIsUntouched'] = $numbers->absent
 	return $out
 }
+
+static storing {
+	$dir = sys_get_temp_dir().'/fieldprobe-'.getmypid().slash
+	is_dir($dir) || mkdir($dir)
+	// The field's default path is the app's files constant, which an app defines and this fixture
+	// does not; the probe hands its own path in, but the default is still read.
+	defined('files') || define('files', $dir)
+	$upload = %file(tempnam($dir, 'up'), name: 'FOTO.JPG')
+	$field = field(type: 'file', name: 'photo', path: $dir)
+	$written = $field->writePath($upload)
+	$record = new obj(photo: 'FOTO.JPG', photo_token: $upload->token)
+	$out = ['writtenAs' => basename($written), 'readAs' => basename($field->read($record)->file), 'label' => $field->label($record)]
+	$upload->delete()
+	rmdir(dirname($written))
+	rmdir($dir)
+	return $out
+}

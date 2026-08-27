@@ -72,6 +72,15 @@ final class FieldTest extends TestCase {
 
 	// An emptied number input submits an empty string, which a numeric column refuses. The
 	// absence of a number is the default, or zero; anything actually typed is left alone.
+	// An upload keeps its name, but on disk its extension is lowercase: the route that serves it
+	// lowercases the extension as well, and on Linux FOTO.JPG stored as token.JPG is not token.jpg.
+	public function testFileFieldStoresAndReadsALowercaseExtension():void {
+		$r = self::fetch('fieldprobe::storing');
+		$this->assertStringEndsWith('.jpg', $r['writtenAs'], 'stored with a lowercase extension');
+		$this->assertSame($r['writtenAs'], $r['readAs'], 'and read back from the same path');
+		$this->assertStringContainsString('icon jpg', $r['label'], 'the icon class follows suit');
+	}
+
 	public function testNumberParseTurnsAnEmptyInputIntoANumber():void {
 		$r = self::fetch('fieldprobe::parsing');
 		$this->assertSame(0, $r['emptyBecomesZero'], 'an emptied number field stores zero, not an empty string');

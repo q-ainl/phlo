@@ -16,6 +16,9 @@
         "fields/select",
         "fields/multiselect",
         "fields/token",
-        "fields/virtual"
+        "fields/virtual",
+        "fields/file",
+        "files/file",
+        "security/token"
     ]
 }

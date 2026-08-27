@@ -3,7 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  File field
-@ advice:   An upload is stored under a random token instead of its own name, so two people can send the same filename and no visitor can guess a neighbouring URL. That takes two columns, name and name_token, which objColumns already claims. Set accept to narrow the picker, and path and uri when the files live somewhere other than the default.
+@ advice:   An upload is stored under a random token instead of its own name, so two people can send the same filename and no visitor can guess a neighbouring URL. That takes two columns, name and name_token, which objColumns already claims. Set accept to narrow the picker, and path and uri when the files live somewhere other than the default. On disk the extension is lowercase whatever the upload said, so a route that lowercases it as well finds FOTO.JPG under token.jpg.
 @ package:  fields
 @ frontend: true
 @ backend:  true
@@ -16,11 +16,11 @@ prop uri = '/files/'
 prop length = 100
 prop accept = null
 
-method label($record):string => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.$record->{$this->name.'_token'}.slash.rawurlencode($filename), target: 'file', inner: tag('i', class: 'icon '.pathinfo($filename, PATHINFO_EXTENSION), inner: void).esc($filename)) : dash
+method label($record):string => ($filename = $record->{$this->name}) ? tag('a', href: $this->uri.$record->{$this->name.'_token'}.slash.rawurlencode($filename), target: 'file', inner: tag('i', class: 'icon '.$this->ext($filename), inner: void).esc($filename)) : dash
 method input($record):string {
 	$input = void
 	$file = ($filename = $record->{$this->name}) ? $this->read($record) : null
-	$input .= lf.tab.tag('div', class: 'file', inner: $file ? tag('i', class: "icon $file->ext", inner: void).esc($filename) : '-select-')
+	$input .= lf.tab.tag('div', class: 'file', inner: $file ? tag('i', class: 'icon '.$this->ext($filename), inner: void).esc($filename) : '-select-')
 	$input .= lf.tab.input(type: 'file', class: 'file-input', name: $this->name, accept: $this->accept)
 	$file && $this->canDelete && $input .= lf.tab.tag('div', inner: tag('label', inner: input(type: 'checkbox', name: $this->name.'Delete')." $this->delete"))
 	return $input.lf
@@ -41,7 +41,7 @@ method parse($record):void {
 method read($record, $path = null):file {
 	$filename = $record->{$this->name};
 	$token = $record->{$this->name.'_token'};
-	return %file(($path ?? $this->path).($info = substr($token, 0, 2).slash.substr($token, 2).dot.pathinfo($filename, PATHINFO_EXTENSION)), name: $filename, info: $info)
+	return %file(($path ?? $this->path).($info = substr($token, 0, 2).slash.substr($token, 2).dot.$this->ext($filename)), name: $filename, info: $info)
 }
 
 method write($file) => file_exists($dest = $this->writePath($file)) || $file->move($dest) || error("Couldn't write: $dest")
@@ -49,8 +49,10 @@ method writePath($file, $path = null):string {
 	$token = $file->token
 	$path = ($path ?? $this->path).substr($token, 0, 2)
 	is_dir($path) || mkdir($path) || error("Couldn't create: $path")
-	return $path.slash.substr($token, 2).dot.$file->ext
+	return $path.slash.substr($token, 2).dot.$this->ext($file->name)
 }
+
+method ext(string $filename):string => strtolower(pathinfo($filename, PATHINFO_EXTENSION))
 
 prop objColumns:array => [$this->name, $this->name.'_token']
 
