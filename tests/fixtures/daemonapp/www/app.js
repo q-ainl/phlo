@@ -63,6 +63,7 @@ const phlo = {
 		const csrf = obj('meta[name="csrf"]')?.content
 		if (csrf) xhr.setRequestHeader('X-CSRF-Token', csrf)
 		xhr.send(data)
+		return xhr
 	},
 	anchor: '',
 	token: (length = 20) => Array(length).fill().map(() => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join(''),
@@ -92,9 +93,9 @@ const app = {
 		options: options => document.body.className = options,
 		settings: (key, value) => document.body.dataset[key] = value,
 		remove: els => objects(els).forEach(el => el.remove()),
-		css: href => [...document.querySelectorAll('link[rel="stylesheet"]')].some(l => (l.getAttribute('href') || '').split('?')[0] === href.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(link = document.createElement('link'), link.rel = 'stylesheet', link.href = href, link.onload = resolve, link.onerror = reject))),
-		js: src => [...document.querySelectorAll('script[src]:not([defer])')].some(s => (s.getAttribute('src') || '').split('?')[0] === src.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(script = document.createElement('script'), script.src = src, (nonce = obj('meta[name="nonce"]')) && (script.nonce = nonce.content), script.onload = resolve, script.onerror = reject))),
-		defer: src => [...document.querySelectorAll('script[src][defer]')].some(s => (s.getAttribute('src') || '').split('?')[0] === src.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(script = document.createElement('script'), script.src = src, script.defer = true, (nonce = obj('meta[name="nonce"]')) && (script.nonce = nonce.content), script.onload = resolve, script.onerror = reject))),
+		css: href => [...document.querySelectorAll('link[rel="stylesheet"]')].some(l => (l.attributes.href?.value ?? '').split('?')[0] === href.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(link = document.createElement('link'), link.rel = 'stylesheet', link.href = href, link.onload = resolve, link.onerror = reject))),
+		js: src => [...document.querySelectorAll('script[src]:not([defer])')].some(s => (s.attributes.src?.value ?? '').split('?')[0] === src.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(script = document.createElement('script'), script.src = src, (nonce = obj('meta[name="nonce"]')) && (script.nonce = nonce.content), script.onload = resolve, script.onerror = reject))),
+		defer: src => [...document.querySelectorAll('script[src][defer]')].some(s => (s.attributes.src?.value ?? '').split('?')[0] === src.split('?')[0]) ? Promise.resolve() : new Promise((resolve, reject) => document.head.appendChild(first(script = document.createElement('script'), script.src = src, script.defer = true, (nonce = obj('meta[name="nonce"]')) && (script.nonce = nonce.content), script.onload = resolve, script.onerror = reject))),
 		main: content => obj('main') ? app.mod.outer('main', content) : app.mod.inner('body', content),
 		outer: (els, content) => objects(els).forEach(el => el.outerHTML = content),
 		inner: (els, content) => objects(els).forEach(el => el.innerHTML = content),
