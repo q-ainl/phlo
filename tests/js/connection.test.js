@@ -43,12 +43,16 @@ test('a closing socket is no verdict, a failed reconnect is, an open socket is o
 		Date,
 	})
 	const app = env.context.app
+	// A browser fires error before close, both when a live socket drops and when a connection
+	// attempt fails; the sequence below is that of a drop followed by one failed reconnect.
 	socket.emit('error')
 	assert.strictEqual(app.online, true, 'an error on a live socket says nothing')
 	socket.emit('close')
 	assert.strictEqual(app.online, true, 'a close says nothing either')
 	socket.emit('error')
-	assert.strictEqual(app.online, false, 'a reconnect that fails does')
+	assert.strictEqual(app.online, false, 'the reconnect that fails does, at its error')
+	socket.emit('close')
+	assert.strictEqual(app.online, false, 'and its close changes nothing')
 	socket.emit('connect')
 	assert.strictEqual(app.online, true)
 })
