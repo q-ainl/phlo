@@ -13,7 +13,7 @@ app.websocket = {
 	get open(){
 		app.options.contains('wss') && delay('websocket', app.websocket.retry, () => {
 			phlo.wss?.close()
-			phlo.wss = new WebSocket(`wss://${location.host}/${app.websocket.path}`)
+			phlo.wss = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/${app.websocket.path}`)
 			phlo.wss.onmessage = e => [{trans, state, ...cmds} = JSON.parse(e.data), apply(cmds, trans, state)]
 			phlo.wss.onopen = e => [app.websocket.emit('connect', e), phlo.log('🖧 Websocket connected', e), app.websocket.retry = 333]
 			phlo.wss.onerror = e => [app.websocket.emit('error', e), phlo.log('🖧 Websocket error', e)]
