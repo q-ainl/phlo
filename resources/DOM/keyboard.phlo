@@ -116,7 +116,7 @@ on('click', 'body', (body, e) => {
 	phlo.keyboard.open?.focus({preventScroll: true})
 })
 
-on('pointerdown', 'body', (el, e) => {
+on('click', 'body', (el, e) => {
 	if (!phlo.keyboard.open) return
 	if (e.target.closest('#keyboard') || e.target === phlo.keyboard.open) return
 	const surface = phlo.keyboard.open.closest('dialog[open]')
