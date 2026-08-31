@@ -118,6 +118,7 @@ on('click', 'body', (body, e) => {
 
 on('click', 'body', (el, e) => {
 	if (!phlo.keyboard.open) return
+	if (!phlo.keyboard.open.isConnected) return phlo.keyboard.hide()
 	if (e.target.closest('#keyboard') || e.target === phlo.keyboard.open) return
 	const surface = phlo.keyboard.open.closest('dialog[open]')
 	if (surface && surface.contains(e.target)) return
