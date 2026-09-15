@@ -36,7 +36,7 @@ method __construct(string $file){
 	}
 	$zip->close()
 	$toIndex = fn($letters) => array_reduce(str_split(strtoupper($letters)), fn($n, $c) => $n * 26 + ord($c) - 64, 0) - 1
-	$isShared = fn($attrs) => preg_match('/\bt="s"\b/', $attrs) === 1
+	$isShared = fn($attrs) => preg_match('/(?:^|\s)t="s"/', $attrs) === 1
 	foreach ($sheets AS $sheetID => $sheet){
 		$name = $sheetNames[$sheetID - 1] ?? 'Sheet '.$sheetID
 		if (!preg_match('/<row[^>]*>(.+)<\/row>/s', $sheet, $m)) dx('error parsing sheet')
