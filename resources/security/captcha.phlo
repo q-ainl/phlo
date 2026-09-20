@@ -14,7 +14,7 @@ static P = 56
 static tol = 8
 static ttl = 600
 
-static issue():array {
+static issue:array {
 	$gapX = random_int(static::$P + 14, static::$W - static::$P - 6)
 	$gapY = random_int(12, static::$H - static::$P - 12)
 	%session->captcha = arr(gap: $gapX, exp: time() + static::$ttl)
@@ -77,7 +77,7 @@ static verify($x, $telemetry):bool {
 	return true
 }
 
-static consume():void {
+static consume:void {
 	unset(%session->captcha)
 }
 

@@ -28,7 +28,7 @@ method merchant:string => 'v0.1/merchants/'.($this->config['merchant_code'] ?? v
 // The merchant's paired readers.
 // A reader id changes when a device is re-paired, so resolve by name and store the id;
 // never assume it is permanent.
-method readers():obj {
+method readers:obj {
 	if ($m = $this->missing('merchant_code', 'api_key')) return $m
 	return $this->get($this->merchant.'/readers')
 }

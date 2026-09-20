@@ -25,7 +25,7 @@ static fields:array => arr(
 // Returns the session token, fetching one on first use.
 // The API takes a session rather than a token per call, so the first call exchanges the
 // API token for one and every later call in the same request reuses it.
-method session():obj {
+method session:obj {
 	if ($m = $this->missing('api_token')) return $m
 	if ($this->sessionToken !== void) return static::ok($this->sessionToken)
 	$res = $this->post('session', ['accessToken' => trim((string)$this->config['api_token']), 'source' => (string)($this->config['source'] ?? 'Phlo')])
@@ -36,7 +36,7 @@ method session():obj {
 	return static::ok($token)
 }
 
-method guard():?obj {
+method guard:?obj {
 	$res = $this->session
 	return $res->ok ? null : $res
 }
