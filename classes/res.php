@@ -52,6 +52,7 @@ class res extends obj {
 			if ($httpCode) http_response_code($httpCode);
 			if ($this->type) header('Content-Type: '.$this->type);
 			if (!$this->streaming && !is_null($this->body)) header('Content-Length: '.strlen($this->body));
+			if (!(defined('indexable') && indexable) && !isset($this->headers['X-Robots-Tag'])) header('X-Robots-Tag: noindex');
 			foreach ($this->headers as $key => $value) header("$key: $value");
 		}
 		if (!is_null($this->body) && !$head) print($this->body);

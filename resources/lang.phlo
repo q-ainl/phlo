@@ -149,7 +149,7 @@ method translation($from, $text, ...$args):string {
 			if (trim($line)){
 				$hash = $this->hash($from, $line)
 				$item = $this->lookup($hash)
-				if ($item === null) [$missing[$hash] = $item = $line, debug(%app->lang.': '.(strlen($line) > 20 ? substr($line, 0, 18).'...' : $line))]
+				if ($item === null) [$missing[$hash] = $item = $line, debug(%app->lang.': '.(mb_strlen($line) > 20 ? mb_substr($line, 0, 18).'...' : $line))]
 			}
 			else $item = void
 			$translation[] = $item

@@ -124,6 +124,7 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$async = $req->async || $res->streaming;
 	if (!$req->method) return $body ?? void;
 	!$res->streaming && $res->done && error('Output already started, invalid view()');
+	$code && $res->status = $code;
 	is_null($path) && $path = $req->path;
 	$asset = fn($item) => str_starts_with($item, slash) && $prefix && !str_starts_with($item, slash.$prefix.slash) && $item !== slash.$prefix ? slash.$prefix.$item : $item;
 	!$async && !is_bool($path) && $path !== $req->path && location($asset(slash.trim($path, slash)));
@@ -190,7 +191,6 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$options && $bodyAttrs .= " class=\"$options\"";
 	$settings && $bodyAttrs .= loop($settings, fn($value, $key) => ' data-'.$key.'="'.esc($value).'"', void);
 	$dom = DOM($body, $head, $cmds['lang'] ?? $app->lang ?? 'en', $bodyAttrs, $htmlAttrs);
-	$code && $res->status = $code;
 	$res->type = 'text/html';
 	$res->body = $dom;
 	return $dom;
@@ -208,7 +208,8 @@ function apply(...$cmds):string {
 		$dbg[] = '['.$d['mem'].'] ['.$d['dur'].']';
 		$cmds['debug'] = isset($cmds['debug']) ? [...(array)$cmds['debug'], ...$dbg] : $dbg;
 	}
-	$body = (string)json_encode($cmds, jsonFlat);
+	$body = json_encode($cmds, jsonFlat);
+	$body === false && error('apply() cannot be encoded: '.json_last_error_msg());
 	if ($req->cli){
 		$res->outputted = true;
 		$res->done = true;
