@@ -42,6 +42,19 @@ method request($action, ...$data):obj {
 	$raw = trim((string)HTTP($this->url.$action, ['secret: '.$this->secret], true, $get ? null : $data))
 	if (strtolower($raw) === 'ok') return obj(ok: true)
 	$res = json_decode($raw)
-	if (!$res && $raw) return obj(ok: false, error: $raw)
-	return $res ?: obj(ok: false, error: 'Empty WhatsApp response')
+	if ($res instanceof \stdClass) return WhatsApp::asObj($res)
+	if (is_array($res)) return obj(ok: true, items: $res)
+	if (is_scalar($res)) return obj(ok: (bool)$res, value: $res)
+	if ($raw !== void) return obj(ok: false, error: $raw)
+	return obj(ok: false, error: 'Empty WhatsApp response')
+}
+
+// json_decode answers with a stdClass while every method here promises an obj, so without this
+// step the first JSON answer ends the request with a TypeError instead of reaching the caller.
+// Keys are assigned one by one because a JSON key may carry a dash or a digit, and such a key
+// cannot be unpacked as a named argument.
+static asObj(\stdClass $data):obj {
+	$out = obj()
+	foreach ((array)$data AS $key => $value) $out->$key = $value
+	return $out
 }
