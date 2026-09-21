@@ -13,6 +13,14 @@ final class SeoTest extends TestCase {
 		return [proc_close($proc), $out, $err];
 	}
 
+	private static function http(string $url):array {
+		$context = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+		$body    = (string)file_get_contents($url, false, $context);
+		$status  = 0;
+		foreach ($http_response_header ?? [] as $h) if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)){ $status = (int)$m[1]; break; }
+		return [$status, $body];
+	}
+
 	public static function setUpBeforeClass():void {
 		[$code, $out, $err] = self::cli('app.php', 'build::run');
 		self::assertSame(0, $code, "build::run failed:\n$out$err");
@@ -77,12 +85,40 @@ final class SeoTest extends TestCase {
 		$this->assertStringNotContainsString('canonical', $h);
 	}
 
-	public function testErrorStatusDropsTheIndex():void {
-		[$code, $out, $err] = self::cli('app-indexed.php', 'app.errorHead');
-		$this->assertSame(0, $code, $err);
-		$h = json_decode(trim($out), true);
-		$this->assertIsString($h, 'head output not a string: '.$out);
-		$this->assertStringContainsString('noindex', $h);
-		$this->assertStringNotContainsString('canonical', $h);
+	// Over real HTTP on purpose: view() used to set the response status after the head had already
+	// been assembled, so the resource could not see it. Setting the status by hand in a fixture would
+	// pass either way, which is the regression this has to catch.
+	public function testErrorStatusDropsTheIndexOverHttp():void {
+		$port   = 8930 + (getmypid() % 1000);
+		$server = proc_open(
+			[PHP_BINARY, '-S', '127.0.0.1:'.$port, __DIR__.'/fixtures/seo/www/app-indexed.php'],
+			[1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']],
+			$pipes,
+			__DIR__.'/fixtures/seo/www'
+		);
+		$this->assertIsResource($server);
+		try {
+			$up = false;
+			for ($i = 0; $i < 50 && !$up; ++$i){
+				usleep(100_000);
+				$sock = @fsockopen('127.0.0.1', $port, $errno, $errstr, 0.2);
+				if ($sock){ fclose($sock); $up = true; }
+			}
+			$this->assertTrue($up, 'php -S did not come up on port '.$port);
+
+			[$ok, $okBody] = self::http("http://127.0.0.1:$port/");
+			$this->assertSame(200, $ok);
+			$this->assertStringContainsString('canonical', $okBody, 'an ordinary page on an indexable host keeps its canonical');
+			$this->assertStringNotContainsString('noindex', $okBody);
+
+			[$gone, $goneBody] = self::http("http://127.0.0.1:$port/gone");
+			$this->assertSame(404, $gone);
+			$this->assertStringContainsString('noindex', $goneBody, 'view(code: 404) is noindex without the app saying so');
+			$this->assertStringNotContainsString('canonical', $goneBody);
+		}
+		finally {
+			proc_terminate($server);
+			proc_close($server);
+		}
 	}
 }

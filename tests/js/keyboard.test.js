@@ -55,9 +55,9 @@ test('moving to a field in another dialog takes the keys along', () => {
 test('a tap elsewhere in the same dialog leaves the keys standing', () => {
 	const env = mount('<dialog id="modal" open><input id="naam" data-keyboard><button id="kleur"></button></dialog><button id="buiten"></button>', ['DOM/keyboard'])
 	focus(env, '#naam')
-	fire(env, 'pointerdown', 'body', {target: env.document.querySelector('#kleur')})
+	fire(env, 'click', 'body', {target: env.document.querySelector('#kleur')})
 	assert.ok(keyboard(env), 'the choice belongs to the same form')
-	fire(env, 'pointerdown', 'body', {target: env.document.querySelector('#buiten')})
+	fire(env, 'click', 'body', {target: env.document.querySelector('#buiten')})
 	assert.strictEqual(keyboard(env), null, 'outside the dialog it is done')
 })
 
