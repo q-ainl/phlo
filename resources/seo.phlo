@@ -81,9 +81,10 @@ method schemaData:?array {
 	$this->ogImage && $base['image'] = $this->ogImage
 	return array_replace($base, (array)$this->structuredData)
 }
-// Whether this response belongs in a search index. An environment without the indexable
-// constant never does, and neither does an error page: a crawler following a dead link
-// should not keep the address. An app narrows it further per path with noIndex or noLink.
+// Whether this response belongs in a search index.
+// An environment without the indexable constant never does, and neither does an error page: a
+// crawler following a dead link should not keep the address. An app narrows it further per path
+// with noIndex or noLink.
 prop noIndex:bool => !(defined('indexable') && indexable) || %res->status >= 400 || (%app->noIndex ?? false) || (%app->noLink ?? false)
 // Whether this response has a public address worth pointing at, for hreflang alternates.
 prop noLink:bool => !(defined('indexable') && indexable) || (%app->noLink ?? false)
