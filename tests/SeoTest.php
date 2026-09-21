@@ -13,8 +13,8 @@ final class SeoTest extends TestCase {
 		return [proc_close($proc), $out, $err];
 	}
 
-	private static function http(string $url):array {
-		$context = stream_context_create(['http' => ['timeout' => 5, 'ignore_errors' => true]]);
+	private static function http(string $url, array $headers = []):array {
+		$context = stream_context_create(['http' => ['header' => implode("\r\n", $headers), 'timeout' => 5, 'ignore_errors' => true]]);
 		$body    = (string)file_get_contents($url, false, $context);
 		$status  = 0;
 		foreach ($http_response_header ?? [] as $h) if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $m)){ $status = (int)$m[1]; break; }
@@ -115,6 +115,13 @@ final class SeoTest extends TestCase {
 			$this->assertSame(404, $gone);
 			$this->assertStringContainsString('noindex', $goneBody, 'view(code: 404) is noindex without the app saying so');
 			$this->assertStringNotContainsString('canonical', $goneBody);
+
+			// The apply transport stays 200. A status on an async reply makes the request look
+			// failed to everything between the browser and the app, while the client reads the
+			// body either way, so view() hands the code to the page and not to the transport.
+			[$asyncCode, $asyncBody] = self::http("http://127.0.0.1:$port/gone", ['X-Requested-With: phlo']);
+			$this->assertSame(200, $asyncCode, 'an async reply carries no error status');
+			$this->assertNotSame('', trim($asyncBody), 'and it carries a body');
 		}
 		finally {
 			proc_terminate($server);

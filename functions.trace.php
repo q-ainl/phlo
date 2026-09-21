@@ -186,7 +186,7 @@ function view(?string $body = null, ?string $title = null, array|string $css = [
 	$async = $req->async || $res->streaming;
 	if (!$req->method) return $body ?? void;
 	!$res->streaming && $res->done && error('Output already started, invalid view()');
-	$code && $res->status = $code;
+	!$async && $code && $res->status = $code;
 	is_null($path) && $path = $req->path;
 	$asset = fn($item) => str_starts_with($item, slash) && $prefix && !str_starts_with($item, slash.$prefix.slash) && $item !== slash.$prefix ? slash.$prefix.$item : $item;
 	!$async && !is_bool($path) && $path !== $req->path && location($asset(slash.trim($path, slash)));
