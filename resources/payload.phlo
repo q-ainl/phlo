@@ -9,10 +9,16 @@
 @ tags:     payload request upload post put patch query
 
 $contentType = %req->contentType
+// Decoded here instead of through json_read().
+// An empty body and a malformed one both have to come back as no payload at all, not as a crash
+// on a request that may be perfectly valid.
 if (in_array(phlo('req')->method, ['POST', 'PUT', 'PATCH', 'QUERY']) && str_starts_with($contentType, 'application/json')){
 	$data = json_decode((string)file_get_contents('php://input'))
 	return $this->objData = is_object($data) ? get_object_vars($data) : (is_array($data) ? $data : [])
 }
+// Fields are assigned one by one, not through objImport().
+// Unpacking them as named arguments turns a field called "2" into a positional one, which ends
+// the request with a 500.
 if ($_POST) loop($_POST, fn($value, $key) => $this->$key = $value)
 elseif (in_array(phlo('req')->method, ['PUT', 'PATCH', 'QUERY']) && str_starts_with($contentType, 'application/x-www-form-urlencoded')){
 	$body = file_get_contents('php://input')

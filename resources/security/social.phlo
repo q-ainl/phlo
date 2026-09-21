@@ -90,6 +90,9 @@ static decodeIdToken($jwt):?array {
 	return is_array($claims) ? $claims : null
 }
 
+// RS256 only, and deliberately so.
+// Accepting a symmetric algorithm here would let a token signed with the provider's public key
+// pass as valid, which is the oldest way an id_token check is defeated.
 static algs:array => arr(RS256: OPENSSL_ALGO_SHA256)
 
 static verifySignature($provider, $jwt):bool {
