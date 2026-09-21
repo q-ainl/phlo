@@ -49,10 +49,10 @@ method request($action, ...$data):obj {
 	return obj(ok: false, error: 'Empty WhatsApp response')
 }
 
-// json_decode answers with a stdClass while every method here promises an obj, so without this
-// step the first JSON answer ends the request with a TypeError instead of reaching the caller.
-// Keys are assigned one by one because a JSON key may carry a dash or a digit, and such a key
-// cannot be unpacked as a named argument.
+// Turns the decoded answer into the obj every method here promises.
+// Without it the first JSON answer ends the request with a TypeError. Keys are assigned one by
+// one, because a JSON key may carry a dash or a digit and such a key cannot be unpacked as a
+// named argument.
 static asObj(\stdClass $data):obj {
 	$out = obj()
 	foreach ((array)$data AS $key => $value) $out->$key = $value
