@@ -1,8 +1,9 @@
 <?php
 use PHPUnit\Framework\TestCase;
 
-// robots.txt is gated on the site-wide `indexable` constant; head() owns the full SEO head
-// (description, og:*, canonical) gated on a per-page noIndex flag, with the twitter card opt-in.
+// The site-wide `indexable` constant gates robots.txt and the head alike: without it a host is
+// noindex and carries no canonical. head() owns the rest of the SEO head (description, og:*,
+// canonical), dropped per page by a noIndex flag or by an error status, with the twitter card opt-in.
 final class SeoTest extends TestCase {
 
 	private static function cli(string $entry, string ...$args):array {
@@ -46,7 +47,7 @@ final class SeoTest extends TestCase {
 	}
 
 	public function testHeadShape():void {
-		[$code, $out, $err] = self::cli('app.php', 'seo.head');
+		[$code, $out, $err] = self::cli('app-indexed.php', 'seo.head');
 		$this->assertSame(0, $code, $err);
 		$h = json_decode(trim($out), true);
 		$this->assertIsString($h, 'head output not a string: '.$out);
@@ -65,5 +66,23 @@ final class SeoTest extends TestCase {
 		$this->assertStringContainsString('canonical', $h);
 		$this->assertStringNotContainsString('twitter', $h);
 		$this->assertStringNotContainsString('noindex', $h);
+	}
+
+	public function testHeadWithoutIndexable():void {
+		[$code, $out, $err] = self::cli('app.php', 'seo.head');
+		$this->assertSame(0, $code, $err);
+		$h = json_decode(trim($out), true);
+		$this->assertIsString($h, 'head output not a string: '.$out);
+		$this->assertStringContainsString('noindex', $h);
+		$this->assertStringNotContainsString('canonical', $h);
+	}
+
+	public function testErrorStatusDropsTheIndex():void {
+		[$code, $out, $err] = self::cli('app-indexed.php', 'app.errorHead');
+		$this->assertSame(0, $code, $err);
+		$h = json_decode(trim($out), true);
+		$this->assertIsString($h, 'head output not a string: '.$out);
+		$this->assertStringContainsString('noindex', $h);
+		$this->assertStringNotContainsString('canonical', $h);
 	}
 }

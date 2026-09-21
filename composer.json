@@ -20,7 +20,8 @@
     "suggest": {
         "ext-pdo": "Required by the DB resources (MySQL, PostgreSQL, SQLite)",
         "ext-sodium": "Required by the security/encryption resource",
-        "ext-gd": "Required by the icon sprite builder (build config key: icons)"
+        "ext-gd": "Required by the icon sprite builder (build config key: icons)",
+        "ext-mbstring": "Required by the lang, manual and fields resources"
     },
     "scripts": {
         "test": "phpunit"

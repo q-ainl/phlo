@@ -7,6 +7,11 @@ prop pages = ['', 'about']
 prop lang = 'en'
 prop image = 'icon.webp'
 
+static errorHead:string {
+	%res->status = 404
+	return %seo->head
+}
+
 app::route()
 
 route GET => view('ok', 'SEO')
