@@ -24,6 +24,60 @@ prop model:string = 'gpt-4o-mini'
 prop instructions = void
 static fileCache:array = []
 
+// How much goes into one job, whichever cap is reached first.
+// A job is one AI call over numbered lines: the line count keeps the answer short enough to come
+// back whole, the character count keeps a page of long sentences out of a truncated request.
+prop batchLines:int = 50
+prop batchChars:int = 4000
+
+// Phrases waiting for a job, keyed by source and target language, with their character count.
+// Never make this instance persistent: the tail of a batch leaves when it dies, so one that
+// outlives the request takes the tail with it.
+prop pending:array = []
+prop pendingChars:array = []
+
+// Gathers missing phrases and hands over a batch once it is full.
+// translation() runs for every nl() call, so asking there meant a job per phrase: a hundred jobs
+// for one page, each an AI call for a single line, most of them refused by a queue that was full.
+method collect($from, $to, array $missing):void {
+	$key = $from.'|'.$to
+	foreach ($missing AS $hash => $line){
+		if (isset($this->pending[$key][$hash])) continue
+		$this->pending[$key][$hash] = $line
+		$this->pendingChars[$key] = ($this->pendingChars[$key] ?? 0) + strlen($line)
+	}
+	if (count($this->pending[$key] ?? []) >= $this->batchLines || ($this->pendingChars[$key] ?? 0) >= $this->batchChars) $this->flush($key)
+}
+
+// Hands one batch over and forgets it.
+// A refused job costs nothing: the phrases are still missing from the file, so the next request
+// that needs them gathers them again.
+method flush($key):bool {
+	$lines = $this->pending[$key] ?? []
+	unset($this->pending[$key], $this->pendingChars[$key])
+	if (!$lines) return false
+	$parts = explode('|', (string)$key, 2)
+	return $this->dispatch($parts[0], $parts[1] ?? $parts[0], json_encode($lines))
+}
+
+method flushAll():void {
+	foreach (array_keys($this->pending) AS $key) $this->flush($key)
+}
+
+// The one place that reaches the background, so a test can count jobs without a daemon or a process.
+method dispatch($from, $to, $json):bool => phlo_async('lang::asyncBatch', $from, $to, $json)
+
+// Where the tail of a batch leaves, at the end of every request.
+// The instance dies there in worker mode too, because phlo('tech/reset') keeps only what carries
+// objPers. Nothing may escape: a missed batch costs one visit, an exception during shutdown lands
+// on top of whatever ended the request.
+method __destruct(){
+	try {
+		$this->flushAll()
+	}
+	catch (\Throwable $e){}
+}
+
 method file($lang):string => langs.$lang.'.ini'
 
 method escape($value):string => strtr((string)$value, [bs => bs.bs, dq => bs.dq, lf => '\n'])
@@ -154,7 +208,7 @@ method translation($from, $text, ...$args):string {
 			else $item = void
 			$translation[] = $item
 		}
-		if ($missing) phlo_async('lang::asyncBatch', $from, %app->lang, json_encode($missing))
+		if ($missing) $this->collect($from, %app->lang, $missing)
 		$translation = implode(lf, $translation)
 	}
 	return $args ? sprintf($translation, ...$args) : $translation
