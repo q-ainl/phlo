@@ -44,4 +44,27 @@ final class ServeTest extends TestCase {
 		$this->assertSame('', stream_get_contents($stderr), 'the worker logs nothing to stderr across the whole soak');
 		$this->assertSame(0, proc_close($proc), 'the worker exits cleanly when its input closes');
 	}
+
+	public function testUnencodableResultsAndStreamsReturnErrorsAndWorkerSurvives():void {
+		$proc = proc_open([PHP_BINARY, self::$entry, 'phlo_serve'], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+		foreach ([
+			['id' => 'bytes', 'target' => 'chr', 'args' => [255]],
+			['id' => 'nan', 'target' => 'sqrt', 'args' => [-1]],
+			['id' => 'stream', 'target' => 'app::invalidStream', 'stream' => true],
+			['id' => 'exception', 'target' => 'app::invalidException'],
+			['id' => 'ok', 'target' => 'app::mirror', 'args' => ['ok']],
+		] as $job) fwrite($pipes[0], json_encode($job)."\n");
+		fclose($pipes[0]);
+		$out = stream_get_contents($pipes[1]);
+		$err = stream_get_contents($pipes[2]);
+		$this->assertSame(0, proc_close($proc), $err);
+		$this->assertSame('', $err);
+		$frames = array_map(fn($line) => json_decode($line, true, flags: JSON_THROW_ON_ERROR), explode("\n", trim($out)));
+		$this->assertSame('ready', $frames[0]['t']);
+		foreach (['bytes', 'nan', 'stream', 'exception'] as $i => $id){
+			$this->assertSame($id, $frames[$i + 1]['id']);
+			$this->assertSame('error', $frames[$i + 1]['t']);
+		}
+		$this->assertSame(['id' => 'ok', 't' => 'done', 'result' => ['ok']], $frames[5]);
+	}
 }

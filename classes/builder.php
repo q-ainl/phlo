@@ -410,13 +410,15 @@ class build_builder {
 			$c = $js[$i];
 			if ($c === slash && $i + 1 < $len){
 				$n = $js[$i + 1];
-				if ($n === slash && ($prev === void || $prev === ')' || $prev === ']' || ctype_alnum($prev) || $prev === '_' || $prev === '$' || $prev === '}' || $prev === lf)){
+				if ($n === slash){
 					$end = strpos($js, lf, $i);
 					$i = $end === false ? $len : $end;
 					continue;
 				}
 				if ($n === '*'){
 					$end = strpos($js, '*/', $i + 2);
+					$comment = substr($js, $i, ($end === false ? $len : $end + 2) - $i);
+					$out .= strpbrk($comment, "\r\n") !== false ? lf : space;
 					$i = $end === false ? $len : $end + 2;
 					continue;
 				}
@@ -460,12 +462,7 @@ class build_builder {
 			if ($c === lf){
 				++$i;
 				while ($i < $len && ($js[$i] === space || $js[$i] === tab || $js[$i] === lf)) ++$i;
-				if ($i < $len && $js[$i] === '}'){
-					$out .= '}';
-					$prev = '}';
-					++$i;
-				}
-				else $out .= lf;
+				$out .= lf;
 				continue;
 			}
 			$out .= $c;

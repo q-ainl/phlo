@@ -81,6 +81,11 @@ final class FieldTest extends TestCase {
 		$this->assertStringContainsString('icon jpg', $r['label'], 'the icon class follows suit');
 	}
 
+	public function testFileFieldStillFindsAnUploadStoredBeforeTheLowercaseRule():void {
+		$r = self::fetch('fieldprobe::storedBefore');
+		$this->assertSame('cd1234.JPG', $r['readAs'], 'an upload from before the rule still opens');
+	}
+
 	public function testNumberParseTurnsAnEmptyInputIntoANumber():void {
 		$r = self::fetch('fieldprobe::parsing');
 		$this->assertSame(0, $r['emptyBecomesZero'], 'an emptied number field stores zero, not an empty string');

@@ -15,7 +15,7 @@ prop savepoint:int = 0
 prop insertIgnore:string = ' IGNORE'
 prop insertOnConflict:string = void
 
-method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, ...$args){
+method load(string $table, string $columns = '*', string $where = void, string $joins = void, string $group = void, string $limit = void, string $order = void, array $whereArgs = [], ...$args){
 	$table = strpos($table, space) || strpos($table, dot) ? $table : "$this->fieldQuotes$table$this->fieldQuotes"
 	$args && $where = ($where ? "$where AND " : void).loop(array_keys($args), fn($column) => $table.dot.$this->quoteId($column).'=?', ' AND ')
 	$joins && $joins = " $joins"
@@ -24,7 +24,7 @@ method load(string $table, string $columns = '*', string $where = void, string $
 	$order && $order = " ORDER BY $order"
 	$limit && $limit = " LIMIT $limit"
 	$query = "SELECT $columns FROM $table$joins$where$group$order$limit"
-	return $this->query($query, ...array_values($args))
+	return $this->query($query, ...array_values($whereArgs), ...array_values($args))
 }
 
 method query($query, ...$args) => $this->queryRun($query, $args, true)

@@ -56,16 +56,14 @@ method offset($offset):static {
 method build:array {
 	$where = $this->conditions ? implode(' AND ', $this->conditions) : void
 	$limit = $this->limitVal ? ($this->offsetVal ? "$this->offsetVal,$this->limitVal" : "$this->limitVal") : void
-	$args = ['where' => $where ?: void, 'order' => $this->orderBy ?: void, 'limit' => $limit ?: void]
-	foreach ($this->bindings AS $b) $args[] = $b
-	return $args
+	return ['where' => $where ?: void, 'order' => $this->orderBy ?: void, 'limit' => $limit ?: void, 'whereArgs' => $this->bindings]
 }
 
-prop records:array => ($class = $this->class) && $class::records(...$this->build)
-prop record:?model => ($class = $this->class) && $class::record(...$this->build)
-prop column:array => ($class = $this->class) && $class::column(...$this->build)
-prop item => ($class = $this->class) && $class::item(...$this->build)
-prop count => ($class = $this->class) && $class::recordCount(...$this->build)
+prop records:array => ($class = $this->class) ? $class::records(...$this->build) : error('No model configured for query')
+prop record:?model => ($class = $this->class) ? $class::record(...$this->build) : error('No model configured for query')
+prop column:array => ($class = $this->class) ? $class::column(...$this->build) : error('No model configured for query')
+prop item => ($class = $this->class) ? $class::item(...$this->build) : error('No model configured for query')
+prop count => ($class = $this->class) ? $class::recordCount(...$this->build) : error('No model configured for query')
 method delete:int {
 	$class = $this->class
 	$where = $this->conditions ? implode(' AND ', $this->conditions) : error('Cannot delete without conditions')

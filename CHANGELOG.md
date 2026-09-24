@@ -91,6 +91,15 @@ tagged release onward. The engine version constant lives in `phlo.php`
   handler class is renamed from `phlo_dashboard` to `phlo_control` in the same
   pass, so the last of the old naming is gone: the feature is the Control
   Center, and Phlo Dashboard stays the name of the separate fleet app.
+- `whereArgs` is a reserved read option on `load()`. A query builder binds its values
+  through it, so a raw `where` clause and named equality filters can be combined in one
+  call: `%DB->rows('items', where: 'price > ?', whereArgs: [10], active: 1)`. An app that
+  overrides `load()` must accept the parameter, and a column actually named `whereArgs`
+  has to be filtered through an explicit `where` clause from now on.
+- An async GET form replaces the query string of its `action` with its own fields, the
+  way a plain browser submit does. A parameter that has to survive the submit belongs in
+  a form field; a non-GET submit still keeps the `action` query string and sends its
+  fields as the body.
 
 ### Added
 - The `DOM/dialog` buttons read their labels from `app.dlgLabels`, so an app writes
@@ -155,6 +164,43 @@ tagged release onward. The engine version constant lives in `phlo.php`
 - `DOM/link` intercepted a link that carried a `target`, so `class=async` and
   `target=_blank` on one element resolved differently on a plain click than on
   a ctrl or cmd click. Browser semantics win whenever a target is set.
+- The terminal accessors on a query builder returned `true` instead of the rows they had
+  just read. Each one was written as `($class = $this->class) && $class::records(...)`,
+  which yields the boolean of the `&&` and not the call, so `records`, `record`,
+  `column`, `item` and `count` all handed back a bare `true` the moment a model was set.
+  They evaluate conditionally now, and a builder without a model says so instead of
+  quietly answering `false`.
+- A query builder lost its bindings. `build()` appended them as numeric keys behind the
+  named `where`, `order` and `limit` entries, and PHP forbids a positional argument after
+  a named one, so a condition carrying a value fataled instead of running. They travel as
+  `whereArgs` now.
+- `JSONDB->load()` dropped its named filters whenever a raw `where` clause was also
+  given: the clause was only built `!$where && $args`, so `where: 'a > ?', b: 1` silently
+  matched on `a` alone and returned rows the caller had excluded. Both halves are joined
+  with `AND`, as the SQL driver already did.
+- A nested write to the session did not survive the request. `objData` was a copy of
+  `$_SESSION`, so `%session->cart['items'][] = $id` reached the copy and never the stored
+  session, while a top-level write worked because `__set` assigns to both. The property
+  binds to `$_SESSION` by reference now, at start and after `objRegenerateId()`.
+- Stripping comments from a script could change what the script did. A `//` following a
+  string was not always recognised, so the rest of the line survived as code or the
+  closing `}` of a block was eaten; a removed block comment glued its neighbours
+  together, turning `return/* x */1` into `return1`. Block comments leave a space or a
+  newline behind, and the end of a line is kept where it carries meaning.
+- The semicolon cleanup of compiled PHP reached inside string literals, so `'a;;b'` came
+  out as `'a;b'`. Literal tokens, including the text segments of an interpolated string,
+  are held aside during the cleanup and put back afterwards.
+- A worker that could not encode its result wrote an empty line instead of a frame. An
+  invalid UTF-8 byte or a `NAN` made `json_encode()` fail, and the job it belonged to was
+  never closed, so the caller waited for a reply that no longer existed. Line and done
+  frames throw on an encoding error, an error frame carries the job id and substitutes
+  invalid bytes so it can always be sent, and the worker picks up the next job. The error
+  is raised outside the output buffer callback, because throwing inside it leaks raw
+  output.
+- An uploaded file stored before the extension was lowercased could no longer be read.
+  `read()` built its path from the lowercased extension only, so a record written under
+  `IMG.JPG` pointed at a file that was not there. It falls back to the extension as
+  stored when the lowercased name is missing.
 
 ## [1.0.1] - 2026-08-01
 

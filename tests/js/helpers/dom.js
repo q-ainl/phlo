@@ -10,8 +10,8 @@ const {environment} = require('./frontend')
 
 // A stand-in for what app.js does after a response: run every registered onExist over the
 // document, then bind the events. Enough for the bindings to attach and redraw.
-function mount(html, resources = ['DOM/store'], over = {}){
-	const dom = new JSDOM(`<!doctype html><body>${html}</body>`)
+function mount(html, resources = ['DOM/store'], over = {}, url = 'https://phlo.test/'){
+	const dom = new JSDOM(`<!doctype html><body>${html}</body>`, {url})
 	const {window} = dom
 	const env = environment({
 		window,
@@ -27,6 +27,7 @@ function mount(html, resources = ['DOM/store'], over = {}){
 			return 'forEach' in els ? els : [els]
 		},
 		addEventListener: (...a) => window.addEventListener(...a),
+		queueMicrotask,
 		...over,
 	})
 

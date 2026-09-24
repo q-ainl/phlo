@@ -391,7 +391,7 @@ onExist('[data-each]', el => {
 		bound.forEach(item => {
 			if (item.dataset.bind !== undefined && item.dataset.eachBind === undefined) item.dataset.eachBind = item.dataset.bind
 			const attr = item.attributes['data-bind-attr']?.value
-			if (attr !== null && item.dataset.eachBindAttr === undefined) item.dataset.eachBindAttr = attr
+			if (attr !== undefined && item.dataset.eachBindAttr === undefined) item.dataset.eachBindAttr = attr
 			if (item.dataset.eachBind !== undefined){
 				const not = item.dataset.eachBind.startsWith('!') ? '!' : ''
 				const rel = not ? item.dataset.eachBind.slice(1) : item.dataset.eachBind

@@ -9,3 +9,19 @@ static prepareTable {
 	static::DB()->query('CREATE TABLE IF NOT EXISTS items (id '.app::autoId(static::DB()).', list_id INTEGER, label TEXT)')
 	static::DB()->query('DELETE FROM items')
 }
+
+static queryBuilderTests {
+	static::prepareTable()
+	static::create(list_id: 1, label: 'een')
+	static::create(list_id: 2, label: 'twee')
+	static::create(list_id: 3, label: "' OR 1=1 --")
+	return [
+		'records' => array_values(array_map(fn($r) => $r->label, static::query()->gt('list_id', 1)->records)),
+		'column' => array_values(static::query()->gt('list_id', 1)->column),
+		'item' => static::query()->eq('list_id', 1)->item,
+		'record' => static::query()->eq('list_id', 2)->record?->label,
+		'absent' => static::query()->eq('list_id', 99)->record,
+		'count' => static::query()->gt('list_id', 1)->count,
+		'binding' => array_values(array_map(fn($r) => $r->label, static::query()->eq('label', "' OR 1=1 --")->records)),
+	]
+}

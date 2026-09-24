@@ -43,10 +43,14 @@ method collect($from, $to, array $missing):void {
 	$key = $from.'|'.$to
 	foreach ($missing AS $hash => $line){
 		if (isset($this->pending[$key][$hash])) continue
+		$length = strlen($line)
+		// A line that no longer fits sends what is waiting first, so a batch never leaves over the cap.
+		// One line longer than the cap cannot be split and goes on its own.
+		if (($this->pending[$key] ?? null) && $this->pendingChars[$key] + $length > $this->batchChars) $this->flush($key)
 		$this->pending[$key][$hash] = $line
-		$this->pendingChars[$key] = ($this->pendingChars[$key] ?? 0) + strlen($line)
+		$this->pendingChars[$key] = ($this->pendingChars[$key] ?? 0) + $length
+		if (count($this->pending[$key]) >= $this->batchLines || $this->pendingChars[$key] >= $this->batchChars) $this->flush($key)
 	}
-	if (count($this->pending[$key] ?? []) >= $this->batchLines || ($this->pendingChars[$key] ?? 0) >= $this->batchChars) $this->flush($key)
 }
 
 // Hands one batch over and forgets it.

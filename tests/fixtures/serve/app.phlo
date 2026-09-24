@@ -7,3 +7,11 @@
 static mirror(...$args) => $args
 
 static probe => [%box->visit(), %box->visit()]
+
+static invalidStream {
+	echo chr(255).lf
+}
+
+static invalidException {
+	error(chr(255))
+}

@@ -73,14 +73,54 @@ final class LangBatchTest extends TestCase {
 		$this->assertSame(0, $spy->waiting('nl|de'), 'the batch stayed behind after it was sent');
 	}
 
+	// One nl() over a long block hands its missing lines over in a single call. The cap has to hold
+	// inside that call as well, or a hundred lines leave as one request and come back truncated.
+	public function testOneCallLargerThanTheCapSplitsIntoFullJobs():void {
+		$spy = $this->spy();
+		$spy->batchLines = 50;
+		$spy->batchChars = 100000;
+		$lines = [];
+		for ($i = 1; $i <= 120; $i++) $lines['h'.$i] = 'regel '.$i;
+		$spy->take('nl', 'de', $lines);
+
+		$this->assertCount(2, $spy->jobs, 'two full jobs left, the remainder waits for the tail');
+		$this->assertCount(50, json_decode($spy->jobs[0]['json'], true));
+		$this->assertCount(50, json_decode($spy->jobs[1]['json'], true));
+		$this->assertSame(20, $spy->waiting('nl|de'), 'and the twenty that are left over stay behind');
+	}
+
+	// Two lines that each fit but do not fit together: the first leaves on its own rather than
+	// riding along in a job of nearly twice the cap.
+	public function testABatchNeverLeavesOverTheCharacterCap():void {
+		$spy = $this->spy();
+		$spy->batchLines = 50;
+		$spy->batchChars = 4000;
+		$spy->take('nl', 'de', ['h1' => str_repeat('a', 3900), 'h2' => str_repeat('b', 3900)]);
+
+		$this->assertCount(1, $spy->jobs, 'the first line left when the second no longer fitted');
+		$this->assertSame(3900, strlen(implode(json_decode($spy->jobs[0]['json'], true))), 'and it left under the cap');
+		$this->assertSame(1, $spy->waiting('nl|de'), 'the second waits for a tail of its own');
+	}
+
+	// A single line over the cap cannot be split, so it goes as one job instead of waiting forever.
+	public function testALineLongerThanTheCapGoesOnItsOwn():void {
+		$spy = $this->spy();
+		$spy->batchChars = 4000;
+		$spy->take('nl', 'de', ['h1' => str_repeat('a', 9000)]);
+
+		$this->assertCount(1, $spy->jobs);
+		$this->assertSame(0, $spy->waiting('nl|de'));
+	}
+
 	public function testTheCharacterCapSendsBeforeTheLineCapIsReached():void {
 		$spy = $this->spy();
 		$spy->batchLines = 50;
 		$spy->batchChars = 300;
 		$spy->take('nl', 'fr', ['h1' => str_repeat('a', 200), 'h2' => str_repeat('b', 150)]);
 
-		$this->assertCount(1, $spy->jobs, 'two long lines are one AI request and should not wait for fifty');
-		$this->assertCount(2, json_decode($spy->jobs[0]['json'], true));
+		$this->assertCount(1, $spy->jobs, 'a job left on the character cap without waiting for fifty lines');
+		$this->assertCount(1, json_decode($spy->jobs[0]['json'], true), 'and it left before the line that would push it over the cap');
+		$this->assertSame(1, $spy->waiting('nl|fr'), 'that line opens the next batch');
 	}
 
 	public function testTheSamePhraseTwiceIsOneLine():void {

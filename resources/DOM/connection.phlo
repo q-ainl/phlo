@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  One verdict on the connection, drawn from the traffic itself: app.online, offline on <body>, app.connection.on('change')
-@ advice:   Nothing runs on a clock here, and the browser's own opinion is not asked either. The verdict comes from what actually happened: a request that got no answer at all, or a websocket reconnect that failed, means offline; any answer at all, or a socket that opens, means online. A socket that merely closes says nothing, because sockets drop for a hundred reasons while HTTP is fine, and the reconnect that follows is the only probe there is. Read app.online, style on body.offline, and subscribe with app.connection.on('change', cb) to pause a live view or refuse what needs the server. It decides nothing about what the visitor sees; that is the app's.
+@ advice:   Nothing runs on a clock here, and the browser's own opinion is not asked either. The verdict comes from what actually happened: a request that got no answer at all, or a websocket reconnect that failed, means offline; any answer at all, or a socket that opens, means online. A socket that merely closes says nothing, because sockets drop for a hundred reasons while HTTP is fine, and the reconnect that follows is the only probe there is. Read app.online, style on body.offline, and subscribe with app.connection.on('change', cb) to pause a live view or refuse what needs the server. It decides nothing about what the visitor sees; that is the app's. The websocket listeners are attached after the bundle has run, so this resource may sit before or after DOM/websocket in the list.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -14,7 +14,7 @@ app.connection = {
 	since: Date.now(),
 	reason: 'start',
 	subs: [],
-	on(cb){
+	on(event, cb){
 		app.connection.subs.push(cb)
 		return () => app.connection.subs = app.connection.subs.filter(sub => sub !== cb)
 	},
@@ -40,7 +40,9 @@ phlo.request = (...args) => {
 	return xhr
 }
 
-app.websocket?.on?.('connect', () => [app.connection.attempting = false, app.connection.set(true, 'websocket')])
-app.websocket?.on?.('close', () => app.connection.attempting = true)
-app.websocket?.on?.('error', () => app.connection.attempting && app.connection.set(false, 'websocket'))
+queueMicrotask(() => {
+	app.websocket?.on?.('connect', () => [app.connection.attempting = false, app.connection.set(true, 'websocket')])
+	app.websocket?.on?.('close', () => app.connection.attempting = true)
+	app.websocket?.on?.('error', () => app.connection.attempting && app.connection.set(false, 'websocket'))
+})
 </script>

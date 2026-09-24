@@ -208,12 +208,15 @@ function phlo_serve():void {
 		$args   = (array)($msg['args'] ?? []);
 		$stream = (bool)($msg['stream'] ?? false);
 		$lineBuf = void;
-		$emit = static function(string $chunk) use (&$lineBuf, $id):string {
+		$streamError = null;
+		$emit = static function(string $chunk) use (&$lineBuf, &$streamError, $id):string {
 			$lineBuf .= $chunk;
 			while (($pos = strpos($lineBuf, lf)) !== false){
 				$out = substr($lineBuf, 0, $pos);
 				$lineBuf = substr($lineBuf, $pos + 1);
-				fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], jsonFlat).lf);
+				if ($streamError !== null) continue;
+				try { fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $out], jsonFlat | JSON_THROW_ON_ERROR).lf); }
+				catch (JsonException $e){ $streamError = $e; }
 			}
 			return void;
 		};
@@ -223,14 +226,15 @@ function phlo_serve():void {
 				ob_start($emit, 1);
 				$result = phlo_dispatch($target, $args);
 				while (ob_get_level()) ob_end_flush();
-				if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], jsonFlat).lf);
+				if ($streamError !== null) throw $streamError;
+				if ($lineBuf !== void) fwrite(STDOUT, json_encode(['id' => $id, 't' => 'line', 'data' => $lineBuf], jsonFlat | JSON_THROW_ON_ERROR).lf);
 			}
 			else $result = phlo_dispatch($target, $args);
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done', 'result' => $result], jsonFlat).lf);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'done', 'result' => $result], jsonFlat | JSON_THROW_ON_ERROR).lf);
 		}
 		catch (Throwable $e){
 			while (ob_get_level()) ob_end_clean();
-			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], jsonFlat).lf);
+			fwrite(STDOUT, json_encode(['id' => $id, 't' => 'error', 'message' => $e->getMessage()], jsonFlat | JSON_INVALID_UTF8_SUBSTITUTE).lf);
 		}
 		phlo('tech/reset');
 		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();

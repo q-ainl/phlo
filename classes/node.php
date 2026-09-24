@@ -110,7 +110,19 @@ class build_node extends stdClass {
 	}
 
 	private function parsePHP(string $php):string {
-		return str_replace([lf, '\\;'.lf, '(;', '[;', '{;', '};', ',;', '.;', ';;', lf.';'.lf], [';'.lf, lf, '(', '[', '{', '}', ',', '.', ';', lf.lf], $php.';');
+		$literals = [];
+		$code = void;
+		$tokens = token_get_all('<?php '.$php);
+		array_shift($tokens);
+		foreach ($tokens as $token){
+			if (is_array($token) && in_array($token[0], [T_CONSTANT_ENCAPSED_STRING, T_ENCAPSED_AND_WHITESPACE], true)){
+				$key = "\0literal".count($literals)."\0";
+				$literals[$key] = $token[1];
+				$code .= $key;
+			}
+			else $code .= is_array($token) ? $token[1] : $token;
+		}
+		return strtr(str_replace([lf, '\\;'.lf, '(;', '[;', '{;', '};', ',;', '.;', ';;', lf.';'.lf], [';'.lf, lf, '(', '[', '{', '}', ',', '.', ';', lf.lf], $code.';'), $literals);
 	}
 
 	private function buildArrow():string {

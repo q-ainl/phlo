@@ -62,6 +62,17 @@ test('a list renders a row per item and gives them back when it shrinks', () => 
 	assert.deepStrictEqual(rows(), [], 'and an empty list must empty the element')
 })
 
+test('a row with a plain text binding carries no attribute binding', () => {
+	const env = mount(`<ul id="l" data-each="receipt.lines" data-key="i">
+		<template><li data-bind=".title"></li></template>
+	</ul>`)
+	env.context.app.mod.store('receipt', {lines: [{i: 0, title: 'Drop'}]})
+	const li = env.document.querySelector('#l li')
+	assert.strictEqual(li.textContent, 'Drop')
+	assert.strictEqual(li.getAttribute('data-bind-attr'), null, 'a missing attribute binding stays missing')
+	assert.strictEqual(li.getAttribute('data-each-bind-attr'), null)
+})
+
 test('a template is chosen per item', () => {
 	const env = mount(`<ul id="l" data-each="receipt.lines" data-each-template="kind" data-key="i">
 		<template><li class="normal" data-bind=".title"></li></template>

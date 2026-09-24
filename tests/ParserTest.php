@@ -245,4 +245,12 @@ final class ParserTest extends TestCase {
 		$out = $node->renderMethod('App');
 		$this->assertStringContainsString('esc($ok ? "a]}b" : "c")', $out);
 	}
+
+	// The semicolon cleanup rewrote statements and string contents alike, so 'a;;b' came out as 'a;b'.
+	public function testPhpCleanupPreservesLiterals():void {
+		foreach (["return 'a;;b'", 'return "a;;b"', 'return "prefix;;{$value};;suffix"'] as $source){
+			$value = 'mid';
+			$this->assertSame(eval($source.';'), eval(build_node::transpile($source)));
+		}
+	}
 }

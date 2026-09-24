@@ -3,7 +3,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  File field
-@ advice:   An upload is stored under a random token instead of its own name, so two people can send the same filename and no visitor can guess a neighbouring URL. That takes two columns, name and name_token, which objColumns already claims. Set accept to narrow the picker, and path and uri when the files live somewhere other than the default. On disk the extension is lowercase whatever the upload said, so a route that lowercases it as well finds FOTO.JPG under token.jpg.
+@ advice:   An upload is stored under a random token instead of its own name, so two people can send the same filename and no visitor can guess a neighbouring URL. That takes two columns, name and name_token, which objColumns already claims. Set accept to narrow the picker, and path and uri when the files live somewhere other than the default. On disk the extension is lowercase whatever the upload said, so a route that lowercases it as well finds FOTO.JPG under token.jpg. Reading falls back to the extension as it was written, so an upload stored before that rule still opens.
 @ package:  fields
 @ frontend: true
 @ backend:  true
@@ -41,7 +41,12 @@ method parse($record):void {
 method read($record, $path = null):file {
 	$filename = $record->{$this->name};
 	$token = $record->{$this->name.'_token'};
-	return %file(($path ?? $this->path).($info = substr($token, 0, 2).slash.substr($token, 2).dot.$this->ext($filename)), name: $filename, info: $info)
+	$root = $path ?? $this->path;
+	$dir = substr($token, 0, 2).slash.substr($token, 2).dot;
+	$info = $dir.$this->ext($filename);
+	$raw = $dir.pathinfo($filename, PATHINFO_EXTENSION);
+	if ($info !== $raw && !is_file($root.$info) && is_file($root.$raw)) $info = $raw;
+	return %file($root.$info, name: $filename, info: $info)
 }
 
 method write($file) => file_exists($dest = $this->writePath($file)) || $file->move($dest) || error("Couldn't write: $dest")

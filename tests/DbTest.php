@@ -219,4 +219,21 @@ final class DbTest extends TestCase {
 		$this->assertTrue($r['createTyped'] ?? false, 'JSONDB create() returns a typed model instance, not a bare obj: '.$out);
 		$this->assertTrue($r['recordTyped'] ?? false, 'JSONDB record() hydrates the row into the model class (FETCH_CLASS honours the requested class): '.$out);
 	}
+
+	// The terminals used to close on &&, which yields a boolean rather than the rows asked for, and a
+	// raw WHERE bound its values through the same variadic as the named filters, so a binding could
+	// land behind a named argument. Bindings travel as whereArgs now.
+	public function testQueryBuilderReturnsRowsAndBindsItsValues():void {
+		[$code, $out, $err] = self::cli('itm::queryBuilderTests');
+		$this->assertSame(0, $code, $out.$err);
+		$r = json_decode(trim($out), true);
+		$this->assertIsArray($r, "no JSON: $out");
+		$this->assertSame(['twee', "' OR 1=1 --"], $r['records'], 'records gives the rows, not true');
+		$this->assertCount(2, $r['column'], 'column gives values, not a boolean');
+		$this->assertIsInt($r['item'], 'item gives a value');
+		$this->assertSame('twee', $r['record'], 'record gives the record');
+		$this->assertNull($r['absent'], 'and nothing at all when there is no match');
+		$this->assertSame(2, $r['count']);
+		$this->assertSame(["' OR 1=1 --"], $r['binding'], 'a value that looks like SQL stays a value');
+	}
 }

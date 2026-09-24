@@ -50,6 +50,24 @@ static parsing {
 	return $out
 }
 
+// An upload stored before the extension was lowercased still sits on disk under its own case.
+// Nothing migrates those, so read() has to look there when the lowercase name is not a file.
+static storedBefore {
+	$dir = sys_get_temp_dir().'/fieldprobe-old-'.getmypid().slash
+	is_dir($dir) || mkdir($dir)
+	defined('files') || define('files', $dir)
+	$token = 'abcd1234'
+	is_dir($dir.'ab') || mkdir($dir.'ab')
+	file_put_contents($dir.'ab'.slash.'cd1234.JPG', 'x')
+	$field = field(type: 'file', name: 'photo', path: $dir)
+	$record = new obj(photo: 'FOTO.JPG', photo_token: $token)
+	$out = ['readAs' => basename($field->read($record)->file)]
+	unlink($dir.'ab'.slash.'cd1234.JPG')
+	rmdir($dir.'ab')
+	rmdir($dir)
+	return $out
+}
+
 static storing {
 	$dir = sys_get_temp_dir().'/fieldprobe-'.getmypid().slash
 	is_dir($dir) || mkdir($dir)

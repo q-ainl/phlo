@@ -35,7 +35,7 @@ test('a request without an answer makes it offline, any answer makes it online',
 	assert.ok(!env.document.body.classList.contains('offline'))
 })
 
-test('a closing socket is no verdict, a failed reconnect is, an open socket is online again', () => {
+test('a closing socket is no verdict, a failed reconnect is, an open socket is online again', async () => {
 	const socket = {subs: {}, on(evt, cb){ (this.subs[evt] ??= []).push(cb) }, emit(evt){ (this.subs[evt] || []).forEach(cb => cb()) }}
 	const env = mount('<main></main>', ['DOM/connection'], {
 		phlo: {existing: new WeakMap, log(){}, error(){}, request: () => null},
@@ -43,6 +43,9 @@ test('a closing socket is no verdict, a failed reconnect is, an open socket is o
 		Date,
 	})
 	const app = env.context.app
+	// The socket listeners attach after the bundle has run, so this resource can sit before
+	// DOM/websocket in the list. One tick is what that costs.
+	await Promise.resolve()
 	// A browser fires error before close, both when a live socket drops and when a connection
 	// attempt fails; the sequence below is that of a drop followed by one failed reconnect.
 	socket.emit('error')
@@ -57,11 +60,24 @@ test('a closing socket is no verdict, a failed reconnect is, an open socket is o
 	assert.strictEqual(app.online, true)
 })
 
+// DOM/websocket may sit after this resource in the list, so app.websocket does not exist yet while
+// this one runs. Registering straight away would skip it silently and never come back to it.
+test('the socket is heard even when it arrives after this resource', async () => {
+	const {env, app} = mountConnection()
+	const socket = {subs: {}, on(evt, cb){ (this.subs[evt] ??= []).push(cb) }, emit(evt){ (this.subs[evt] || []).forEach(cb => cb()) }}
+	env.context.app.websocket = socket
+	await Promise.resolve()
+	socket.emit('error')
+	socket.emit('close')
+	socket.emit('error')
+	assert.strictEqual(app.online, false, 'a failed reconnect is still a verdict')
+})
+
 test('subscribers hear every change once, and app.online cannot be assigned', () => {
 	const {env, made, app} = mountConnection()
 	env.context.app.websocket = undefined
 	const heard = []
-	app.connection.on((online, reason) => heard.push([online, reason]))
+	app.connection.on('change', (online, reason) => heard.push([online, reason]))
 	env.context.phlo.request('GET', 'x'); made[0].fire('timeout')
 	env.context.phlo.request('GET', 'x'); made[1].fire('error')
 	env.context.phlo.request('GET', 'x'); made[2].fire('load')

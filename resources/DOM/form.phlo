@@ -1,7 +1,7 @@
 @ version:  1.0
 @ creator:  q-ai.nl
 @ summary:  Single Page App form handler and input state saver
-@ advice:   A form with class async submits over the same channel as the rest and answers with commands rather than a new page, using its own method attribute. Method and target are read as attributes, never as properties of the form: a field named action or method shadows the property with the element itself, and a form for a record with such a field would then never leave the page. Without an action the form posts to the page it is on, resolved against the origin like every other request. Apart from that, this keeps the DOM honest: what a visitor types is written back into the attributes, so the state that is saved and restored on a back button matches what is on screen.
+@ advice:   A form with class async submits over the same channel as the rest and answers with commands rather than a new page, using its own method attribute. Method and target are read as attributes, never as properties of the form: a field named action or method shadows the property with the element itself, and a form for a record with such a field would then never leave the page. A relative action resolves the way the browser would: against a base element when the page carries one, against the page itself otherwise. An empty or absent action posts to the current address, which a base element does not move. A GET form puts its fields in the query string, replacing the one on the action, the way an ordinary GET form does; a value that has to survive belongs in a field. A file field contributes its filename, because a file cannot travel in a URL. Apart from that, this keeps the DOM honest: what a visitor types is written back into the attributes, so the state that is saved and restored on a back button matches what is on screen.
 @ package:  dom
 @ frontend: true
 @ backend:  false
@@ -17,5 +17,17 @@ on('input change', 'input, select, textarea', input => {
 	phlo.state.replace()
 	return false
 })
-on('submit', 'form.async', (form, e) => [e.preventDefault(), app[(form.attributes.method?.value ?? 'GET').toLowerCase()](new URL(form.attributes.action?.value ?? location.pathname, location.origin).pathname.substr(1), new FormData(form))])
+on('submit', 'form.async', (form, e) => {
+	e.preventDefault()
+	const method = (form.attributes.method?.value ?? 'GET').toLowerCase()
+	const url = new URL(form.attributes.action?.value || location.href, document.baseURI)
+	const data = new FormData(form)
+	if (method === 'get'){
+		const query = new URLSearchParams
+		for (const [name, value] of data) query.append(name, typeof value === 'string' ? value : value.name)
+		url.search = query.toString()
+		return app.get(url.pathname.substr(1) + url.search)
+	}
+	return app[method](url.pathname.substr(1) + url.search, data)
+})
 </script>
