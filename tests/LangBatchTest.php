@@ -226,4 +226,23 @@ final class LangBatchTest extends TestCase {
 
 		$this->assertSame(2, $spy->waiting('nl|de'), 'a text of two lines should give two phrases');
 	}
+
+	// --- The language cookie --------------------------------------------------
+
+	// The cookie is whatever the visitor sends. One naming a language the app does not carry used to
+	// read an array key that is not there, and the warning ended the request as a 500.
+	public function testACookieNamingALanguageTheAppDoesNotCarryIsIgnored():void {
+		require_once php.'cookies.php';
+		phlo('app')->langs = ['nl' => 'Nederlands', 'en' => 'English'];
+		$cookies = phlo('cookies');
+		$before = $cookies->objData;
+
+		$cookies->objData['lang'] = 'zh-TW';
+		$this->assertNull($this->spy()->cookie(), 'a cookie chose a language the app does not have');
+
+		$cookies->objData['lang'] = 'en';
+		$this->assertSame('en', $this->spy()->cookie(), 'a cookie naming a language the app does carry should still count');
+
+		$cookies->objData = $before;
+	}
 }

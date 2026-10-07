@@ -201,6 +201,10 @@ tagged release onward. The engine version constant lives in `phlo.php`
   `read()` built its path from the lowercased extension only, so a record written under
   `IMG.JPG` pointed at a file that was not there. It falls back to the extension as
   stored when the lowercased name is missing.
+- A `lang` cookie naming a language the app does not carry ended the request with a 500.
+  `lang->cookie()` read `%app->langs[$lang]` without asking whether the key exists, and
+  the cookie is whatever the visitor sends: a crawler arriving with `lang=zh-TW` raised
+  "Undefined array key". It checks with `isset` now, the way `browser` already did.
 
 ## [1.0.1] - 2026-08-01
 
